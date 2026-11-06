@@ -1,0 +1,821 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact Administration · WorkTrack Pro{% endblock %}
+
+{% block content %}
+<style>
+    /* ===== CNDP CONTACT ADMIN PAGE STYLING ===== */
+    :root {
+        --cndp-crimson: var(--color-primary, #10b981);
+        --cndp-crimson-dark: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        --cndp-crimson-glow: rgba(var(--wt-brand-rgb), 0.45);
+        --cndp-obsidian: #0a0d18;
+        --cndp-card-bg: #111827;
+        --cndp-border: rgba(255, 255, 255, 0.1);
+    }
+
+    .contact-container {
+        max-width: 1200px;
+        margin: 1rem auto 3rem;
+        padding: 0 1rem;
+    }
+
+    /* Hero Banner */
+    .contact-hero {
+        background: linear-gradient(135deg, rgba(var(--wt-brand-rgb), 0.95) 0%, rgba(17, 24, 39, 0.98) 60%, rgba(10, 13, 24, 1) 100%);
+        border-radius: 20px;
+        padding: 2.75rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        margin-bottom: 2rem;
+    }
+
+    .contact-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 85% 30%, color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .contact-badge-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(8px);
+    }
+
+    .contact-pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+        animation: pulseLive 2s infinite;
+    }
+
+    @keyframes pulseLive {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .contact-title {
+        font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+        margin-bottom: 0.75rem;
+    }
+
+    .contact-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 650px;
+        line-height: 1.5;
+        margin-bottom: 0;
+    }
+
+    /* Main Grid */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    @media (max-width: 991px) {
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Left Card: Info & Channels */
+    .contact-info-card {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid #e2e8f0;
+        padding: 2rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+    }
+
+    body.dark .contact-info-card, [data-theme="dark"] .contact-info-card {
+        background: #111827;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .info-section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    body.dark .info-section-header, [data-theme="dark"] .info-section-header {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .info-section-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent);
+        color: var(--cndp-crimson);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .channel-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .channel-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    body.dark .channel-icon, [data-theme="dark"] .channel-icon {
+        background: #1e293b;
+        color: #cbd5e1;
+    }
+
+    .channel-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin-bottom: 2px;
+    }
+
+    .channel-val {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    body.dark .channel-val, [data-theme="dark"] .channel-val {
+        color: #f1f5f9;
+    }
+
+    .security-notice-box {
+        background: linear-gradient(145deg, rgba(var(--wt-brand-rgb), 0.06) 0%, rgba(var(--wt-brand-rgb), 0.02) 100%);
+        border: 1px dashed color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent);
+        border-radius: 12px;
+        padding: 1rem;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: #64748b;
+    }
+
+    body.dark .security-notice-box, [data-theme="dark"] .security-notice-box {
+        color: #94a3b8;
+    }
+
+    /* Right Card: The Form */
+    .contact-form-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        padding: 2.5rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
+    }
+
+    body.dark .contact-form-card, [data-theme="dark"] .contact-form-card {
+        background: #111827;
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .form-group-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    body.dark .form-group-title, [data-theme="dark"] .form-group-title {
+        color: #94a3b8;
+    }
+
+    .form-field-custom {
+        width: 100%;
+        padding: 0.85rem 1.15rem;
+        font-size: 0.95rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #0f172a;
+        transition: all 0.25s ease;
+        outline: none;
+    }
+
+    body.dark .form-field-custom, [data-theme="dark"] .form-field-custom {
+        background: #0d121f;
+        border-color: #2e384d;
+        color: #f1f5f9;
+    }
+
+    .form-field-custom:focus {
+        border-color: var(--cndp-crimson);
+        background: #ffffff;
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #10b981) 18%, transparent);
+    }
+
+    body.dark .form-field-custom:focus, [data-theme="dark"] .form-field-custom:focus {
+        background: #131929;
+        border-color: var(--wt-bad);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);
+    }
+
+    /* 3 Priority Buttons */
+    .priority-selector-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .prio-btn-card {
+        border: 1.5px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 0.75rem 0.5rem;
+        background: #f8fafc;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        user-select: none;
+    }
+
+    body.dark .prio-btn-card, [data-theme="dark"] .prio-btn-card {
+        background: #0f172a;
+        border-color: #2e384d;
+    }
+
+    .prio-btn-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .prio-btn-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .prio-dot-pill {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .prio-low .prio-dot-pill { background: #16a34a; }
+    .prio-med .prio-dot-pill { background: #f59e0b; }
+    .prio-high .prio-dot-pill { background: var(--wt-bad); }
+
+    .prio-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    body.dark .prio-name, [data-theme="dark"] .prio-name {
+        color: #cbd5e1;
+    }
+
+    /* Active states */
+    .prio-btn-card.active.prio-low {
+        border-color: #16a34a;
+        background: rgba(22, 163, 74, 0.08);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
+    }
+    .prio-btn-card.active.prio-low .prio-name { color: #16a34a; font-weight: 800; }
+
+    .prio-btn-card.active.prio-med {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.08);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+    }
+    .prio-btn-card.active.prio-med .prio-name { color: #f59e0b; font-weight: 800; }
+
+    .prio-btn-card.active.prio-high {
+        border-color: var(--wt-bad);
+        background: rgba(192, 40, 58, 0.08);
+        box-shadow: 0 4px 12px rgba(192, 40, 58, 0.2);
+    }
+    .prio-btn-card.active.prio-high .prio-name { color: var(--wt-bad); font-weight: 800; }
+
+    /* Dropzone */
+    .contact-dropzone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    body.dark .contact-dropzone, [data-theme="dark"] .contact-dropzone {
+        background: #0d121f;
+        border-color: #2e384d;
+    }
+
+    .contact-dropzone:hover, .contact-dropzone.dragover {
+        border-color: var(--cndp-crimson);
+        background: rgba(var(--wt-brand-rgb), 0.03);
+    }
+
+    /* Submit Button */
+    .btn-cndp-submit {
+        background: linear-gradient(135deg, var(--cndp-crimson) 0%, var(--color-primary, #10b981) 100%);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 1.05rem;
+        padding: 0.95rem 2rem;
+        border-radius: 14px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        width: 100%;
+        cursor: pointer;
+        box-shadow: 0 10px 25px color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-cndp-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(192, 40, 58, 0.5);
+        color: #ffffff;
+    }
+
+    .btn-cndp-submit:active {
+        transform: translateY(0);
+    }
+
+    .btn-cndp-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Success Card Banner */
+    .contact-success-banner {
+        background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 15px 35px rgba(22, 101, 52, 0.4);
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="contact-container">
+
+    <!-- Top Navigation Breadcrumb -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+            <i class="fas fa-arrow-left me-1"></i>
+            <span class="lang-en">Back to {% if user.is_authenticated %}Dashboard{% else %}Login{% endif %}</span>
+            <span class="lang-ar">العودة إلى {% if user.is_authenticated %}لوحة القيادة{% else %}تسجيل الدخول{% endif %}</span>
+        </a>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger rounded-pill px-3 py-2 text-uppercase fw-bold" style="letter-spacing: 0.05em;">
+                <i class="fas fa-shield-alt me-1"></i>
+                <span class="lang-en">Super Admin Direct Line</span>
+                <span class="lang-ar">خط الإدارة المباشر</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Hero Banner -->
+    <div class="contact-hero">
+        <div class="contact-badge-chip">
+            <span class="contact-pulse-dot"></span>
+            <span class="lang-en">Central Executive Channel</span>
+            <span class="lang-ar">القناة التنفيذية المركزية</span>
+        </div>
+
+        <h1 class="contact-title">
+            <span class="lang-en">Contact WorkTrack Administration</span>
+            <span class="lang-ar">الاتصال بإدارة منظومة وورك تراك</span>
+        </h1>
+
+        <p class="contact-subtitle lang-en">
+            Submit inquiries, operational correspondence, technical requests, or official notices directly to the WorkTrack administration. All submissions are automatically recorded in Contact Submissions and dispatched to all Super Admins.
+        </p>
+        <p class="contact-subtitle lang-ar">
+            أرسل استفساراتك، مراسلاتك التشغيلية، طلباتك التقنية أو إخطاراتك الرسمية مباشرة إلى إدارة المنظومة. يتم تسجيل جميع المراسلات تلقائياً في وحدة المراسلات وإشعار جميع المشرفين العامين فوراً عبر البريد الإلكتروني.
+        </p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="contact-grid">
+
+        <!-- Left Column: Institutional Info -->
+        <div class="contact-info-card">
+            
+            <div class="info-section-header">
+                <div class="info-section-icon">
+                    <i class="fas fa-landmark"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark" style="font-size: 1.05rem;">
+                        <span class="lang-en">WorkTrack Administration</span>
+                        <span class="lang-ar">أمانة إدارة وورك تراك</span>
+                    </h5>
+                    <div class="small text-muted">
+                        <span class="lang-en">Workforce & Operations Management</span>
+                        <span class="lang-ar">إدارة القوى العاملة والعمليات</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channels -->
+            <div class="d-flex flex-column gap-3">
+                
+                <div class="channel-item">
+                    <div class="channel-icon"><i class="fas fa-envelope-open-text text-danger"></i></div>
+                    <div>
+                        <div class="channel-title">
+                            <span class="lang-en">Official Email</span>
+                            <span class="lang-ar">البريد الإلكتروني الرسمي</span>
+                        </div>
+                        <div class="channel-val">contact@worktrack.com</div>
+                    </div>
+                </div>
+
+                <div class="channel-item">
+                    <div class="channel-icon"><i class="fas fa-phone-alt text-success"></i></div>
+                    <div>
+                        <div class="channel-title">
+                            <span class="lang-en">Central Line</span>
+                            <span class="lang-ar">الهاتف المركزي</span>
+                        </div>
+                        <div class="channel-val">+213 (0) 23 85 41 20</div>
+                    </div>
+                </div>
+
+                <div class="channel-item">
+                    <div class="channel-icon"><i class="fas fa-map-marker-alt text-primary"></i></div>
+                    <div>
+                        <div class="channel-title">
+                            <span class="lang-en">Location</span>
+                            <span class="lang-ar">المقر المركزي</span>
+                        </div>
+                        <div class="channel-val">Algiers, Algeria</div>
+                    </div>
+                </div>
+
+                <div class="channel-item">
+                    <div class="channel-icon"><i class="fas fa-clock text-warning"></i></div>
+                    <div>
+                        <div class="channel-title">
+                            <span class="lang-en">Working Hours</span>
+                            <span class="lang-ar">أوقات العمل</span>
+                        </div>
+                        <div class="channel-val">Sun - Thu: 08:30 - 16:30</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Security Assurance -->
+            <div class="security-notice-box">
+                <div class="d-flex align-items-center gap-2 mb-1 fw-bold text-dark">
+                    <i class="fas fa-user-shield text-danger"></i>
+                    <span class="lang-en">Automatic Super Admin Dispatch</span>
+                    <span class="lang-ar">إشعار فوري لجميع المشرفين</span>
+                </div>
+                <div class="lang-en">
+                    Every submission triggers an audit log, a dedicated action task in the Contact Submissions module, and an automated email alert sent to all verified Super Admins.
+                </div>
+                <div class="lang-ar">
+                    تؤدي كل رسالة مرسلة إلى إنشاء سجل تدقيق، ومهمة متابعة في وحدة المراسلات، وإرسال إشعار بريدي مباشر لجميع المشرفين العامين.
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Submission Form -->
+        <div class="contact-form-card">
+
+            <!-- Dynamic Success Banner (JS or Django Post) -->
+            <div id="contactSuccessCard" class="contact-success-banner mb-4" {% if success %}style="display: block;"{% endif %}>
+                <div class="d-flex flex-column align-items-center gap-2">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.6rem;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h4 class="fw-bold mb-1">
+                        <span class="lang-en">Message Transmitted Successfully!</span>
+                        <span class="lang-ar">تم إرسال الرسالة بنجاح!</span>
+                    </h4>
+                    <p class="mb-3 opacity-90 small" style="max-width: 500px;">
+                        <span class="lang-en">Your request has been registered in the Contact Submissions module and dispatched to all Super Admins by email.</span>
+                        <span class="lang-ar">تم تسجيل طلبك رسمياً في وحدة المراسلات وإشعار المشرفين العامين فوراً عبر البريد الإلكتروني.</span>
+                    </p>
+                    <button type="button" class="btn btn-sm btn-light fw-bold rounded-pill px-4 text-dark" onclick="resetContactForm()">
+                        <i class="fas fa-redo me-1"></i>
+                        <span class="lang-en">Send Another Message</span>
+                        <span class="lang-ar">إرسال رسالة أخرى</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- The Form -->
+            <form id="contactAdminForm" action="{% url 'submit-contact' %}" method="POST" enctype="multipart/form-data" onsubmit="handleContactSubmit(event)">
+                {% csrf_token %}
+                <input type="hidden" name="is_ajax" value="1">
+                <input type="hidden" name="priority" id="hiddenPriorityInput" value="medium">
+
+                <div class="row g-3">
+
+                    <!-- Full Name -->
+                    <div class="col-md-6">
+                        <label class="form-group-title" for="contact_name">
+                            <span class="lang-en">Full Name *</span>
+                            <span class="lang-ar">الاسم الكامل *</span>
+                        </label>
+                        <input type="text" id="contact_name" name="name" class="form-field-custom" required
+                               placeholder="e.g. Dr. Ahmed Benali"
+                               value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="col-md-6">
+                        <label class="form-group-title" for="contact_email">
+                            <span class="lang-en">Official Email *</span>
+                            <span class="lang-ar">البريد الإلكتروني الرسمي *</span>
+                        </label>
+                        <input type="email" id="contact_email" name="email" class="form-field-custom" required
+                               placeholder="ahmed.benali@example.com"
+                               value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="col-md-6">
+                        <label class="form-group-title" for="contact_phone">
+                            <span class="lang-en">Phone Number</span>
+                            <span class="lang-ar">رقم الهاتف</span>
+                        </label>
+                        <input type="tel" id="contact_phone" name="phone" class="form-field-custom"
+                               placeholder="+213 550 12 34 56">
+                    </div>
+
+                    <!-- Topic / Service Category -->
+                    <div class="col-md-6">
+                        <label class="form-group-title" for="contact_service">
+                            <span class="lang-en">Category / Service *</span>
+                            <span class="lang-ar">تصنيف الطلب / الخدمة *</span>
+                        </label>
+                        <select id="contact_service" name="service" class="form-field-custom" required>
+                            <option value="General Inquiry">General Administration Inquiry / استفسار عام</option>
+                            <option value="Technical Support">Platform Technical Support / دعم تقني للمنصة</option>
+                            <option value="Institutional Partnership">Institutional Partnership / شراكة مؤسسية</option>
+                            <option value="Documentation Request">Documentation & Archive Demand / طلب توثيق وأرشيف</option>
+                            <option value="Urgent Executive Notice">Urgent Administrative Notice / إخطار إداري عاجل</option>
+                        </select>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="col-12">
+                        <label class="form-group-title" for="contact_subject">
+                            <span class="lang-en">Subject / Headline</span>
+                            <span class="lang-ar">الموضوع / العنوان الرئيسي</span>
+                        </label>
+                        <input type="text" id="contact_subject" name="subject" class="form-field-custom"
+                               placeholder="Brief summary of your inquiry...">
+                    </div>
+
+                    <!-- Priority Selection (3 Beautiful Buttons) -->
+                    <div class="col-12">
+                        <label class="form-group-title">
+                            <span class="lang-en">Priority Level</span>
+                            <span class="lang-ar">مستوى الأولوية</span>
+                        </label>
+                        <div class="priority-selector-grid">
+
+                            <!-- Low -->
+                            <div class="prio-btn-card prio-low" onclick="selectContactPriority('low')">
+                                <span class="prio-dot-pill"></span>
+                                <span class="prio-name">
+                                    <span class="lang-en">Normal</span>
+                                    <span class="lang-ar">عادي</span>
+                                </span>
+                            </div>
+
+                            <!-- Medium (Default) -->
+                            <div class="prio-btn-card prio-med active" onclick="selectContactPriority('medium')">
+                                <span class="prio-dot-pill"></span>
+                                <span class="prio-name">
+                                    <span class="lang-en">Important</span>
+                                    <span class="lang-ar">هام</span>
+                                </span>
+                            </div>
+
+                            <!-- High -->
+                            <div class="prio-btn-card prio-high" onclick="selectContactPriority('high')">
+                                <span class="prio-dot-pill"></span>
+                                <span class="prio-name">
+                                    <span class="lang-en">Urgent</span>
+                                    <span class="lang-ar">عاجل</span>
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Message Body -->
+                    <div class="col-12">
+                        <label class="form-group-title" for="contact_message">
+                            <span class="lang-en">Detailed Message / Description *</span>
+                            <span class="lang-ar">نص الرسالة / تفاصيل الطلب *</span>
+                        </label>
+                        <textarea id="contact_message" name="message" class="form-field-custom" rows="5" required
+                                  placeholder="Provide all context, references, or instructions for the administration..."></textarea>
+                    </div>
+
+                    <!-- Attachment Dropzone -->
+                    <div class="col-12">
+                        <label class="form-group-title">
+                            <span class="lang-en">Supporting Documents (Optional)</span>
+                            <span class="lang-ar">وثائق ومرفقات داعمة (اختياري)</span>
+                        </label>
+                        <div class="contact-dropzone" onclick="document.getElementById('contactFileInput').click()"
+                             ondragover="handleContactDragOver(event)" ondragleave="handleContactDragLeave(event)" ondrop="handleContactDrop(event)">
+                            <input type="file" id="contactFileInput" name="file" class="d-none" onchange="handleContactFileSelected(this)">
+                            <div class="d-flex flex-column align-items-center gap-1">
+                                <i class="fas fa-cloud-upload-alt fs-3 text-muted mb-1"></i>
+                                <div class="fw-bold text-dark small" id="dropzoneLabel">
+                                    <span class="lang-en">Click to browse or drag &amp; drop files</span>
+                                    <span class="lang-ar">اضغط لاختيار ملف أو اسحب الملف هنا</span>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.76rem;">PDF, DOCX, PNG, JPG (Max 50MB)</div>
+                                <div id="selectedFileInfo" class="mt-2 text-danger fw-bold small d-none"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 mt-4">
+                        <button type="submit" id="contactSubmitBtn" class="btn-cndp-submit">
+                            <i class="fas fa-paper-plane"></i>
+                            <span class="lang-en">Transmit Message to Administration</span>
+                            <span class="lang-ar">إرسال الرسالة إلى الإدارة المركزية</span>
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // Priority Selector
+    function selectContactPriority(prio) {
+        document.querySelectorAll('.prio-btn-card').forEach(btn => btn.classList.remove('active'));
+        const target = document.querySelector(`.prio-btn-card.prio-${prio === 'high' ? 'high' : prio === 'low' ? 'low' : 'med'}`);
+        if (target) target.classList.add('active');
+        document.getElementById('hiddenPriorityInput').value = prio;
+    }
+
+    // Drag and Drop
+    function handleContactDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('dragover');
+    }
+
+    function handleContactDragLeave(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('dragover');
+    }
+
+    function handleContactDrop(e) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            const input = document.getElementById('contactFileInput');
+            input.files = e.dataTransfer.files;
+            handleContactFileSelected(input);
+        }
+    }
+
+    function handleContactFileSelected(input) {
+        const info = document.getElementById('selectedFileInfo');
+        if (input.files && input.files.length > 0) {
+            const file = input.files[0];
+            info.textContent = `Attached: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            info.classList.remove('d-none');
+        } else {
+            info.classList.add('d-none');
+        }
+    }
+
+    // AJAX Submission
+    async function handleContactSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btn = document.getElementById('contactSubmitBtn');
+        const originalHtml = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Transmitting to Super Admins...';
+
+        const fd = new FormData(form);
+
+        try {
+            const resp = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: fd
+            });
+            const data = await resp.json();
+
+            if (data.status === 'success') {
+                form.style.display = 'none';
+                const successCard = document.getElementById('contactSuccessCard');
+                successCard.style.display = 'block';
+                successCard.scrollIntoView({ behavior: 'smooth' });
+
+                if (typeof showToast === 'function') {
+                    showToast('Message transmitted successfully to all Super Admins!');
+                }
+            } else {
+                alert(data.message || 'Error sending message. Please review your input.');
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        } catch (err) {
+            console.error('Submission error:', err);
+            // Fallback: standard submit if network/json fail
+            form.submit();
+        }
+    }
+
+    function resetContactForm() {
+        const form = document.getElementById('contactAdminForm');
+        form.reset();
+        form.style.display = 'block';
+        document.getElementById('contactSuccessCard').style.display = 'none';
+        document.getElementById('selectedFileInfo').classList.add('d-none');
+        selectContactPriority('medium');
+        const btn = document.getElementById('contactSubmitBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Transmit Message to Administration';
+    }
+</script>
+{% endblock %}

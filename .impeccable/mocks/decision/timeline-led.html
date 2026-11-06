@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Roadmap first</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Montserrat+Alternates:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;overflow:hidden;font-family:Montserrat,sans-serif;background:#eef1f6;color:#131925;display:flex}
+.side{width:264px;background:#0033a0;color:#fff;padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{font-family:'Montserrat Alternates';font-weight:700;font-size:16px;padding:6px 12px 22px}
+.nav{padding:9px 12px;border-radius:999px;font-size:14px;color:#dfe7fb}.nav.on{background:#fff;color:#0033a0;font-weight:600}
+.grp{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.08em;color:#c9d6f5;margin:16px 12px 4px}
+main{flex:1;display:flex;flex-direction:column}
+.top{height:60px;background:#fff;border-bottom:1px solid #dce2ec;display:flex;align-items:center;padding:0 24px;gap:12px;font-size:13px;color:#5b6473}
+.search{margin-left:auto;border:1px solid #dce2ec;border-radius:999px;padding:9px 16px;width:300px;background:#f6f8fb}
+.wrap{padding:24px;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;align-items:flex-end;justify-content:space-between}
+h1{font-family:'Montserrat Alternates';font-size:30px;letter-spacing:-.02em}.sub{color:#5b6473;font-size:14px;margin-top:4px}
+.btn{background:#0033a0;color:#fff;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px}.btn.g{background:#fff;color:#2a3242;border:1px solid #dce2ec}
+.panel{background:#fff;border:1px solid #dce2ec;border-radius:12px;box-shadow:0 2px 8px rgba(19,25,37,.05)}
+.road{padding:18px 20px}.road h2,.col h2{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between}
+.months{display:grid;grid-template-columns:200px repeat(12,1fr);font-family:'IBM Plex Mono';font-size:11px;color:#5b6473;border-bottom:1px solid #e8ecf3;padding-bottom:6px}
+.row{display:grid;grid-template-columns:200px 1fr;align-items:center;height:44px;border-bottom:1px solid #f0f2f6}
+.row b{font-size:13px;font-weight:600}.row small{display:block;font-size:11px;color:#5b6473;font-weight:500}
+.track{position:relative;height:100%}.today{position:absolute;top:-30px;bottom:-200px;left:74%;width:2px;background:#19bedc}
+.bar{position:absolute;top:10px;height:24px;border-radius:999px;background:#e3e9f6;overflow:hidden}
+.fill{height:100%;background:#0033a0;border-radius:999px}.fill.c{background:#2d6bff}
+.tag{position:absolute;top:9px;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#fdf1de;color:#a85f00}
+.tag.r{background:#e8eefb;color:#0033a0}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px}.col{padding:18px 20px}
+.item{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid #f0f2f6;font-size:13px}
+.dot{width:30px;height:30px;border-radius:50%;background:#e8eefb;color:#0033a0;display:grid;place-items:center;font-size:11px;font-weight:700}
+.dot.w{background:#fdf1de;color:#a85f00}.dot.b{background:#fbe7ea;color:#c0283a}
+.item span{color:#5b6473;margin-left:auto;font-size:12px}.item i{font-style:normal;font-weight:600}
+.k{display:grid;grid-template-columns:1fr 1fr;gap:0}.k div{padding:12px 0;border-top:1px solid #f0f2f6}.k b{font-family:'Montserrat Alternates';font-size:26px;display:block}.k small{font-size:12px;color:#5b6473}
+</style></head><body>
+<aside class="side"><div class="brand">WorkTrack Pro</div>
+<div class="nav on">Dashboard</div><div class="nav">Search</div><div class="grp">WORK</div><div class="nav">Tasks</div><div class="nav">Board</div><div class="nav">Calendar</div>
+<div class="grp">MODULES</div><div class="nav">All modules</div><div class="grp">TEAM</div><div class="nav">Messenger</div><div class="nav">Correspondence</div><div class="nav">Attendance</div></aside>
+<main><div class="top">Home › Overview<div class="search">Search tasks, people, modules</div></div>
+<div class="wrap">
+<div class="head"><div><h1>Good morning, Jane</h1><div class="sub">Thursday 6 November · 4 submissions wait for your review</div></div><div style="display:flex;gap:10px"><div class="btn g">New module</div><div class="btn">New task</div></div></div>
+<section class="panel road"><h2>Roadmap 2026 <small style="font-weight:500;color:#5b6473">5 modules · today</small></h2>
+<div class="months"><span></span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+<div class="row"><div><b>Curriculum archive</b><small>14 / 20 tasks</small></div><div class="track"><div class="today"></div><div class="bar" style="left:4%;width:78%"><div class="fill" style="width:70%"></div></div><div class="tag r" style="left:83%">3 to review</div></div></div>
+<div class="row"><div><b>Teacher training Q4</b><small>6 / 18 tasks</small></div><div class="track"><div class="bar" style="left:62%;width:30%"><div class="fill c" style="width:34%"></div></div><div class="tag" style="left:93%">2 overdue</div></div></div>
+<div class="row"><div><b>Digital library migration</b><small>22 / 25 tasks</small></div><div class="track"><div class="bar" style="left:18%;width:50%"><div class="fill" style="width:88%"></div></div></div></div>
+<div class="row"><div><b>Annual report 2026</b><small>3 / 12 tasks</small></div><div class="track"><div class="bar" style="left:55%;width:40%"><div class="fill c" style="width:25%"></div></div><div class="tag r" style="left:42%">1 to review</div></div></div>
+<div class="row" style="border:0"><div><b>Correspondence registry</b><small>9 / 9 tasks</small></div><div class="track"><div class="bar" style="left:0;width:40%"><div class="fill" style="width:100%"></div></div></div></div>
+</section>
+<div class="grid">
+<section class="panel col"><h2>Needs you <small style="color:#0033a0">See all 9</small></h2>
+<div class="item"><div class="dot">SB</div><i>Lesson plan pack, version 3</i>&nbsp;· Sara B.<span>To review · 2 h</span></div>
+<div class="item"><div class="dot w">!</div><i>Trainer schedule</i>&nbsp;· Teacher training Q4<span>Overdue 2 days</span></div>
+<div class="item"><div class="dot">KM</div><i>Archive index, version 2</i>&nbsp;· Karim M.<span>To review · 5 h</span></div>
+<div class="item"><div class="dot b">!</div><i>Budget annex</i>&nbsp;· Annual report<span>Rejected · needs reassign</span></div></section>
+<section class="panel col"><h2>Today</h2><div class="k"><div><b>58%</b><small>Tasks completed</small></div><div><b>4</b><small>Waiting for review</small></div><div><b>2</b><small>Overdue</small></div><div><b>17</b><small>Team members</small></div></div></section>
+</div></div></main></body></html>

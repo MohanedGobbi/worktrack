@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Action inbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Montserrat+Alternates:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}body{width:1440px;height:900px;overflow:hidden;font-family:Montserrat,sans-serif;background:#eef1f6;color:#131925;display:flex}
+.side{width:264px;background:#0033a0;color:#fff;padding:18px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{font-family:'Montserrat Alternates';font-weight:700;font-size:16px;padding:6px 12px 22px}
+.nav{padding:9px 12px;border-radius:999px;font-size:14px;color:#dfe7fb}.nav.on{background:#fff;color:#0033a0;font-weight:600}
+.grp{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:.08em;color:#c9d6f5;margin:16px 12px 4px}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{height:60px;background:#fff;border-bottom:1px solid #dce2ec;display:flex;align-items:center;padding:0 24px;font-size:13px;color:#5b6473}
+.search{margin-left:auto;border:1px solid #dce2ec;border-radius:999px;padding:9px 16px;width:300px;background:#f6f8fb}
+.wrap{padding:24px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
+.head{display:flex;align-items:flex-end;justify-content:space-between}
+h1{font-family:'Montserrat Alternates';font-size:30px;letter-spacing:-.02em}.sub{color:#5b6473;font-size:14px;margin-top:4px}
+.btn{background:#0033a0;color:#fff;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px}.btn.g{background:#fff;color:#2a3242;border:1px solid #dce2ec}
+.split{display:grid;grid-template-columns:460px 1fr;gap:16px;flex:1;min-height:0}
+.panel{background:#fff;border:1px solid #dce2ec;border-radius:12px;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:12px;border-bottom:1px solid #e8ecf3}.tab{padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;color:#5b6473}.tab.on{background:#0033a0;color:#fff}
+.tab small{margin-left:6px;font-family:'IBM Plex Mono'}
+.li{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f0f2f6;font-size:13px}.li.on{background:#f0f4fc;box-shadow:inset 3px 0 0 #0033a0}
+.av{width:34px;height:34px;border-radius:50%;background:#e8eefb;color:#0033a0;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}.av.w{background:#fdf1de;color:#a85f00}.av.b{background:#fbe7ea;color:#c0283a}
+.li i{font-style:normal;font-weight:600;display:block}.li span{font-size:12px;color:#5b6473}.li em{margin-left:auto;font-style:normal;font-size:11px;color:#5b6473;font-family:'IBM Plex Mono'}
+.det{padding:22px 26px;display:flex;flex-direction:column;gap:16px}
+.det h2{font-family:'Montserrat Alternates';font-size:22px}.meta{display:flex;gap:18px;font-size:13px;color:#5b6473}
+.badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#e8eefb;color:#0033a0}
+.file{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #dce2ec;border-radius:10px;font-size:13px}.ic{width:40px;height:48px;border-radius:6px;background:#e8eefb}
+.vers{font-size:13px}.vers div{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #f0f2f6}.vers b{font-family:'IBM Plex Mono';font-weight:500}
+.note{border:1px solid #dce2ec;border-radius:8px;padding:12px;color:#5b6473;font-size:13px;height:70px}
+.act{display:flex;gap:10px}.act .btn{padding:11px 22px}
+.mods{display:flex;gap:10px}.m{flex:1;background:#fff;border:1px solid #dce2ec;border-radius:999px;padding:10px 16px;font-size:12px;display:flex;justify-content:space-between}.m b{font-weight:600}
+</style></head><body>
+<aside class="side"><div class="brand">WorkTrack Pro</div>
+<div class="nav on">Dashboard</div><div class="nav">Search</div><div class="grp">WORK</div><div class="nav">Tasks</div><div class="nav">Board</div><div class="nav">Calendar</div>
+<div class="grp">MODULES</div><div class="nav">All modules</div><div class="grp">TEAM</div><div class="nav">Messenger</div><div class="nav">Correspondence</div><div class="nav">Attendance</div></aside>
+<main><div class="top">Home › Overview<div class="search">Search tasks, people, modules</div></div>
+<div class="wrap">
+<div class="head"><div><h1>9 things need you</h1><div class="sub">Thursday 6 November · 58% of this month's tasks done</div></div><div style="display:flex;gap:10px"><div class="btn g">Roadmap</div><div class="btn">New task</div></div></div>
+<div class="split">
+<section class="panel"><div class="tabs"><div class="tab on">All<small>9</small></div><div class="tab">To review<small>4</small></div><div class="tab">Overdue<small>2</small></div><div class="tab">To-dos<small>3</small></div></div>
+<div class="li on"><div class="av">SB</div><div><i>Lesson plan pack, version 3</i><span>Sara B. · Curriculum archive</span></div><em>2 h</em></div>
+<div class="li"><div class="av w">!</div><div><i>Trainer schedule</i><span>Overdue 2 days · Teacher training Q4</span></div><em>2 d</em></div>
+<div class="li"><div class="av">KM</div><div><i>Archive index, version 2</i><span>Karim M. · Curriculum archive</span></div><em>5 h</em></div>
+<div class="li"><div class="av b">!</div><div><i>Budget annex</i><span>Rejected · Annual report 2026</span></div><em>1 d</em></div>
+<div class="li"><div class="av">LA</div><div><i>Scanned registry, batch 4</i><span>Lina A. · Digital library</span></div><em>1 d</em></div>
+<div class="li"><div class="av w">✓</div><div><i>Call the print shop</i><span>To-do · Annual report 2026</span></div><em>today</em></div>
+</section>
+<section class="panel det"><div class="meta"><span class="badge">Waiting for review</span><span>Curriculum archive</span><span>Submitted by Sara B. · 2 h ago</span></div>
+<h2>Lesson plan pack, version 3</h2>
+<div class="file"><div class="ic"></div><div><b>lesson-plans-grade-5-v3.pdf</b><br><span style="color:#5b6473">2.4 MB · 38 pages</span></div><div class="btn g" style="margin-left:auto;padding:8px 16px">Preview</div></div>
+<div class="vers"><div><span>Version 3 · today</span><b>current</b></div><div><span>Version 2 · 3 Nov · sent back</span><b>changes asked</b></div><div><span>Version 1 · 28 Oct</span><b>draft</b></div></div>
+<div class="note">Comment for Sara (optional)</div>
+<div class="act"><div class="btn">Approve and rate</div><div class="btn g">Request changes</div></div></section>
+</div>
+<div class="mods"><div class="m"><b>Curriculum archive</b>70%</div><div class="m"><b>Teacher training Q4</b>34%</div><div class="m"><b>Digital library</b>88%</div><div class="m"><b>Annual report</b>25%</div></div>
+</div></main></body></html>

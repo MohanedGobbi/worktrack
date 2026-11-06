@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Submissions - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<!-- ===== MASTER GREEN HERO BANNER ===== -->
+<div class="hero-command-banner mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-white bg-opacity-15 text-white border border-white border-opacity-20 px-3 py-1 rounded-pill">
+                    <i class="fas fa-layer-group me-1"></i> <span class="lang-en">Submissions Hub</span><span class="lang-ar">مركز التسليمات</span>
+                </span>
+            </div>
+            <h1 class="fw-bold mb-0 text-white" style="font-size: clamp(1.8rem, 3vw, 2.5rem); letter-spacing: -0.02em;">
+                <span class="lang-en">Task Submissions</span><span class="lang-ar">سجل تسليم المهام</span>
+            </h1>
+        </div>
+        {% if is_manager %}
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'submission-create' %}" class="btn btn-emerald-primary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm text-white">
+                <i class="fas fa-plus"></i>
+                <span class="lang-en">Initiate Submission</span><span class="lang-ar">تسليم جديد</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Statistics KPI Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: var(--color-surface, #ffffff); border: 1px solid rgba(0,0,0,0.06) !important;">
+                <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase"><span class="lang-en">System Volume</span><span class="lang-ar">إجمالي التسليمات</span></div>
+                        <h3 class="mb-0 fw-bold mt-1">{{ total_submissions }}</h3>
+                    </div>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(var(--wt-brand-rgb), 0.12); color: var(--wt-brand);">
+                        <i class="fas fa-inbox fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: var(--color-surface, #ffffff); border: 1px solid rgba(0,0,0,0.06) !important;">
+                <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase"><span class="lang-en">Pending Review</span><span class="lang-ar">قيد المراجعة</span></div>
+                        <h3 class="mb-0 fw-bold mt-1 text-warning">{{ pending_count }}</h3>
+                    </div>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                        <i class="fas fa-search fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: var(--color-surface, #ffffff); border: 1px solid rgba(0,0,0,0.06) !important;">
+                <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase"><span class="lang-en">Approved</span><span class="lang-ar">تمت الموافقة</span></div>
+                        <h3 class="mb-0 fw-bold mt-1 text-success">{{ approved_count }}</h3>
+                    </div>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(var(--wt-brand-rgb), 0.12); color: var(--wt-brand);">
+                        <i class="fas fa-check-double fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: var(--color-surface, #ffffff); border: 1px solid rgba(0,0,0,0.06) !important;">
+                <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase"><span class="lang-en">Rejected</span><span class="lang-ar">مرفوضة</span></div>
+                        <h3 class="mb-0 fw-bold mt-1 text-danger">{{ rejected_count }}</h3>
+                    </div>
+                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(192, 40, 58, 0.12); color: var(--wt-bad);">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bulk Action Toolbar (Hidden by default) -->
+    <div id="bulk-toolbar" class="card mb-3 border-primary shadow-sm d-none" style="background: rgba(99, 102, 241, 0.05); border-left: 5px solid #6366f1 !important;">
+        <div class="card-body d-flex justify-content-between align-items-center py-2">
+            <div>
+                <span class="badge bg-primary rounded-pill me-2" id="selected-count">0</span>
+                <span class="fw-bold text-primary">Submissions Selected</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success btn-sm rounded-pill px-3" onclick="performBulkAction('approved')">
+                    <i class="fas fa-check-circle me-1"></i> Approve Selected
+                </button>
+                <button type="button" class="btn btn-danger btn-sm rounded-pill px-3" onclick="performBulkAction('rejected')">
+                    <i class="fas fa-times-circle me-1"></i> Reject Selected
+                </button>
+                <button type="button" class="btn btn-link btn-sm text-muted" onclick="deselectAll()"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" placeholder="Search submissions..." value="{{ search|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="sort">
+                        <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="updated_at" {% if sort == 'updated_at' %}selected{% endif %}>Recently Updated</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i><span class="lang-en">Filter</span><span class="lang-ar">تصفية</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Submissions List -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-list"></i> Submissions</span>
+            <span class="badge bg-primary">{{ submissions|length }} Items</span>
+        </div>
+        <div class="card-body">
+            {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                {% if is_manager %}
+                                <th style="width: 40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="select-all">
+                                    </div>
+                                </th>
+                                {% endif %}
+                                <th>Task Details</th>
+                                <th>Submitted By</th>
+                                <th class="text-center">Overall Progress</th>
+                                <th class="text-center">Submittal Score</th>
+                                <th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
+                                <th>Submitted Date</th>
+                                <th><span class="lang-en">Actions</span><span class="lang-ar">الإجراءات</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                                <tr>
+                                    {% if is_manager %}
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input sub-checkbox" type="checkbox" value="{{ submission.id }}">
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                    <td>
+                                        <strong>{{ submission.task.title }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ submission.task.description|truncatewords:15 }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-primary">{{ submission.worker.first_name }} {{ submission.worker.last_name }}</div>
+                                        <small class="text-muted">{{ submission.worker.email }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary mb-1">{{ submission.task.progress|default:0 }}%</span>
+                                            <div class="progress w-100" style="height: 4px; max-width: 80px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" data-width-pct="{{ submission.task.progress|default:0 }}" aria-valuenow="{{ submission.task.progress|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if submission.score is not null %}
+                                            <span class="fw-bold text-success">{{ submission.score }}<small class="text-muted">/100</small></span>
+                                        {% else %}
+                                            <span class="text-muted small">Pending...</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if submission.status == 'approved' %}
+                                            <span class="badge bg-success px-3 rounded-pill"><i class="fas fa-check-circle me-1"></i> Approved</span>
+                                        {% elif submission.status == 'rejected' %}
+                                            <span class="badge bg-danger px-3 rounded-pill"><i class="fas fa-times-circle me-1"></i> Rejected</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark px-3 rounded-pill"><i class="fas fa-clock me-1"></i> Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="small fw-bold">{{ submission.created_at|date:"M d, Y" }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">{{ submission.created_at|timesince }} ago</div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'submission-detail' submission.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i><span class="lang-en">View</span><span class="lang-ar">عرض</span></a>
+                                        {% if submission.status == 'pending' and is_manager %}
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-success" onclick="updateStatus('{{ submission.id }}', 'approved')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="updateStatus('{{ submission.id }}', 'rejected')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No submissions found</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Bulk Actions Logic
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.sub-checkbox');
+    const toolbar = document.getElementById('bulk-toolbar');
+    const selectedCount = document.getElementById('selected-count');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateToolbar();
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateToolbar);
+    });
+
+    function updateToolbar() {
+        const checkedCount = document.querySelectorAll('.sub-checkbox:checked').length;
+        if (checkedCount > 0) {
+            toolbar.classList.remove('d-none');
+            toolbar.classList.add('d-flex');
+            selectedCount.textContent = checkedCount;
+        } else {
+            toolbar.classList.add('d-none');
+            toolbar.classList.remove('d-flex');
+        }
+    }
+});
+
+function deselectAll() {
+    document.getElementById('select-all').checked = false;
+    document.querySelectorAll('.sub-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('bulk-toolbar').classList.add('d-none');
+}
+
+async function performBulkAction(action) {
+    const selectedIds = Array.from(document.querySelectorAll('.sub-checkbox:checked')).map(cb => cb.value);
+    
+    const isApprove = action === 'approved';
+    const title = isApprove ? `Approve ${selectedIds.length} Submissions?` : `Reject ${selectedIds.length} Submissions?`;
+    const text = isApprove 
+        ? 'Confirming will mark all selected work as completed.' 
+        : 'This will notify workers that changes are required for all selected items.';
+    const icon = isApprove ? 'success' : 'warning';
+    
+    const confirmed = await window.amazingConfirm(title, text, icon, `Yes, ${action.capitalize()}`, isApprove ? 'var(--color-primary, #10b981)' : '#ef4444');
+    
+    if (confirmed) {
+        try {
+            const formData = new FormData();
+            formData.append('action', action);
+            selectedIds.forEach(id => formData.append('submission_ids[]', id));
+            
+            const response = await fetch('/submissions/bulk-action/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Error performing bulk action:', error);
+        }
+    }
+}
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
+async function updateStatus(submissionId, status) {
+    const isApprove = status === 'approved';
+    const title = isApprove ? 'Approve Submission?' : 'Reject Submission?';
+    const text = isApprove 
+        ? 'Confirming this will mark the work as completed.' 
+        : 'This will notify the worker that changes are required.';
+    const icon = isApprove ? 'success' : 'warning';
+    const btnText = isApprove ? 'Yes, Approve' : 'Yes, Reject';
+    const btnColor = isApprove ? 'var(--color-primary, #10b981)' : '#ef4444';
+
+    const confirmed = await window.amazingConfirm(title, text, icon, btnText, btnColor);
+    
+    if (confirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/submissions/${submissionId}/update-status/`;
+        form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="hidden" name="status" value="${status}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Manager Analytics — Worktrack Pro{% endblock %}
+{% block extra_css %}
+<style>
+  .hero { 
+    background: var(--wt-hero-bg) !important; 
+    border-radius: 24px; 
+    padding: 2.5rem 2.5rem; 
+    position: relative; 
+    overflow: hidden; 
+    min-height: 180px;
+    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent) !important;
+    box-shadow: none !important; 
+    color: white; 
+    margin-bottom: 2rem; 
+  }
+  .hero h1 {
+    color: #ffffff !important;
+    text-shadow: none !important;
+  }
+  .kpi-card { background:white; border-radius:16px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,.06); text-align:center; border-top:4px solid; }
+  .kpi-value { font-size:2.2rem; font-weight:800; }
+  .kpi-label { color:#64748b; font-size:.85rem; }
+  .health-bar { height:8px; border-radius:4px; background:#e2e8f0; overflow:hidden; }
+  .health-fill { height:100%; border-radius:4px; transition:width .4s; width: calc(var(--hf, 0) * 1%); }
+  .hf-green { background:var(--color-primary, #10b981); }
+  .hf-amber { background:#f59e0b; }
+  .hf-red   { background:var(--wt-bad); }
+  .worker-row:hover { background:#f8fafc; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero">
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; opacity: 0.5;"></div>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 position-relative" style="z-index: 2;">
+    <div>
+      <h1 class="fw-bold mb-1" style="font-size: 2.4rem; letter-spacing: -0.5px; color: #ffffff !important; text-shadow: none !important;"><i class="fas fa-chart-pie me-2 opacity-75"></i>Manager Analytics Panel</h1>
+      <p class="mb-0 opacity-75" style="font-size: 0.95rem;">Real-time overview of team performance and module health</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'export-tasks-csv' %}" class="btn rounded-pill fw-bold" style="padding: 0.55rem 1.4rem; background: rgba(255,255,255,0.95); color: color-mix(in oklab, var(--wt-brand) 62%, #000); text-decoration: none;"><i class="fas fa-download me-1"></i>Export Tasks</a>
+      <a href="{% url 'export-submissions-csv' %}" class="btn btn-outline-light rounded-pill fw-bold" style="padding: 0.55rem 1.4rem; border: 1px solid rgba(255,255,255,0.5);"><i class="fas fa-download me-1"></i>Export Submissions</a>
+    </div>
+  </div>
+</div>
+
+<!-- Global KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="kpi-card" style="border-top-color:var(--wt-bad);">
+      <div class="kpi-value" style="color:var(--wt-bad);">{{ total_overdue }}</div>
+      <div class="kpi-label">Overdue Tasks</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card" style="border-top-color:#f59e0b;">
+      <div class="kpi-value" style="color:#f59e0b;">{{ total_pending }}</div>
+      <div class="kpi-label">Pending Tasks</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card" style="border-top-color:var(--color-primary, #10b981);">
+      <div class="kpi-value" style="color:var(--color-primary, #10b981);">{{ total_completed }}</div>
+      <div class="kpi-label">Completed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card" style="border-top-color:#6366f1;">
+      <div class="kpi-value" style="color:#6366f1;">{% if global_avg_score %}{{ global_avg_score }}{% else %}N/A{% endif %}</div>
+      <div class="kpi-label">Avg Score / 100</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Monthly Trend Chart -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+      <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2 text-primary"></i>Monthly Submission Trend (6 months)</h6>
+      <canvas id="trendChart" style="max-height:260px;"></canvas>
+    </div>
+  </div>
+  <!-- Module Health -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+      <h6 class="fw-bold mb-3"><i class="fas fa-cubes me-2 text-indigo"></i>Module Health Scores</h6>
+      {% for mh in module_health %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small fw-semibold">{{ mh.module.name }}</span>
+          <span class="small text-muted">{{ mh.health }}% · {{ mh.done }}/{{ mh.total }}
+            {% if mh.overdue %}<span class="text-danger ms-1">⚠ {{ mh.overdue }} overdue</span>{% endif %}
+          </span>
+        </div>
+        <div class="health-bar">
+          <div class="health-fill {% if mh.health >= 80 %}hf-green{% elif mh.health >= 50 %}hf-amber{% else %}hf-red{% endif %}" data-width-pct="{{ mh.health|default:0 }}"></div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-muted">No modules yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Per-Worker Performance Table -->
+<div class="card border-0 shadow-sm rounded-4 mt-4">
+  <div class="card-body">
+    <h6 class="fw-bold mb-3"><i class="fas fa-users me-2 text-muted"></i>Team Performance</h6>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Worker</th>
+            <th>Total Subs</th>
+            <th>Approved</th>
+            <th>Approval Rate</th>
+            <th>Avg Score</th>
+            <th>Overdue Tasks</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ws in worker_stats %}
+          <tr class="worker-row">
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.85rem;flex-shrink:0;">
+                  {{ ws.user.first_name|first }}{{ ws.user.last_name|first }}
+                </div>
+                <div>
+                  <div class="fw-semibold">{{ ws.user.get_full_name }}</div>
+                  <div class="small text-muted">{{ ws.user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ ws.total_subs }}</td>
+            <td><span class="badge bg-success-subtle text-success rounded-pill">{{ ws.approved }}</span></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height: 6px; border-radius: 3px;">
+                  <div class="progress-bar {% if ws.approval_rate >= 80 %}bg-success{% elif ws.approval_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" data-width-pct="{{ ws.approval_rate|default:0 }}"></div>
+                </div>
+                <small>{{ ws.approval_rate }}%</small>
+              </div>
+            </td>
+            <td>{% if ws.avg_score %}{{ ws.avg_score }}/100{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td>{% if ws.overdue_tasks %}<span class="badge bg-danger-subtle text-danger rounded-pill">{{ ws.overdue_tasks }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
+            <td><a href="{% url 'worker-performance' %}?user_id={{ ws.user.id }}" class="btn btn-sm btn-light rounded-pill"><span class="lang-en">View</span><span class="lang-ar">عرض</span></a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-3">No workers found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+
+<!-- Data for Trend Chart -->
+<div id="monthly-trend-data" style="display:none;">{{ monthly_trend|safe }}</div>
+
+<script>
+const t = JSON.parse(document.getElementById('monthly-trend-data').textContent);
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels: t.map(d=>{
+      if (window.__isArabic) {
+        const months = {
+          'Jan': 'جانفي', 'Feb': 'فيفري', 'Mar': 'مارس', 'Apr': 'أفريل', 'May': 'ماي', 'Jun': 'جوان',
+          'Jul': 'جويلية', 'Aug': 'أوت', 'Sep': 'سبتمبر', 'Oct': 'أكتوبر', 'Nov': 'نوفمبر', 'Dec': 'ديسمبر'
+        };
+        let parts = d.label.split(' ');
+        if (parts.length > 0 && months[parts[0]]) {
+          parts[0] = months[parts[0]];
+        }
+        return parts.join(' ');
+      }
+      return d.label;
+    }),
+    datasets:[
+      {label:window.__isArabic ? 'المقدمة' : 'Submitted', data:t.map(d=>d.submitted), borderColor:'#6366f1', tension:.4, fill:true, backgroundColor:'rgba(99,102,241,.12)', pointRadius:4},
+      {label:window.__isArabic ? 'المعتمدة' : 'Approved',  data:t.map(d=>d.approved),  borderColor:'var(--color-primary, #10b981)', tension:.4, fill:false, pointRadius:4},
+    ]
+  },
+  options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+});
+</script>
+{% endblock %}

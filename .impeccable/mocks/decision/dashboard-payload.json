@@ -1,0 +1,37 @@
+{
+  "title": "Choose the dashboard layout",
+  "question": "Managers land on this page every morning. Pick the layout; the ROWD look is already set, this choice is about what sits where.",
+  "options": [
+    {
+      "id": "timeline-led",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Roadmap first",
+      "thesis": "The year's modules on one timeline, with what needs you pinned to each module's bar.",
+      "viewport": "A full-width roadmap (months across, a today line, one bar per module with its progress inside and badges like '3 to review'), then the 'Needs you' list and today's team summary below.",
+      "risk": "Strong when modules have start and end dates; modules without dates drop off the roadmap and need a fallback row.",
+      "html": ".impeccable/mocks/decision/timeline-led.html"
+    },
+    {
+      "id": "module-stack",
+      "kind": "dealt",
+      "label": "Module stack",
+      "thesis": "Every module is a ROWD module shape whose progress fills it, stacked like the brand mark.",
+      "viewport": "One ruled summary strip of today's numbers, then the modules as wide rounded rows (progress filling each row, due date, tasks done, attention badges), with the 'Needs you' queue in a side rail.",
+      "risk": "Most on-brand, but with 30+ modules the stack gets long; it needs grouping and a compact mode.",
+      "html": ".impeccable/mocks/decision/module-stack.html"
+    },
+    {
+      "id": "inbox-split",
+      "kind": "dealt",
+      "label": "Action inbox",
+      "thesis": "Everything waiting on the manager in one list, opened beside it without leaving the page.",
+      "viewport": "Tabs (All, To review, Overdue, To-dos) over a list of items on one side; the selected submission or task opens on the other side with Approve / Request changes; modules sit in a compact strip at the bottom.",
+      "risk": "Fastest for clearing work, but modules and the roadmap move down the page, so it reads less like an overview.",
+      "html": ".impeccable/mocks/decision/inbox-split.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

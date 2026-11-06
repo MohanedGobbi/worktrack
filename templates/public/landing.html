@@ -1,0 +1,134 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ wt_lang|default:'ar' }}" dir="{% if wt_lang == 'en' %}ltr{% else %}rtl{% endif %}">
+<head>
+    {% include 'public/_head.html' %}
+    <title>{% if wt_lang == 'en' %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% else %}{{ site_config.app_name_ar|default:"وورك تراك برو" }}{% endif %}</title>
+    <meta name="description" content="{{ site_config.app_name|default:'WorkTrack Pro' }}: modules, tasks, reviews and performance scoring for your organisation.">
+</head>
+<body class="wt-public{% if wt_lang != 'en' %} rtl-mode{% endif %}" data-scene="landing">
+    <div class="lp-field-light" aria-hidden="true"></div>
+    <canvas class="lp-canvas" id="lpCanvas" aria-hidden="true"></canvas>
+
+    <section class="lp-hero" aria-labelledby="lp-title">
+        {% with show_story_nav=True %}{% include 'public/_header.html' %}{% endwith %}
+
+        <div class="lp-hero-body" id="signin">
+            <h1 class="lp-title" id="lp-title">
+                <span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span>
+                <span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span>
+            </h1>
+            <p class="lp-tagline">
+                <span class="lang-en">Every task, from assignment to score.</span>
+                <span class="lang-ar">كل مهمة، من التكليف حتى التقييم.</span>
+            </p>
+            <p class="lp-sub">
+                <span class="lang-en">Where your team receives work, submits results and sees how each person is doing. Sign in with your work email.</span>
+                <span class="lang-ar">هنا يستلم فريقك المهام ويسلّم النتائج ويتابع أداء كل فرد. سجّل الدخول ببريد العمل.</span>
+            </p>
+            {% include 'public/_signin_stack.html' %}
+        </div>
+
+        <div class="lp-hero-foot">
+            {% include 'includes/rowd_credit.html' with variant='dark' %}
+            <a class="lp-cue" href="#how"><span class="lang-en">How it works</span><span class="lang-ar">كيف تعمل المنصة</span><i class="fas fa-arrow-down"></i></a>
+        </div>
+    </section>
+
+    <div class="lp-story" id="lpStory">
+        <section class="lp-step" id="how" data-step="1">
+            <div class="lp-step-copy">
+                <h2><span class="lang-en">Work lives in modules.</span><span class="lang-ar">العمل يُنظَّم في وحدات.</span></h2>
+                <p>
+                    <span class="lang-en">A module holds one stream of work: its tasks, the people on it and its documents. Managers open modules, and each person joins the ones they belong to.</span>
+                    <span class="lang-ar">تجمع الوحدة مسارًا واحدًا من العمل: مهامه والأشخاص المشاركين فيه ووثائقه. يفتح المدير الوحدات، وينضم كل موظف إلى الوحدات التي تخصه.</span>
+                </p>
+            </div>
+        </section>
+
+        <section class="lp-step" data-step="2">
+            <div class="lp-step-copy">
+                <h2><span class="lang-en">Each task reaches the right person.</span><span class="lang-ar">كل مهمة تصل إلى الشخص المناسب.</span></h2>
+                <p>
+                    <span class="lang-en">Tasks carry a priority, tags, a due date and the people assigned to them. Follow them as a list, a board or a calendar.</span>
+                    <span class="lang-ar">لكل مهمة أولوية ووسوم وموعد تسليم ومسؤولون عنها. تابعها كقائمة أو لوحة أو تقويم.</span>
+                </p>
+            </div>
+        </section>
+
+        <section class="lp-step" data-step="3">
+            <div class="lp-step-copy">
+                <h2><span class="lang-en">Every submission keeps its versions.</span><span class="lang-ar">كل تسليم يحتفظ بنسخه.</span></h2>
+                <p>
+                    <span class="lang-en">Workers upload their results. Managers review, comment, approve or send back, and rate the work. Earlier versions stay on record.</span>
+                    <span class="lang-ar">يرفع الموظف نتائج عمله، فيراجعها المدير ويعلّق عليها ويعتمدها أو يعيدها ويقيّمها، وتبقى النسخ السابقة محفوظة.</span>
+                </p>
+            </div>
+        </section>
+
+        <section class="lp-step" id="score" data-step="4">
+            <div class="lp-step-copy">
+                <h2><span class="lang-en">The score computes itself.</span><span class="lang-ar">مؤشر الأداء يُحتسب تلقائيًا.</span></h2>
+                <p>
+                    <span class="lang-en">Each person's score combines four measures taken from their real work. These are the weights set for this organisation.</span>
+                    <span class="lang-ar">يجمع مؤشر كل فرد أربعة مقاييس من عمله الفعلي. هذه هي الأوزان المعتمدة في مؤسستك.</span>
+                </p>
+                <div class="lp-formula">
+                    <ul class="lp-weights" data-weights>
+                        {% for w in kpi_weights %}
+                        <li style="--lp-w: {{ w.pct }}; --lp-w-color: {% cycle 'var(--wt-on-brand)' 'color-mix(in oklab, var(--wt-on-brand) 55%, var(--wt-accent))' 'var(--wt-accent)' 'color-mix(in oklab, var(--wt-accent) 60%, var(--wt-signal))' %};">
+                            <span><span class="lang-en">{{ w.en }}</span><span class="lang-ar">{{ w.ar }}</span></span>
+                            <span class="lp-w-track"><span class="lp-w-fill"></span></span>
+                            <span class="lp-w-num">{{ w.pct }}%</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="lp-formula-code" aria-label="Formula" translate="no">score = {% for w in kpi_weights %}<b>{{ w.weight }}</b> × {{ w.key }}{% if not forloop.last %} + {% endif %}{% endfor %}</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="lp-step" data-step="5">
+            <div class="lp-step-copy">
+                <h2><span class="lang-en">And the rest of the working day.</span><span class="lang-ar">وبقية يوم العمل.</span></h2>
+                <ul class="lp-points">
+                    <li><i class="fas fa-comments"></i><span><span class="lang-en">Team and direct messages, with voice notes and polls</span><span class="lang-ar">محادثات جماعية وخاصة مع رسائل صوتية واستطلاعات</span></span></li>
+                    <li><i class="fas fa-envelope-open-text"></i><span><span class="lang-en">Administrative correspondence with acknowledgements</span><span class="lang-ar">مراسلات إدارية مع إشعارات الاستلام</span></span></li>
+                    <li><i class="fas fa-clock"></i><span><span class="lang-en">Attendance records</span><span class="lang-ar">سجلات الحضور والغياب</span></span></li>
+                    <li><i class="fas fa-bell"></i><span><span class="lang-en">Notifications in the app and by email</span><span class="lang-ar">تنبيهات داخل المنصة وعبر البريد</span></span></li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <section class="lp-close" aria-labelledby="lp-close-title">
+        <div class="lp-close-inner">
+            <div>
+                <h2 id="lp-close-title"><span class="lang-en">Sign in to {{ site_config.app_name|default:"WorkTrack Pro" }}.</span><span class="lang-ar">ادخل إلى {{ site_config.app_name_ar|default:"وورك تراك برو" }}.</span></h2>
+                <p>
+                    <span class="lang-en">Use the account your administrator created for you. No account yet? Ask your administrator{% if allow_registration %} or request one here{% endif %}.</span>
+                    <span class="lang-ar">استخدم الحساب الذي أنشأه لك المشرف. ليس لديك حساب بعد؟ تواصل مع المشرف{% if allow_registration %} أو اطلب حسابًا من هنا{% endif %}.</span>
+                </p>
+                <div class="lp-close-actions">
+                    <a class="lp-btn lp-btn--primary" href="#signin" data-focus-signin><span class="lang-en">Sign in</span><span class="lang-ar">تسجيل الدخول</span><i class="fas fa-arrow-up"></i></a>
+                    {% if allow_registration %}<a class="lp-btn lp-btn--ghost" href="{% url 'register' %}"><span class="lang-en">Request an account</span><span class="lang-ar">طلب حساب</span></a>{% endif %}
+                </div>
+            </div>
+            <div class="lp-vendor">
+                <b class="wt-credit-label" translate="no"><span class="lang-en">Built by</span><span class="lang-ar">تطوير</span></b>
+                <a href="https://rowd.co" target="_blank" rel="noopener"><img src="{% static 'wt/brand/rowd_logo_navy_transparent.png' %}" alt="ROWD Tech" width="168" height="41"></a>
+                <span lang="en" dir="ltr">Engineering Progress.</span>
+            </div>
+        </div>
+        <div class="lp-legal">
+            <span>&copy; {% now "Y" %} <span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></span>
+            <a href="{% url 'submit-contact' %}"><span class="lang-en">Contact the administrator</span><span class="lang-ar">تواصل مع المشرف</span></a>
+        </div>
+    </section>
+
+    <script src="{% static 'vendor/gsap/gsap.min.js' %}"></script>
+    <script src="{% static 'vendor/gsap/ScrollTrigger.min.js' %}"></script>
+    <script src="{% static 'vendor/lenis/lenis.min.js' %}"></script>
+    <script src="{% static 'wt/js/public.js' %}?v=1"></script>
+    <script type="module" src="{% static 'wt/js/stack-scene.js' %}?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 rounded-4 bg-primary bg-opacity-10 text-primary shadow-sm">
+                    <i class="fas {% if group %}{{ group.icon_class }}{% else %}fa-layer-group{% endif %} fa-2x"></i>
+                </div>
+                <div>
+                    <h2 class="fw-900 mb-0 h3 text-slate-800">{{ title }}</h2>
+                    <p class="text-muted small mb-0">Manage your module categories and their visual appearance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" id="groupForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'manage-groups' %}">
+                        
+                        <!-- Name & Icon -->
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-bold text-slate-700">Group Name</label>
+                            <div class="input-group input-group-lg shadow-sm rounded-3">
+                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-tag text-primary"></i></span>
+                                <input type="text" class="form-control border-start-0" 
+                                       id="name" name="name" value="{{ group.name|default:'' }}" 
+                                       placeholder="e.g. Finance & Administration" required>
+                            </div>
+                            <div class="invalid-feedback">Please provide a group name.</div>
+                        </div>
+
+                        <!-- Amazing Icon Picker -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-slate-700 d-block mb-3">Select Group Icon</label>
+                            <input type="hidden" name="icon_class" id="icon_class_input" value="{{ group.icon_class|default:'fa-layer-group' }}">
+                            <div class="icon-grid-panel p-3 bg-light rounded-4 border">
+                                <div class="row g-2" id="iconGrid">
+                                    {% for icon in icon_list %}
+                                    <div class="col-auto">
+                                        <div class="icon-item {% if group.icon_class == icon or not group and icon == 'fa-layer-group' %}active{% endif %}" 
+                                             data-icon="{{ icon }}" title="{{ icon|cut:'fa-'|capfirst }}">
+                                            <i class="fas {{ icon }}"></i>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold text-slate-700">Description (Optional)</label>
+                            <textarea class="form-control rounded-3" id="description" name="description" rows="3" 
+                                      placeholder="What kind of modules belong in this group?">{{ group.description|default:'' }}</textarea>
+                        </div>
+
+                        <!-- Color Selection -->
+                        <div class="row mb-5">
+                            <div class="col-md-6 mb-4 mb-md-0">
+                                <label class="form-label fw-bold text-slate-700 d-block">Theme Accent Color</label>
+                                <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
+                                    <div class="color-swatch shadow-sm js-apply-style" id="accentPreview" data-style-background-color="{{ group.color|default:'#6366f1' }}"></div>
+                                    <div class="flex-grow-1">
+                                        <input type="color" class="form-control form-control-color border-0 w-100" 
+                                               id="color" name="color" value="{{ group.color|default:'#6366f1' }}" 
+                                               title="Choose an accent color">
+                                        <p class="text-muted xxs-text mb-0 mt-2">Used for flags and icons.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-slate-700 d-block">Panel Background Color</label>
+                                <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border">
+                                    <div class="color-swatch shadow-sm js-apply-style" id="bgPreview" data-style-background-color="{{ group.bg_color|default:'#ffffff' }}" style="border: 1px solid #dee2e6;"></div>
+                                    <div class="flex-grow-1">
+                                        <input type="color" class="form-control form-control-color border-0 w-100" 
+                                               id="bg_color" name="bg_color" value="{{ group.bg_color|default:'#ffffff' }}" 
+                                               title="Choose a background color">
+                                        <p class="text-muted xxs-text mb-0 mt-2">Background of the group on dashboard.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Member Assignment Section -->
+                        <div class="mb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <label class="form-label fw-bold text-slate-700 mb-0">
+                                        <i class="fas fa-user-plus text-primary me-2"></i><span class="lang-en">Assign Group Members</span><span class="lang-ar">تعيين أعضاء المجموعة</span>
+                                    </label>
+                                    <p class="text-muted small mb-0"><span class="lang-en">Users assigned here will share group visibility for tasks, modules, and team assignments.</span><span class="lang-ar">المستخدمون المعينون هنا سيشاركون إمكانية رؤية المهام والوحدات.</span></p>
+                                </div>
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold" id="selectedMembersBadge">
+                                    <span id="selectedCount">{{ group_member_ids|length|default:'0' }}</span> <span class="lang-en">Selected</span><span class="lang-ar">محدد</span>
+                                </span>
+                            </div>
+
+                            <!-- Filter & Search Toolbar -->
+                            <div class="p-3 bg-light rounded-4 border mb-3">
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                            <input type="text" id="memberFilterInput" class="form-control border-start-0" placeholder="Filter by name, username or email...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-flex justify-content-md-end gap-1 flex-wrap">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-secondary active role-filter-btn" data-role="all">All</button>
+                                            <button type="button" class="btn btn-outline-secondary role-filter-btn" data-role="manager">Managers</button>
+                                            <button type="button" class="btn btn-outline-secondary role-filter-btn" data-role="worker">Workers</button>
+                                            <button type="button" class="btn btn-outline-secondary role-filter-btn" data-role="admin">Admins</button>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-1" id="btnSelectAllMembers">Select All</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeselectAllMembers">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- User Cards Grid -->
+                            <div class="members-picker-container p-3 bg-light rounded-4 border" style="max-height: 380px; overflow-y: auto;">
+                                <div class="row g-2" id="membersCardGrid">
+                                    {% for u in all_users %}
+                                    <div class="col-md-6 member-item-col" data-role="{{ u.role|lower }}" data-name="{{ u.get_full_name|lower }} {{ u.username|lower }} {{ u.email|lower }}">
+                                        <label class="card h-100 p-2 border shadow-sm rounded-3 cursor-pointer member-select-card {% if u.id in group_member_ids %}border-primary bg-primary bg-opacity-10{% else %}bg-white{% endif %}" for="member_chk_{{ u.id }}" style="transition: all 0.2s ease;">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input class="form-check-input member-checkbox me-1" type="checkbox" name="members" value="{{ u.id }}" id="member_chk_{{ u.id }}"
+                                                       {% if u.id in group_member_ids %}checked{% endif %}>
+                                                <div class="avatar-placeholder rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 34px; height: 34px; font-size: 0.8rem; border: 1px solid rgba(0,0,0,0.08);">
+                                                    {{ u.first_name|default:u.username|slice:":1"|upper }}
+                                                </div>
+                                                <div class="overflow-hidden flex-grow-1">
+                                                    <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;">{{ u.get_full_name|default:u.username }}</div>
+                                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;">{{ u.email|default:u.username }}</div>
+                                                </div>
+                                                <span class="badge rounded-pill text-uppercase {% if u.role == 'manager' %}bg-info text-dark{% elif u.role == 'super_admin' or u.role == 'admin' %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size: 0.65rem;">
+                                                    {{ u.role|slice:":4" }}
+                                                </span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    {% empty %}
+                                    <div class="col-12 text-center text-muted py-4">
+                                        <i class="fas fa-users-slash fa-2x mb-2 opacity-50"></i>
+                                        <div>No users found to assign.</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+                            {% if group %}
+                            <button type="button" class="btn btn-link text-danger fw-bold text-decoration-none" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteGroupModal">
+                                <i class="fas fa-trash-alt me-2"></i> Delete Group
+                            </button>
+                            {% else %}
+                            <div></div>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'manage-groups' %}" class="btn btn-light px-4 rounded-pill fw-bold"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                                <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm">
+                                    {% if group %}Update Group{% else %}Create Group{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="col-xl-4 d-none d-xl-block">
+                <div id="tipCard" class="card border-0 shadow-sm rounded-4 text-white p-4 h-100 transition-all js-apply-style" 
+                 data-style-background="linear-gradient(135deg, {{ group.color|default:'#4f46e5' }}, {{ group.color|default:'#9333ea' }}dd);">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="p-2 rounded-3 bg-white bg-opacity-20">
+                        <i class="fas fa-lightbulb fa-lg"></i>
+                    </div>
+                    <h4 class="fw-bold mb-0">Organization Tip</h4>
+                </div>
+                <p class="small mb-4">Well-defined groups help your team find the right modules faster. Use distinct colors to visually categorize different departments or project phases.</p>
+                <div class="mt-auto p-4 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-10 text-center glass-effect">
+                    <div class="premium-icon-preview mb-3 shadow-lg mx-auto js-apply-style" id="previewCircle" 
+                         data-style-background="{{ group.bg_color|default:'#ffffff' }}" data-style-color="{{ group.color|default:'#6366f1' }}">
+                        <i class="fas {% if group %}{{ group.icon_class }}{% else %}fa-layer-group{% endif %} fa-2x"></i>
+                    </div>
+                    <h5 class="fw-black mb-1" id="previewTitle">{{ group.name|default:'Group Preview' }}</h5>
+                    <p class="mb-0 x-small fw-bold opacity-75">Visual Identity Sample</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if group %}
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4 text-center">
+                <div class="display-4 text-danger mb-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Delete Group "{{ group.name }}"?</h5>
+                <p class="text-muted small px-3">This will NOT delete the modules within the group, but they will become uncategorized. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Keep It</button>
+                <form action="{% url 'group-delete' group.slug %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4 rounded-pill fw-bold">Yes, Delete Group</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .fw-900 { font-weight: 900; }
+    .fw-black { font-weight: 900; }
+    .text-slate-800 { color: #1e293b; }
+    .text-slate-700 { color: #334155; }
+    .xxs-text { font-size: 0.65rem; }
+    .x-small { font-size: 0.75rem; }
+    
+    .icon-grid-panel {
+        max-height: 300px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    
+    .icon-item {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 1.25rem;
+        color: #64748b;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .icon-item:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        transform: scale(1.1);
+        z-index: 10;
+    }
+    
+    .icon-item.active {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    
+    .color-swatch {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+    
+    .premium-icon-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .glass-effect {
+        backdrop-filter: blur(8px);
+    }
+    
+    .transition-all { transition: all 0.3s ease; }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorInput = document.getElementById('color');
+        const bgColorInput = document.getElementById('bg_color');
+        const accentPreview = document.getElementById('accentPreview');
+        const bgPreview = document.getElementById('bgPreview');
+        const nameInput = document.getElementById('name');
+        
+        const tipCard = document.getElementById('tipCard');
+        const previewCircle = document.getElementById('previewCircle');
+        const previewTitle = document.getElementById('previewTitle');
+        const headerIcon = document.querySelector('.bg-primary.bg-opacity-10 i');
+        const iconGridItems = document.querySelectorAll('.icon-item');
+        const iconInput = document.getElementById('icon_class_input');
+        
+        // Apply dynamic styles from data attributes to bypass linter issues
+        function applyDynamicStyles() {
+            document.querySelectorAll('.js-apply-style').forEach(el => {
+                const ds = el.dataset;
+                if (ds.styleBackground) el.style.background = ds.styleBackground;
+                if (ds.styleBackgroundColor) el.style.backgroundColor = ds.styleBackgroundColor;
+                if (ds.styleColor) el.style.color = ds.styleColor;
+            });
+        }
+        applyDynamicStyles();
+
+        // Color live preview
+        colorInput.addEventListener('input', function() {
+            const val = this.value;
+            accentPreview.style.backgroundColor = val;
+            tipCard.style.background = `linear-gradient(135deg, ${val}, ${val}dd)`;
+            previewCircle.style.color = val;
+            headerIcon.style.color = val; // Apply to header icon too
+        });
+
+        bgColorInput.addEventListener('input', function() {
+            const val = this.value;
+            bgPreview.style.backgroundColor = val;
+            previewCircle.style.background = val;
+        });
+
+        // Name preview
+        nameInput.addEventListener('input', function() {
+            previewTitle.textContent = this.value || 'Group Preview';
+        });
+
+        // Icon Picker logic
+        iconGridItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active class from others
+                iconGridItems.forEach(i => i.classList.remove('active'));
+                // Add to current
+                this.classList.add('active');
+                // Update hidden input
+                const iconClass = this.dataset.icon;
+                iconInput.value = iconClass;
+                // Update previews
+                headerIcon.className = 'fas ' + iconClass + ' fa-2x';
+                previewCircle.querySelector('i').className = 'fas ' + iconClass + ' fa-2x';
+            });
+        });
+
+        // Member Picker Logic
+        const memberCheckboxes = document.querySelectorAll('.member-checkbox');
+        const selectedCount = document.getElementById('selectedCount');
+        const memberFilterInput = document.getElementById('memberFilterInput');
+        const roleFilterBtns = document.querySelectorAll('.role-filter-btn');
+        const memberCols = document.querySelectorAll('.member-item-col');
+        const btnSelectAll = document.getElementById('btnSelectAllMembers');
+        const btnDeselectAll = document.getElementById('btnDeselectAllMembers');
+
+        function updateMemberCount() {
+            let count = 0;
+            memberCheckboxes.forEach(cb => {
+                const card = cb.closest('.member-select-card');
+                if (cb.checked) {
+                    count++;
+                    if (card) {
+                        card.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+                        card.classList.remove('bg-white');
+                    }
+                } else {
+                    if (card) {
+                        card.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+                        card.classList.add('bg-white');
+                    }
+                }
+            });
+            if (selectedCount) selectedCount.textContent = count;
+        }
+
+        memberCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateMemberCount);
+        });
+
+        let currentRoleFilter = 'all';
+        function filterMembers() {
+            const term = memberFilterInput ? memberFilterInput.value.toLowerCase().trim() : '';
+            memberCols.forEach(col => {
+                const role = col.dataset.role || '';
+                const name = col.dataset.name || '';
+                const matchesRole = (currentRoleFilter === 'all') || (role.includes(currentRoleFilter));
+                const matchesSearch = !term || name.includes(term);
+                if (matchesRole && matchesSearch) {
+                    col.style.display = '';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        }
+
+        if (memberFilterInput) {
+            memberFilterInput.addEventListener('input', filterMembers);
+        }
+
+        roleFilterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                roleFilterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentRoleFilter = this.dataset.role;
+                filterMembers();
+            });
+        });
+
+        if (btnSelectAll) {
+            btnSelectAll.addEventListener('click', function() {
+                memberCols.forEach(col => {
+                    if (col.style.display !== 'none') {
+                        const cb = col.querySelector('.member-checkbox');
+                        if (cb) cb.checked = true;
+                    }
+                });
+                updateMemberCount();
+            });
+        }
+
+        if (btnDeselectAll) {
+            btnDeselectAll.addEventListener('click', function() {
+                memberCols.forEach(col => {
+                    if (col.style.display !== 'none') {
+                        const cb = col.querySelector('.member-checkbox');
+                        if (cb) cb.checked = false;
+                    }
+                });
+                updateMemberCount();
+            });
+        }
+
+        // Form validation
+        const form = document.getElementById('groupForm');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

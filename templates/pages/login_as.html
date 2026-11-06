@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 class="fw-bold mb-0 text-dark">
+                <i class="fas fa-user-secret text-primary me-2"></i> Immersive Login
+            </h2>
+            <p class="text-muted mt-2 mb-0">Select a user account to seamlessly impersonate their session.</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <form method="GET" class="d-flex ms-auto" style="max-width: 400px;">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search users by name or email..." value="{{ search }}">
+                    <button class="btn btn-primary px-4 fw-bold" type="submit"><span class="lang-en">Search</span><span class="lang-ar">بحث</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Grid -->
+    <div class="row g-4">
+        {% for u in users %}
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100 u-card transition-all" style="border-radius: 14px;">
+                <div class="card-body text-center p-4 d-flex flex-column">
+                    <div class="avatar-lg mx-auto mb-3 shadow-sm" style="width: 75px; height: 75px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #0ea5e9); color: white; display:flex; align-items:center; justify-content:center; font-size: 1.8rem; font-weight: bold;">
+                        {{ u.first_name|first|default:u.username|first|upper }}
+                    </div>
+                    <h5 class="fw-bold mb-1 text-dark">{{ u.get_full_name|default:u.username }}</h5>
+                    <p class="text-muted small mb-3">{{ u.email }}</p>
+                    
+                    <div class="mb-4">
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm">
+                            {% if u.role == 'super_admin' %}
+                                <i class="fas fa-crown text-warning me-1"></i> Admin
+                            {% elif u.role == 'manager' %}
+                                <i class="fas fa-user-tie text-primary me-1"></i> Manager
+                            {% else %}
+                                <i class="fas fa-user text-secondary me-1"></i> Worker
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="d-grid mt-auto">
+                        <a href="{% url 'impersonate-user' u.id %}" class="btn btn-outline-primary rounded-pill fw-bold" style="border-width: 2px;">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login As 
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm">
+            <div class="mb-3">
+                <i class="fas fa-users-slash fa-3x text-muted opacity-25"></i>
+            </div>
+            <h5 class="text-muted fw-bold">No users found</h5>
+            <p class="text-muted small">Try adjusting your search criteria.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.u-card {
+    transition: all 0.25s ease;
+}
+.u-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important; 
+    border-color: #6366f1 !important;
+}
+</style>
+{% endblock %}

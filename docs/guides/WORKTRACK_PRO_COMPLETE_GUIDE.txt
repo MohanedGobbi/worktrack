@@ -1,0 +1,967 @@
+# WorkTrack Pro - Complete Application Workflow & User Guide
+
+## Table of Contents
+1. Application Overview
+2. User Roles & Permissions
+3. Step-by-Step Workflow
+4. User Role Summary
+5. Key URLs Reference
+6. Typical Workflow Scenario
+7. Access Control Matrix
+
+---
+
+## 1. APPLICATION OVERVIEW
+
+WorkTrack Pro is a Django-based KPI workforce management system designed to streamline task assignment, submission tracking, and performance measurement.
+
+### Core Features
+- **Task Management**: Create, assign, and track work tasks
+- **Submission Workflow**: Workers submit work with version control and feedback
+- **KPI Tracking**: Automatic calculation of performance metrics
+- **Dashboards**: Role-based analytics and insights
+- **Audit Logs**: Complete activity tracking and compliance
+- **Notifications**: Real-time alerts and reminders
+
+### Technology Stack
+- Django 4.2.11
+- Python 3.13.7
+- PostgreSQL/SQLite Database
+- Django REST Framework
+- Bootstrap 5 UI
+
+---
+
+## 2. USER ROLES & PERMISSIONS
+
+### Worker Role 👷
+**Responsibilities**: Execute assigned work, submit deliverables
+
+**Permissions**:
+- View assigned tasks
+- Create draft submissions
+- Edit draft submissions (before submitting)
+- Submit work for manager review
+- View own KPI scores
+- View personal notifications
+- Manage own profile and password
+
+**Restrictions**:
+- Cannot create tasks
+- Cannot assign tasks
+- Cannot review submissions
+- Cannot view other users' KPIs
+- Cannot access admin areas
+
+**Dashboard Access**: Worker Dashboard with personal metrics
+
+---
+
+### Manager Role 👔
+**Responsibilities**: Create tasks, assign work, review submissions
+
+**Permissions**:
+- Create new tasks with details (title, description, deadline, priority)
+- Assign tasks to one or multiple workers
+- View all team submissions
+- Approve or reject submissions
+- Add scores and feedback to submissions
+- View team KPI scores and performance metrics
+- Access manager dashboard with team analytics
+- View audit logs for team activities
+- Manage team members
+
+**Restrictions**:
+- Cannot manage other managers
+- Cannot change system settings
+- Cannot view global analytics
+- Cannot deactivate users
+
+**Dashboard Access**: Manager Dashboard with team analytics
+
+---
+
+### Super Admin Role 🔐
+**Responsibilities**: System administration, global management
+
+**Permissions**:
+- **FULL SYSTEM ACCESS** - All actions available
+- Create, read, update, delete any object
+- User management (create, deactivate, change roles)
+- Create other managers and admins
+- System-wide analytics and reporting
+- KPI configuration and recalculation
+- Configure system settings
+- Access all audit logs
+- Manage departments and roles
+- Global analytics dashboard
+
+**Restrictions**: None
+
+**Dashboard Access**: Admin Dashboard with system-wide statistics
+
+---
+
+## 3. STEP-BY-STEP WORKFLOW (20 STAGES)
+
+### STAGE 1: USER REGISTRATION
+**Role**: New User
+**Action**: Register account on system
+**Steps**:
+1. Visit http://localhost:8000/register/
+2. Enter email address (must be unique)
+3. Enter first name and last name
+4. Enter password (minimum 8 characters)
+5. Confirm password
+6. Click "Register" button
+
+**Result**: Account created with default role "Worker"
+**Status**: 🔵 Draft Account (awaiting first login)
+
+---
+
+### STAGE 2: USER LOGIN
+**Role**: Any User
+**Action**: Authenticate to system
+**Steps**:
+1. Visit http://localhost:8000/login/
+2. Enter email address
+3. Enter password
+4. Click "Login" button
+
+**Result**: 
+- JWT authentication token generated
+- Session created with timestamp
+- Redirected to user dashboard
+**Status**: 🟢 Active Session
+
+---
+
+### STAGE 3: VIEW DASHBOARD
+**Role**: Worker
+**Action**: View personal dashboard with overview
+**Steps**:
+1. After login, automatically on /dashboard/
+2. See widgets showing:
+   - Total assigned tasks
+   - Pending tasks count
+   - In-progress tasks count
+   - Recent submissions
+   - Unread notifications
+3. Quick access to key sections
+
+**Result**: 
+- Personal metrics displayed
+- Quick navigation available
+- Notifications visible
+**Status**: 🟢 Active
+
+---
+
+### STAGE 4: TASK CREATION
+**Role**: Manager or Super Admin
+**Action**: Create new work assignment
+**Steps**:
+1. Navigate to Tasks section → "Create Task" button
+2. Fill in task details:
+   - **Title**: Concise work description (e.g., "Q1 Financial Report")
+   - **Description**: Full requirements and details
+   - **Deadline**: Date task must be complete
+   - **Priority**: Low, Medium, High, Critical
+   - **KPI Weight**: How much this task affects performance score (0-100)
+3. Click "Create Task"
+
+**Result**: 
+- Task created in database
+- Status automatically set to "Pending"
+- Task visible in system
+- Not yet assigned to anyone
+**Status**: ✅ Complete (awaiting assignment)
+
+---
+
+### STAGE 5: TASK ASSIGNMENT
+**Role**: Manager or Super Admin
+**Action**: Assign task to workers
+**Steps**:
+1. In task creation form (before clicking Create):
+   - Scroll to "Assign Workers" section
+   - Click dropdown menu
+   - Select workers (MULTI-SELECT available)
+   - Can assign to 1 or multiple workers
+   - Add more by selecting again
+2. Click "Create Task" to save with assignments
+
+**Alternative (Edit Existing Task)**:
+1. Go to task detail page
+2. Click "Edit Task" button
+3. Update worker assignments
+4. Click "Save"
+
+**Result**: 
+- Task linked to selected workers
+- Each worker receives notification
+- Task appears in their task list
+- Multiple workers see same task
+**Status**: ✅ Complete (assigned)
+
+---
+
+### STAGE 6: VIEW ASSIGNED TASKS
+**Role**: Worker
+**Action**: See and review assigned work
+**Steps**:
+1. Click "Tasks" in navigation menu → goes to /tasks/
+2. See list of all assigned tasks showing:
+   - Task title
+   - Deadline (with countdown)
+   - Priority (color-coded)
+   - Current status
+3. Use filters to find tasks:
+   - Status filter (Pending, In Progress, etc.)
+   - Priority filter (High, Medium, Low)
+   - Search by title
+4. Click on task to see full details
+
+**Result**: 
+- Task detail page opens
+- Full description visible
+- Requirements clearly shown
+- Due date and priority displayed
+- "Create Submission" button visible
+**Status**: 🟢 Active (task review)
+
+---
+
+### STAGE 7: CREATE DRAFT SUBMISSION
+**Role**: Worker
+**Action**: Initialize work submission
+**Steps**:
+1. On task detail page, click "Create Submission" button
+2. System automatically:
+   - Creates blank submission
+   - Links to task and worker
+   - Sets status to "Draft"
+   - Sets version to 1
+   - Redirects to submission detail page
+
+**Result**: 
+- Draft submission created
+- Ready for editing
+- Not yet visible to manager
+- Can be edited or deleted
+- Shows "Draft" badge
+**Status**: 🔵 Draft (editable, not submitted)
+
+---
+
+### STAGE 8: EDIT DRAFT SUBMISSION
+**Role**: Worker
+**Action**: Add work content to submission
+**Steps**:
+1. On submission detail page, click "Edit" button (appears only for Draft)
+2. Upload work file:
+   - Click "Choose File" button
+   - Select document/file from computer
+   - Supports: .pdf, .doc, .docx, .xlsx, .txt, images, etc.
+3. Add notes/explanation:
+   - Text area for additional context
+   - Explain work approach or special notes
+4. Click "Save" button
+
+**Result**: 
+- Submission content updated
+- File stored securely in media directory
+- Notes saved to database
+- Version remains 1 until resubmitted
+- Still in Draft status (can edit again)
+**Status**: 🔵 Draft (updated, ready for submission)
+
+---
+
+### STAGE 9: SUBMIT FOR REVIEW
+**Role**: Worker
+**Action**: Finalize and send to manager
+**Steps**:
+1. On submission detail page, verify content:
+   - Check file upload successful
+   - Review notes/explanation
+   - Confirm deadline not passed
+2. Click "Submit" button
+3. Confirmation dialog appears
+4. Click "Confirm Submit"
+
+**Result**: 
+- Status changed: Draft → Submitted
+- submitted_at timestamp recorded
+- Submission locked (cannot edit)
+- Manager notified: "New Submission: [Task Title]"
+- Task status changed to "Submitted"
+- Worker can view submission but not edit
+**Status**: 📤 Submitted (awaiting review)
+
+---
+
+### STAGE 10: MANAGER REVIEWS SUBMISSION
+**Role**: Manager
+**Action**: Examine submitted work
+**Steps**:
+1. Receive notification: "New Submission: [Task Name]"
+2. Click notification or go to /submissions/
+3. Click on submission to open detail page
+4. Review details:
+   - See worker's file (can download)
+   - Read worker's notes
+   - See task requirements
+   - Check deadline status
+5. Assess quality before scoring
+
+**Result**: 
+- Submission displayed in review format
+- File preview available
+- Worker information shown
+- Ready for decision
+**Status**: 👀 Under Review (manager examining)
+
+---
+
+### STAGE 11: APPROVE SUBMISSION
+**Role**: Manager
+**Action**: Accept submitted work and score it
+**Steps**:
+1. On submission review page, scroll to "Review Section"
+2. Click "Approve" button
+3. Fill in approval form:
+   - **Score**: 0-100 (100 = excellent)
+   - **Feedback**: Comments on quality, what was good
+   - **Manager Notes**: Internal notes (optional)
+4. Click "Submit Review"
+
+**Result**: 
+- Submission status → "Approved"
+- Task status → "Approved"
+- Score recorded in database
+- Feedback stored
+- Worker notified: "Your Submission was Approved! Score: [score]/100"
+- Task marked complete
+- KPI metrics updated with approval
+- Manager feedback visible to worker
+**Status**: ✅ Approved (task complete)
+
+---
+
+### STAGE 12: REJECT SUBMISSION
+**Role**: Manager
+**Action**: Return work for revision
+**Steps**:
+1. On submission review page, scroll to "Review Section"
+2. Click "Reject" button
+3. Fill in rejection form:
+   - **Score**: 0-100 (shows quality level)
+   - **Rejection Reason**: REQUIRED - explain what needs fixing
+   - **Suggested Changes**: What to improve
+4. Click "Submit Review"
+
+**Result**: 
+- Submission status → "Rejected"
+- Task status remains "Submitted"
+- Rejection reason stored
+- Worker notified: "Your Submission needs revision: [reason]"
+- Worker can now edit and resubmit
+- Allows iterative improvement
+- Version counter tracks resubmissions
+**Status**: ❌ Rejected (needs revision)
+
+---
+
+### STAGE 13: WORKER RESUBMITS
+**Role**: Worker
+**Action**: Revise and resubmit based on feedback
+**Steps**:
+1. Receive rejection notification with feedback
+2. Review rejection reason and manager comments
+3. Go back to submission detail page
+4. Click "Edit" button (now available again)
+5. Update file:
+   - Upload new/revised file
+   - Apply manager feedback
+6. Update notes explaining changes
+7. Click "Save"
+8. Click "Submit" again
+9. Confirm resubmission
+
+**Result**: 
+- New version created
+- Resubmitted to manager
+- Version counter incremented (1→2→3...)
+- Manager receives notification of resubmission
+- Cycle continues until approved or final rejection
+- Complete audit trail of iterations
+**Status**: 🔄 Resubmitted (version 2+)
+
+---
+
+### STAGE 14: VIEW NOTIFICATIONS
+**Role**: Any User
+**Action**: Monitor system alerts
+**Steps**:
+1. Click bell icon 🔔 in top right navbar
+2. See all notifications:
+   - Unread notifications first
+   - Types: Task assigned, Submission received, Approved, Rejected, etc.
+3. Click on notification to view details
+4. Click checkbox to mark as read
+
+**Notification Types**:
+- **Task Assigned**: "Task '[name]' has been assigned to you"
+- **Submission Received**: "[Worker] submitted '[task]' for review"
+- **Submission Approved**: "Your submission was approved. Score: [score]/100"
+- **Submission Rejected**: "Your submission needs revision - [reason]"
+- **Deadline Alert**: "Task '[name]' deadline is today"
+
+**Result**: 
+- Notifications displayed with timestamp
+- Mark as read/unread
+- Filter by type or status
+- Quick access to related items
+**Status**: 📬 Notification (informational)
+
+---
+
+### STAGE 15: CHECK PERSONAL KPI SCORE
+**Role**: Worker
+**Action**: Review personal performance metrics
+**Steps**:
+1. Navigate to /admin-dashboard/ or KPI section
+2. View personal KPI metrics:
+   - **Completion Rate %**: Tasks completed on time
+   - **On-Time Rate %**: Submissions before deadline
+   - **Quality Score**: Average approval score
+   - **Productivity Score**: Tasks completed per month
+3. See breakdown:
+   - Current month score
+   - Previous months (trend)
+   - Components calculation
+4. Review calculation:
+   - Total = (Completion×0.25) + (OnTime×0.25) + (Quality×0.30) + (Productivity×0.20)
+
+**Result**: 
+- Personal KPI displayed with visual chart
+- Historical data shows 12 months back
+- Trends visible
+- Understanding of performance areas
+**Status**: 📊 Calculated (monthly update)
+
+---
+
+### STAGE 16: MANAGER VIEWS TEAM KPI
+**Role**: Manager
+**Action**: Analyze team performance
+**Steps**:
+1. Navigate to KPI Dashboard or /admin-dashboard/
+2. See team statistics:
+   - All team members listed
+   - Individual KPI scores
+   - Team average score
+   - Top performers highlighted
+   - Performance comparisons
+3. Access performance reports:
+   - Individual team member details
+   - Department performance
+   - Trend analysis
+4. Identify gaps and high performers
+
+**Result**: 
+- Team performance matrix displayed
+- Comparative analytics available
+- Trends and patterns visible
+- Data for performance reviews
+- Reports can be exported
+**Status**: 📈 Analysis (team view)
+
+---
+
+### STAGE 17: ADMIN VIEWS SYSTEM ANALYTICS
+**Role**: Super Admin
+**Action**: Monitor system-wide statistics
+**Steps**:
+1. Go to Admin Dashboard or /admin-dashboard/
+2. See system statistics:
+   - **Total Users**: Count by role (Workers, Managers, Admins)
+   - **Total Tasks**: Breakdown by status
+   - **Completion Rate**: System-wide percentage
+   - **Team KPI Averages**: Across all departments
+   - **System Health**: Performance indicators
+3. View trends:
+   - Month-over-month changes
+   - Performance trajectory
+   - Problem areas
+4. Access advanced analytics
+
+**Result**: 
+- System-wide dashboard displayed
+- Real-time statistics
+- Health monitoring
+- Strategic insights
+- System optimization data
+**Status**: 🎯 Audit (system oversight)
+
+---
+
+### STAGE 18: USER PROFILE MANAGEMENT
+**Role**: Any User
+**Action**: Update personal information
+**Steps**:
+1. Click profile icon or go to /profile/
+2. View or edit:
+   - First Name
+   - Last Name
+   - Email address
+   - Department assignment
+   - Position/Title
+   - Phone number (optional)
+   - Profile picture (optional)
+   - Bio/About (optional)
+3. Click "Save Changes"
+
+**Result**: 
+- Profile updated in database
+- Changes take effect immediately
+- Activity logged in audit trail
+- Email verification if email changed
+- Visible to managers/admins
+**Status**: ⚙️ Updated (profile changes)
+
+---
+
+### STAGE 19: CHANGE PASSWORD
+**Role**: Any User
+**Action**: Update account security
+**Steps**:
+1. Go to Profile → Security tab (or /profile/change-password/)
+2. Enter:
+   - Current password (verification)
+   - New password
+   - Confirm new password
+3. Password requirements:
+   - Minimum 8 characters
+   - Should include letters and numbers
+   - Should be different from previous
+4. Click "Change Password"
+
+**Result**: 
+- Password updated
+- Current session maintained (not logged out)
+- Security audit logged
+- Strong password enforced
+- Previous password no longer valid
+**Status**: 🔒 Secured (password updated)
+
+---
+
+### STAGE 20: VIEW AUDIT LOGS
+**Role**: Super Admin
+**Action**: Track system activity
+**Steps**:
+1. Navigate to Audit Logs page or /admin/audit-logs/
+2. View activity log showing:
+   - Timestamp (exact date/time)
+   - User who performed action
+   - Action type (create, update, delete, approve, etc.)
+   - Object type (Task, Submission, User, etc.)
+   - Description of what changed
+   - IP address of user
+3. Filter logs by:
+   - Date range
+   - User
+   - Action type
+   - Object type
+4. Export log if needed for compliance
+
+**Result**: 
+- Complete activity audit trail
+- Accountability tracking
+- Compliance documentation
+- Security investigation capability
+- Historical record preservation
+**Status**: 📋 Logged (permanently recorded)
+
+---
+
+## 4. USER ROLE SUMMARY TABLE
+
+| Capability | Worker | Manager | Super Admin |
+|:---|:---:|:---:|:---:|
+| **View Assigned Tasks** | ✅ | ✅ | ✅ |
+| **Create Draft Submission** | ✅ | ❌ | ✅ |
+| **Submit Submissions** | ✅ | ❌ | ✅ |
+| **Create Tasks** | ❌ | ✅ | ✅ |
+| **Assign Tasks** | ❌ | ✅ | ✅ |
+| **Edit Tasks** | ❌ | ✅ | ✅ |
+| **Review Submissions** | ❌ | ✅ | ✅ |
+| **Approve Submissions** | ❌ | ✅ | ✅ |
+| **Reject Submissions** | ❌ | ✅ | ✅ |
+| **View Own KPI** | ✅ | ✅ | ✅ |
+| **View Team KPI** | ❌ | ✅ | ✅ |
+| **View System Analytics** | ❌ | ❌ | ✅ |
+| **Manage Users** | ❌ | ❌ | ✅ |
+| **View Audit Logs** | ❌ | ✅ | ✅ |
+| **Change System Settings** | ❌ | ❌ | ✅ |
+| **Deactivate Users** | ❌ | ❌ | ✅ |
+| **Create Other Admins** | ❌ | ❌ | ✅ |
+
+---
+
+## 5. KEY URLS QUICK REFERENCE
+
+| Page | URL | Accessible By |
+|:---|:---:|:---:|
+| **Authentication** |
+| Home Page | `/` | Anyone |
+| Login | `/login/` | Not logged in |
+| Register | `/register/` | Not logged in |
+| Logout | `/logout/` | All logged in |
+| **User Area** |
+| Dashboard | `/dashboard/` | All logged in |
+| Profile | `/profile/` | All logged in |
+| Profile Edit | `/profile/edit/` | All logged in |
+| Change Password | `/profile/change-password/` | All logged in |
+| Notifications | `/notifications/` | All logged in |
+| **Task Management** |
+| Tasks List | `/tasks/` | All logged in |
+| Task Detail | `/tasks/<id>/` | Assigned workers & Managers |
+| Create Task | `/tasks/create/` | Manager & Super Admin |
+| Edit Task | `/tasks/<id>/edit/` | Manager & Super Admin |
+| Delete Task | `/tasks/<id>/delete/` | Manager & Super Admin |
+| **Submission Management** |
+| Submissions List | `/submissions/` | All logged in |
+| Create Submission | `/submissions/create/` | Worker |
+| Submission Detail | `/submissions/<id>/` | Worker/Manager/Super Admin |
+| Edit Submission | `/submissions/<id>/edit/` | Draft submissions only |
+| Delete Submission | `/submissions/<id>/delete/` | Draft submissions only |
+| **Analytics & Admin** |
+| Dashboard | `/dashboard/` | All logged in |
+| Admin Dashboard | `/admin-dashboard/` | Manager & Super Admin |
+| KPI Dashboard | `/admin/kpi/` | Manager & Super Admin |
+| User Management | `/admin/users/` | Super Admin |
+| Audit Logs | `/admin/audit-logs/` | Super Admin |
+| **API Endpoints (REST)** |
+| API Root | `/api/` | All logged in |
+| Tasks API | `/api/tasks/` | All logged in |
+| Submissions API | `/api/submissions/` | All logged in |
+| KPI API | `/api/kpi/` | All logged in |
+
+---
+
+## 6. TYPICAL WORKFLOW SCENARIO (COMPLETE EXAMPLE)
+
+### Scenario: Q1 Financial Report Project
+**Duration**: 1 Week
+**Participants**: Jane (Manager), John (Worker)
+
+---
+
+### DAY 1 - MONDAY 9:00 AM (Jane - Manager)
+
+**Action**: Create Task
+```
+Title: Q1 Financial Report
+Description: Compile all department financial figures for Q1 2026
+- Include revenue, expenses, and departmental budgets
+- Use provided Excel templates
+- Include analysis and trends
+Deadline: March 31, 2026
+Priority: High
+KPI Weight: 15 (out of 100)
+Assign to: John Smith, Mike Johnson, Sarah Lee
+```
+
+**Result**: Task created and assigned
+- Jane clicks "Create Task"
+- Task appears in John, Mike, and Sarah's task lists
+- Each receives notification: "New Task: Q1 Financial Report"
+
+---
+
+### DAY 1 - MONDAY 2:00 PM (John - Worker)
+
+**Action**: View Assigned Task
+```
+Steps:
+1. John logs in to dashboard
+2. Sees widget: "2 Pending Tasks"
+3. Clicks "Tasks" → goes to /tasks/
+4. Sees "Q1 Financial Report" (High priority, red badge)
+5. Clicks task to view details
+6. Reads full requirements
+7. Sees deadline: March 31, 2026 (28 days remaining)
+```
+
+**Action**: Create Draft Submission
+```
+Steps:
+1. John clicks "Create Submission" button
+2. System creates blank draft (version 1)
+3. John is redirected to submission detail page
+4. Sees "Draft" badge in blue
+5. Clicks "Edit" button
+```
+
+**Action**: Add to Draft
+```
+Steps:
+1. John uploads file: Q1_Report_Draft.xlsx
+2. Adds notes:
+   "Initial report with cleansed data from all departments.
+   Ready for review. Need manager feedback on expense allocations."
+3. Clicks "Save"
+4. Submission saved, still in Draft status
+5. John can come back and edit more if needed
+```
+
+---
+
+### DAY 3 - WEDNESDAY 11:00 AM (John - Worker)
+
+**Action**: Update Draft Submission
+```
+Steps:
+1. John logs back in
+2. Goes to /submissions/
+3. Clicks on "Q1 Financial Report" draft
+4. Reviews his previous upload and notes
+5. Clicks "Edit" again
+6. Uploads updated file: Q1_Report_Draft_v2.xlsx (with corrections)
+7. Updates notes: "Fixed expense categories from finance feedback. Ready for submission."
+8. Clicks "Save"
+9. Still in Draft, version still 1 (increments on resubmit only)
+```
+
+---
+
+### DAY 4 - THURSDAY 3:00 PM (John - Worker)
+
+**Action**: Submit for Review
+```
+Steps:
+1. John verifies completed work one final time
+2. Sees file uploaded and notes complete
+3. Clicks "Submit" button (only appears for Draft status)
+4. Confirmation dialog: "Ready to submit? You won't be able to edit after."
+5. John clicks "Confirm Submit"
+6. Status changes: Draft → Submitted
+7. Submitted_at timestamp: 2026-02-27 3:05 PM
+8. John sees "Submitted" badge in orange
+```
+
+**Result**: Manager Notified
+- Jane (Manager) receives notification: "New Submission: Q1 Financial Report"
+- Notification shows John's name and task title
+- Jane can click to go directly to submission review page
+
+---
+
+### DAY 5 - FRIDAY 10:00 AM (Jane - Manager)
+
+**Action**: Review Submission
+```
+Steps:
+1. Jane logs in and sees notification
+2. Goes to /submissions/
+3. Clicks on the submission from John
+4. Submission detail page shows:
+   - Worker: John Smith
+   - Task: Q1 Financial Report
+   - Submitted at: 2026-02-27 3:05 PM
+   - Status: Submitted
+   - File: Q1_Report_Draft_v2.xlsx (can download)
+   - Worker notes: "Fixed expense categories..."
+5. Jane downloads and reviews file in Excel
+6. Reviews for:
+   - Accuracy of figures
+   - Complete data from all departments
+   - Proper analysis
+   - Formatting and professionalism
+7. Jane determines: Work is good quality but needs one revision
+```
+
+**Action**: Reject with Feedback
+```
+Steps:
+1. Jane scrolls to "Review Section"
+2. Clicks "Reject" button
+3. Fills rejection form:
+   - Score: 75/100
+   - Rejection Reason: "Report is mostly complete but missing Q1 trend analysis.
+     Please add section comparing this quarter to Q4 2025 and Q1 2025.
+     Also, standardize all charts to use company color scheme."
+   - Suggested Changes: "Refer to template_charts.pptx for chart styling."
+4. Clicks "Submit Review"
+5. Status: Rejected (needs revision)
+6. Jane's feedback and score recorded
+```
+
+**Result**: Worker Notified
+- John receives notification: "Your submission needs revision"
+- Notification contains Jane's feedback
+- John can edit and resubmit
+
+---
+
+### DAY 6 - SATURDAY 2:00 PM (John - Worker)
+
+**Action**: Read Feedback and Revise
+```
+Steps:
+1. John sees rejection notification
+2. Reads Jane's feedback:
+   - Missing trend analysis
+   - Chart styling needs standardization
+   - Reference template provided
+3. Goes to /submissions/ and finds his submission
+4. Sees status badge: "Rejected" (red)
+5. Clicks "Edit" (now available for rejected submissions)
+```
+
+**Action**: Resubmit (Version 2)
+```
+Steps:
+1. John opens the submitted file
+2. Adds trend analysis section:
+   - Q1 2026 vs Q4 2025 comparison
+   - Q1 2026 vs Q1 2025 comparison
+   - Growth/decline analysis
+3. Updates all charts with company colors using template
+4. Verifies all corrections applied
+5. Saves file: Q1_Report_Final.xlsx
+6. Uploads new file to submission
+7. Updates notes: "Added Q1 trend analysis and standardized charts per feedback."
+8. Clicks "Save"
+9. Clicks "Submit" (version auto-increments to v2)
+10. Confirms resubmission
+```
+
+**Result**: Manager Notified Again
+- Jane receives notification: "Resubmission received: Q1 Financial Report (John Smith)"
+- Shows this is version 2
+- Complete activity trail preserved
+
+---
+
+### DAY 7 - SUNDAY 9:00 AM (Jane - Manager)
+
+**Action**: Review Resubmission
+```
+Steps:
+1. Jane sees resubmission notification
+2. Goes to submission detail
+3. Downloads Q1_Report_Final.xlsx
+4. Verifies:
+   - Trend analysis section present and accurate
+   - Charts styled with company colors
+   - All other data intact and correct
+5. Jane determines: Excellent work, ready for approval
+```
+
+**Action**: Approve Submission
+```
+Steps:
+1. Jane scrolls to "Review Section"
+2. Clicks "Approve" button
+3. Fills approval form:
+   - Score: 92/100
+   - Feedback: "Excellent work! Trend analysis provides clear insights.
+     Charts are professional and properly formatted. All data verified
+     and complete. Ready for executive presentation."
+   - Manager Notes: "This will be used for board meeting."
+4. Clicks "Submit Review"
+5. Status: Approved
+```
+
+**Result**: Complete!
+- Submission Status: Approved ✅
+- Task Status: Approved ✅
+- John receives notification: "Your submission was approved! Score: 92/100"
+- Jane's feedback visible to John
+- Task marked as complete in system
+- John's KPI updated:
+  - Quality score increased (based on 92/100)
+  - Completion rate +1
+  - Productivity score +1
+- Task appears in Jane's completed tasks list
+- Full audit trail preserved:
+  - Task created 2/24 by Jane
+  - Assigned to John 2/24
+  - John created draft 2/24
+  - John submitted 2/27
+  - Jane rejected 2/28 (v1)
+  - John resubmitted 3/1 (v2)
+  - Jane approved 3/1
+  - Final score: 92/100
+
+---
+
+## 7. ACCESS CONTROL MATRIX
+
+### By Feature
+
+| Feature | Worker | Manager | Super Admin |
+|:---|:---:|:---:|:---:|
+| Create Task | ❌ | ✅ | ✅ |
+| Assign Task | ❌ | ✅ | ✅ |
+| Edit Task | ❌ | ✅ | ✅ |
+| Delete Task | ❌ | ✅ | ✅ |
+| View Assigned Tasks | ✅ | ✅ | ✅ |
+| Create Submission | ✅ | ❌ | ✅ |
+| Edit Draft Submission | ✅ | ❌ | ✅ |
+| Submit Submission | ✅ | ❌ | ✅ |
+| Delete Draft Submission | ✅ | ❌ | ✅ |
+| Review Submission | ❌ | ✅ | ✅ |
+| Approve Submission | ❌ | ✅ | ✅ |
+| Reject Submission | ❌ | ✅ | ✅ |
+| View Personal KPI | ✅ | ✅ | ✅ |
+| View Team KPI | ❌ | ✅ | ✅ |
+| View System Stats | ❌ | ❌ | ✅ |
+| User Management | ❌ | ❌ | ✅ |
+| Manage Departments | ❌ | ❌ | ✅ |
+| View Audit Logs | ❌ | ✅ | ✅ |
+| Change System Settings | ❌ | ❌ | ✅ |
+| Deactivate Users | ❌ | ❌ | ✅ |
+
+---
+
+## SUMMARY & QUICK START
+
+### For New Users (Workers):
+1. Register account at /register/
+2. Login at /login/
+3. View dashboard for assigned tasks
+4. Create draft submission when ready
+5. Submit work to manager for review
+6. Monitor notifications for feedback
+
+### For Managers:
+1. Create tasks and assign to workers
+2. Monitor submissions in real-time
+3. Review and score submissions
+4. Approve or request revisions
+5. Track team performance via KPI dashboard
+
+### For System Admins:
+1. Manage all users and roles
+2. Create other managers
+3. Configure system settings
+4. Monitor system health via admin dashboard
+5. Review complete audit logs for compliance
+
+---
+
+## CONTACT & SUPPORT
+
+For technical issues or questions, refer to documentation or contact system administrator.
+
+**System**: WorkTrack Pro v1.0
+**Last Updated**: February 24, 2026
+**Database**: SQLite / PostgreSQL
+**Framework**: Django 4.2.11
+**Python**: 3.13.7

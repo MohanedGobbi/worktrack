@@ -1,0 +1,783 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Operational Roadmap · WorkTrack Pro{% endblock %}
+
+{% block content %}
+    <style>
+/* ===== HIGH-END APPLE/STRIPE GANTT CSS ===== */
+.gantt-premium-container { background: #f8fafc; border-radius: 24px; padding: 0; border: 1px solid rgba(255,255,255,0.8); border-top: 5px solid #0ea5e9; box-shadow: 0 20px 40px rgba(0,0,0,0.03), inset 0 2px 0 rgba(255,255,255,1); position: relative; overflow: hidden; margin-top: 3rem; margin-bottom: 3rem; }
+.gantt-premium-container::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%); border-radius: 50%; z-index: 0; pointer-events: none; }
+.gantt-premium-container::after { content: ''; position: absolute; bottom: -150px; left: 250px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(14,165,233,0.05) 0%, transparent 70%); border-radius: 50%; z-index: 0; pointer-events: none; }
+
+.gantt-top-nav { padding: 1.5rem 2rem; position: relative; z-index: 2; display: flex; align-items: center; border-bottom: 1px solid #f1f5f9; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); }
+
+.gantt-wrapper { display: flex; background: white; border-top: 1px solid #e2e8f0; position: relative; z-index: 1; min-height: 400px; }
+
+/* Left Column */
+.gantt-cards-column { width: 380px; background: #f8fafc; display: flex; flex-direction: column; flex-shrink: 0; position: relative; z-index: 5; border-right: 1px solid #e2e8f0; }
+.gantt-column-header { height: 50px; display: flex; align-items: center; padding: 0 1.5rem; font-weight: 700; color: #475569; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; background: #f1f5f9; }
+
+.gantt-modern-card { display: flex; align-items: center; padding: 1.25rem 1.5rem; background: white; border-bottom: 1px solid transparent; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); height: 110px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin: 0.75rem; border-radius: 16px; border: 1px solid #f1f5f9; cursor: pointer; }
+.gantt-modern-card:hover { transform: scale(1.02) translateX(5px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); z-index: 10; border-color: transparent; border-left: 4px solid var(--mod-color); }
+
+.gcard-icon { width: 50px; height: 50px; border-radius: 14px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 8px 18px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.4); flex-shrink: 0; }
+.gcard-body { flex: 1; padding: 0 1.2rem; overflow: hidden; }
+.gcard-title { font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.gcard-badges { display: flex; align-items: center; gap: 0.5rem; }
+.gcard-status-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.gcard-days { font-size: 0.65rem; font-weight: 800; padding: 0.3rem 0.6rem; border-radius: 6px; letter-spacing: 0.5px; }
+
+.gcard-donut { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; box-shadow: inset 0 0 6px rgba(0,0,0,0.15); transition: transform 0.3s; }
+.gantt-modern-card:hover .gcard-donut { transform: rotate(15deg); }
+.gcard-donut::before { content: ''; position: absolute; width: 34px; height: 34px; background: white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+.gcard-donut-inner { position: absolute; z-index: 2; font-size: 0.75rem; font-weight: 900; color: #1e293b; }
+
+/* Right Column (Timeline) */
+.gantt-timeline-column { flex: 1; min-width: 800px; background: white; position: relative; overflow-x: auto; overflow-y: hidden; }
+.gantt-calendar-header { height: 50px; display: flex; border-bottom: 1px solid #e2e8f0; background: #fff; }
+.cal-month { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; color: #64748b; letter-spacing: 1px; border-right: 1px solid #e2e8f0; position: relative; transition: all 0.3s; }
+.cal-month:last-child { border-right: none; }
+.cal-month.active-month { color: #0ea5e9; background: rgba(14, 165, 233, 0.08); }
+.cal-month.active-month::before { content: ''; position: absolute; bottom: 0; width: 40px; height: 4px; background: #0ea5e9; border-radius: 4px 4px 0 0; }
+
+/* Grid Lines layered behind bars */
+.gantt-rows { position: relative; width: 100%; display: flex; flex-direction: column; padding: 0.75rem 0 3rem 0; }
+.gantt-grid-lines { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; pointer-events: none; z-index: 0; }
+.gantt-grid-lines div { flex: 1; border-right: 1px solid #f1f5f9; }
+.gantt-grid-lines div:last-child { border-right: none; }
+
+/* Today Indication */
+.gantt-today-line { position: absolute; top: 0; bottom: 0; width: 40px; transform: translateX(-50%); background: linear-gradient(180deg, rgba(14, 165, 233, 0.2) 0%, rgba(14, 165, 233, 0) 100%); border-left: 2px dashed #0ebbc4; z-index: 50; pointer-events: none; }
+.today-label { position: absolute; bottom: 40px; top: auto; left: 50%; transform: translateX(-50%); background: #0ea5e9; color: white; font-size: 0.65rem; font-weight: 900; padding: 0.3rem 0.8rem; border-radius: 12px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3); z-index: 50; }
+/* Dynamic Gantt Footer Markers & Overlays */
+.gantt-calendar-footer { height: 35px; display: flex; border-top: 1px solid #e2e8f0; background: #fff; position: relative; z-index: 5; }
+.gantt-calendar-footer .cal-month { flex-direction: column; align-items: stretch; justify-content: center; overflow: hidden; font-size: 0.65rem; padding: 0; }
+.gantt-calendar-footer .month-name { display: none; }
+.gantt-calendar-footer .cal-month::before { display: none !important; }
+.sub-markers { display: none; width: 100%; height: 100%; align-items: center; justify-content: space-between; color: #64748b; font-weight: 800; }
+.sub-markers span { flex: 1; text-align: center; border-right: 1px dashed #e2e8f0; height: 100%; display: flex; align-items: center; justify-content: center; }
+.sub-markers span:last-child { border-right: none; }
+.scale-week .week-markers { display: flex; }
+.scale-day .day-markers { display: flex; }
+.urgent-flag { display: inline-flex; align-items: center; background: var(--wt-bad); color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.65rem; font-weight: 800; box-shadow: 0 0 10px rgba(192, 40, 58, 0.5); animation: pulse-urgent 2s infinite; }
+@keyframes pulse-urgent { 0% { box-shadow: 0 0 0 0 rgba(192, 40, 58, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(192, 40, 58, 0); } 100% { box-shadow: 0 0 0 0 rgba(192, 40, 58, 0); } }
+
+/* Timeline Bars */
+.gantt-row { height: 110px; position: relative; width: 100%; margin-bottom: 1.5rem; }
+.gantt-row:last-child { margin-bottom: 0; }
+.gantt-bar-wrapper { position: absolute; height: 100%; top: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; padding: 1.5rem 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; min-width: 0px; overflow: visible; }
+.gantt-bar-wrapper:hover { z-index: 10; filter: brightness(1.1); transform: scaleY(1.05); }
+
+.gantt-date-label { position: absolute; font-size: 0.7rem; font-weight: 800; color: #475569; white-space: nowrap; transition: opacity 0.3s; }
+.start-date { top: 0.5rem; left: 0; }
+.end-date { top: 0.5rem; right: 0; }
+
+.gantt-bar { height: 32px; border-radius: 16px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 6px 15px rgba(0,0,0,0.1); }
+.gantt-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%); pointer-events: none; }
+.gantt-bar-progress { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255,255,255,0.25); border-right: 2px solid rgba(255,255,255,0.8); }
+.gantt-bar-text { position: relative; z-index: 2; color: white; font-weight: 900; font-size: 0.8rem; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+.gantt-milestones { display: flex; align-items: center; justify-content: flex-start; gap: 6px; white-space: nowrap; width: max-content; margin-top: 0.6rem; padding: 0 5px; font-size: 0.75rem; font-weight: 800; color: #334155; }
+.milestone-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 3px white, 0 2px 5px rgba(0,0,0,0.2); margin-right: 0.5rem; }
+.milestone-text { flex: 1; }
+.milestone-end-dot { padding: 0.2rem 0.6rem; border-radius: 12px; color: white; font-size: 0.65rem; background: rgba(0,0,0,0.1); border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+/* rm badges inside custom gantt */
+.rm-safe { background: #ffe4e6; color: #3b0a0a; border-color: var(--wt-brand-tint); }
+.rm-warning { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+.rm-danger { background: #fee2e2; color: color-mix(in oklab, var(--wt-bad) 82%, #000); border-color: #fecaca; }
+.rm-done { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+
+/* 3D GLASS POPUP */
+.module-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(12px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    perspective: 2000px;
+    padding: 20px;
+}
+
+.module-popup-overlay.active {
+    display: flex;
+    animation: popupFadeIn 0.4s ease-out;
+}
+
+.module-popup-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 32px;
+    width: 100%;
+    max-width: 550px;
+    padding: 48px;
+    box-shadow: 0 50px 100px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+    transform-style: preserve-3d;
+    transform: rotateX(15deg) translateY(50px);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    text-align: center;
+}
+
+.module-popup-overlay.active .module-popup-card {
+    transform: rotateX(0) translateY(0);
+}
+
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.popup-icon-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    transform: translateZ(40px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.popup-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 12px;
+    transform: translateZ(30px);
+}
+
+.popup-desc {
+    font-size: 1rem;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 32px;
+    transform: translateZ(20px);
+}
+
+.popup-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    background: rgba(15, 23, 42, 0.04);
+    padding: 20px;
+    border-radius: 20px;
+    transform: translateZ(10px);
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.popup-close-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.05);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.popup-close-btn:hover {
+    background: var(--wt-bad);
+    color: white;
+    transform: rotate(90deg);
+}
+
+/* HOVER TOOLTIP STYLES */
+#roadmapTooltip {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+    z-index: 11000;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    padding: 18px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    width: 260px;
+    transition: opacity 0.2s;
+}
+
+.tt-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.tt-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.tt-chart-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.tooltip-pie-circle {
+    transform: rotate(-90deg);
+}
+
+@keyframes ttPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#roadmapTooltip.active {
+    animation: ttPulse 2s infinite ease-in-out;
+}
+</style>
+
+<div class="container-fluid py-4">
+    <!-- HERO BANNER -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 rounded-4 overflow-hidden shadow-sm position-relative" style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); min-height: 180px;">
+                <div class="card-body p-5 position-relative z-1 d-flex flex-column justify-content-center">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 80px; height: 80px;">
+                            <i class="fas fa-stream fa-2x text-primary"></i>
+                        </div>
+                        <div class="text-white">
+                            <h2 class="fw-900 mb-1" style="font-size: 2.2rem; letter-spacing: -0.5px;">Operational Roadmap</h2>
+                            <p class="mb-0 fs-5 opacity-75 fw-medium">Unified View of Active Module Timelines & Progress</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Decorative Circles -->
+                <div class="position-absolute rounded-circle" style="width: 300px; height: 300px; background: rgba(255,255,255,0.1); top: -100px; right: -50px;"></div>
+                <div class="position-absolute rounded-circle" style="width: 150px; height: 150px; background: rgba(255,255,255,0.15); bottom: -50px; right: 200px;"></div>
+            </div>
+        </div>
+    </div>
+
+<!-- AMAZING OPERATIONAL ROADMAP / PREMIUM GANTT -->
+<div class="row">
+    <div class="col-12">
+        <div class="gantt-premium-container">
+            <div class="gantt-top-nav">
+                <h3 class="sec-title mb-0" style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;"><i class="fas fa-stream text-primary me-2"></i> OPERATIONAL ROADMAP <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 ms-3 fs-6 align-middle" style="border: 1px solid rgba(153, 27, 27, 0.2);"><i class="fas fa-satellite-dish me-2"></i>Live View</span></h3>
+                
+                <div class="ms-auto d-flex gap-2">
+                    <div class="position-relative">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.8rem;"></i>
+                        <input type="text" id="ganttFilterInput" class="form-control form-control-sm rounded-pill border-0 shadow-sm" placeholder="Search modules..." onkeyup="filterGanttCards(this.value)" style="padding-left: 36px; padding-right: 16px; min-width: 180px; font-size: 0.85rem;">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-white fw-bold rounded-pill text-secondary border-0 px-3 shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sort me-1"></i> <span id="ganttSortLabel">Default</span>
+                        </button>
+                        <ul class="dropdown-menu shadow-sm border-0" style="font-size: 0.85rem; border-radius: 12px;">
+                            <li><a class="dropdown-item py-2 fw-medium" href="javascript:void(0)" onclick="sortGantt('default')"><i class="fas fa-layer-group text-muted me-2"></i> Default Order</a></li>
+                            <li><a class="dropdown-item py-2 fw-medium" href="javascript:void(0)" onclick="sortGantt('days-asc')"><i class="fas fa-sort-amount-down-alt text-warning me-2"></i> Days Left (Low to High)</a></li>
+                            <li><a class="dropdown-item py-2 fw-medium" href="javascript:void(0)" onclick="sortGantt('days-desc')"><i class="fas fa-sort-amount-up text-danger me-2"></i> Days Left (High to Low)</a></li>
+                            <li><a class="dropdown-item py-2 fw-medium" href="javascript:void(0)" onclick="sortGantt('progress-asc')"><i class="fas fa-chart-line text-info me-2"></i> Progress (Low to High)</a></li>
+                            <li><a class="dropdown-item py-2 fw-medium" href="javascript:void(0)" onclick="sortGantt('progress-desc')"><i class="fas fa-chart-pie text-success me-2"></i> Progress (High to Low)</a></li>
+                        </ul>
+                    </div>
+                    <!-- Moved scale controls to footer -->
+                    <div class="d-flex align-items-center ms-2 bg-white rounded-pill shadow-sm border px-2 py-1">
+                        <button class="btn btn-sm text-secondary p-1 border-0" onclick="ganttPrevPage()" id="btnPrevPage"><i class="fas fa-chevron-left"></i></button>
+                        <span id="ganttPageDisplay" class="mx-2 fw-bold text-dark" style="font-size: 0.75rem;">Page 1</span>
+                        <button class="btn btn-sm text-secondary p-1 border-0" onclick="ganttNextPage()" id="btnNextPage"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gantt-wrapper">
+                <!-- Left Panel: Project Cards -->
+                <div class="gantt-cards-column">
+                    <div class="gantt-column-header">Project Panel</div>
+                    {% for mod in timeline_modules %}
+                    <div class="gantt-modern-card js-apply-style" data-style-mod-color="{{ mod.color|default:'#6366f1' }}" onclick="window.location.href=`{% url 'module-dashboard' module_slug=mod.slug %}`">
+                        <div class="gcard-left">
+                            <div class="gcard-icon js-apply-style" data-style-background="{{ mod.color|default:'#6366f1' }}">
+                                <i class="fas {{ mod.icon }}"></i>
+                            </div>
+                        </div>
+                        <div class="gcard-body">
+                            <h4 class="gcard-title text-truncate" title="{{ mod.name }}">{{ mod.name }}</h4>
+                            <div class="gcard-badges">
+                                <span class="gcard-status-dot js-apply-style" data-style-color="{{ mod.color|default:'#6366f1' }}" style="background: currentColor;"></span>
+                                <span class="gcard-days {% if mod.days_left == 0 %}rm-done{% elif mod.days_left < 7 %}rm-danger{% elif mod.days_left < 14 %}rm-warning{% else %}rm-safe{% endif %}">
+                                    {% if mod.days_left > 0 %}{{ mod.days_left }} DAYS LEFT{% else %}DEADLINE REACHED{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="gcard-right">
+                            <div class="gcard-donut js-apply-style" data-style-background="conic-gradient({{ mod.color|default:'#6366f1' }} {{ mod.progress|default:0 }}%, #e2e8f0 0)">
+                                <div class="gcard-donut-inner">{{ mod.progress|default:0 }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted fw-bold"><i class="fas fa-layer-group fa-3x mb-3 opacity-25"></i><br>No strategic lifecycles available.</div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Right Panel: Timeline Canvas -->
+                <div class="gantt-timeline-column">
+                    <!-- Calendar Header -->
+                    <div class="gantt-calendar-header" id="ganttHeader" style="transition: min-width 0.5s ease;">
+                        <div class="cal-month {% if current_month_index == 1 %}active-month{% endif %}">JAN</div>
+                        <div class="cal-month {% if current_month_index == 2 %}active-month{% endif %}">FEB</div>
+                        <div class="cal-month {% if current_month_index == 3 %}active-month{% endif %}">MAR</div>
+                        <div class="cal-month {% if current_month_index == 4 %}active-month{% endif %}">APR</div>
+                        <div class="cal-month {% if current_month_index == 5 %}active-month{% endif %}">MAY</div>
+                        <div class="cal-month {% if current_month_index == 6 %}active-month{% endif %}">JUN</div>
+                        <div class="cal-month {% if current_month_index == 7 %}active-month{% endif %}">JUL</div>
+                        <div class="cal-month {% if current_month_index == 8 %}active-month{% endif %}">AUG</div>
+                        <div class="cal-month {% if current_month_index == 9 %}active-month{% endif %}">SEP</div>
+                        <div class="cal-month {% if current_month_index == 10 %}active-month{% endif %}">OCT</div>
+                        <div class="cal-month {% if current_month_index == 11 %}active-month{% endif %}">NOV</div>
+                        <div class="cal-month {% if current_month_index == 12 %}active-month{% endif %}">DEC</div>
+                    </div>
+                    
+                    <!-- Timeline Rows matching cards -->
+                    <div class="gantt-rows" id="ganttTimelineBody" style="transition: min-width 0.5s ease;">
+                        <!-- Today Indicator Line -->
+                        <div class="gantt-today-line js-apply-style" data-style-left="{{ today_pos|default:0 }}%">
+                            <div class="today-label">TODAY, {% now "M d" %}</div>
+                        </div>
+
+                        <div class="gantt-grid-lines">
+                            <div></div><div></div><div></div><div></div><div></div><div></div>
+                            <div></div><div></div><div></div><div></div><div></div><div></div>
+                        </div>
+                        
+                        {% for mod in timeline_modules %}
+                        <div class="gantt-row">
+                            <div class="gantt-bar-wrapper js-apply-style" data-style-left="{{ mod.start_pos }}%" data-style-width="{{ mod.width }}%">
+                                {% if mod.width < 12 %}
+                                    <div class="gantt-date-label start-date" style="font-size: 0.6rem; opacity: 0.8;">{{ mod.start_date|date:"M d" }} - {{ mod.deadline|date:"M d" }}</div>
+                                {% else %}
+                                    <div class="gantt-date-label start-date">Start Date: {{ mod.start_date|date:"M d, Y" }}</div>
+                                    <div class="gantt-date-label end-date">End Date: {{ mod.deadline|date:"M d, Y" }}</div>
+                                {% endif %}
+                                
+                                <div class="gantt-bar js-apply-style" 
+                                     onmouseenter="handleGanttHover(this, event)" 
+                                     onmousemove="handleBarMouseMove(event)"
+                                     onmouseleave="handleBarMouseLeave()"
+                                     data-name="{{ mod.name }}" 
+                                     data-progress="{{ mod.progress|default:0 }}" 
+                                     data-color="{{ mod.color|default:'#6366f1' }}"
+                                     data-days="{% if mod.days_left > 0 %}{{ mod.days_left }} Days Left{% else %}Completed{% endif %}"
+                                     data-dates="{{ mod.start_date|date:'M d' }} - {{ mod.deadline|date:'M d, Y' }}"
+                                     data-style-background="linear-gradient(90deg, {{ mod.color|default:'#6366f1' }}cc, {{ mod.color|default:'#6366f1' }})"
+                                     data-style-box-shadow="0 4px 15px {{ mod.color|default:'#6366f1' }}40"
+                                     style="cursor: pointer;">
+                                    <div class="gantt-bar-progress js-apply-style" data-style-width="{{ mod.progress|default:0 }}%"></div>
+                                    <span class="gantt-bar-text">{{ mod.progress|default:0 }}%</span>
+                                </div>
+                                
+                                <div class="gantt-milestones">
+                                    <div class="milestone-dot js-apply-style" data-style-background="{{ mod.color|default:'#6366f1' }}"></div>
+                                    <span class="milestone-text">
+                                        {% if mod.days_left == 0 %}
+                                            <i class="fas fa-times-circle text-muted me-1"></i> FINISHED
+                                        {% elif mod.days_left < 14 %}
+                                            <span class="urgent-flag"><i class="fas fa-flag me-1"></i> URGENT</span>
+                                        {% else %}
+                                            <i class="fas fa-check-circle text-success me-1"></i> Milestone Achieved
+                                        {% endif %}
+                                    </span>
+                                    <span class="milestone-end-dot js-apply-style" data-style-background="{{ mod.color|default:'#6366f1' }}">{{ mod.deadline|date:"M d" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation for Day/Week/Month Scale -->
+            <div class="gantt-scale-footer d-flex justify-content-center align-items-center py-3 bg-white" style="border-top: 1px solid #f1f5f9; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; position: relative; z-index: 10;">
+                <div class="btn-group bg-light rounded-pill shadow-sm p-1" id="ganttScaleControls" style="border: 1px solid #e2e8f0;">
+                    <button class="btn btn-sm btn-light fw-bold rounded-pill text-secondary border-0 px-4 py-2 gantt-scale-btn shadow-none" onclick="setGanttScale('day', this)" style="transition: all 0.3s;"><i class="fas fa-calendar-day me-1"></i> Day</button>
+                    <button class="btn btn-sm btn-light fw-bold rounded-pill text-secondary border-0 px-4 py-2 gantt-scale-btn shadow-none" onclick="setGanttScale('week', this)" style="transition: all 0.3s;"><i class="fas fa-calendar-week me-1"></i> Week</button>
+                    <button class="btn btn-sm btn-primary fw-bold rounded-pill text-white border-0 px-4 py-2 shadow-sm gantt-scale-btn" onclick="setGanttScale('month', this)" style="transition: all 0.3s;"><i class="fas fa-calendar-alt me-1"></i> Month</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 3D WOW POPUP OVERLAY -->
+    <div id="modulePopupOverlay" class="module-popup-overlay" onclick="closeModulePopup(event)">
+        <div class="module-popup-card" onclick="event.stopPropagation()">
+            <button class="popup-close-btn" onclick="closeModulePopup(event)">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="popupIcon" class="popup-icon-box">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3 id="popupTitle" class="popup-title">Module Name</h3>
+            <p id="popupDesc" class="popup-desc">Detailed information about this specific operational module and its
+                current strategic lifecycle status.</p>
+
+            <div class="popup-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Commenced</div>
+                    <div id="popupStart" class="stat-value">Jan 01</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Progress</div>
+                    <div id="popupProgress" class="stat-value">65%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Deadline</div>
+                    <div id="popupDeadline" class="stat-value">Dec 31</div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <a id="popupLink" href="#" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-lg">
+                    Access Detailed Workspace <i class="fas fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOOLTIP WIDGET FOR HOVER -->
+    <div id="roadmapTooltip">
+        <span id="ttTitle" class="tt-title">Module Name</span>
+        <div class="tt-row">
+            <span>Timeline</span>
+            <span id="ttDates">Start - End</span>
+        </div>
+        <div class="tt-row">
+            <span><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></span>
+            <span id="ttDaysLeft">X Days Left</span>
+        </div>
+        <div class="tt-chart-area">
+            <svg width="60" height="60" class="pie-chart-svg">
+                <circle r="25" cx="30" cy="30" fill="transparent" stroke="#f1f5f9" stroke-width="10"></circle>
+                <circle id="ttPieCircle" r="25" cx="30" cy="30" fill="transparent" stroke="#6366f1" stroke-width="10"
+                    stroke-dasharray="157" stroke-dashoffset="157" style="transition: stroke-dashoffset 0.4s ease;">
+                </circle>
+            </svg>
+            <div style="font-size: 0.9rem; font-weight: 800; color: #1e293b;" id="ttPercentText">0%</div>
+        </div>
+    </div>
+
+    <script>
+        const tooltip = document.getElementById('roadmapTooltip');
+        const ttTitle = document.getElementById('ttTitle');
+        const ttDates = document.getElementById('ttDates');
+        const ttDaysLeft = document.getElementById('ttDaysLeft');
+        const ttPieCircle = document.getElementById('ttPieCircle');
+        const ttPercentText = document.getElementById('ttPercentText');
+
+        function setGanttScale(scale, btnElement) {
+            const timeline = document.getElementById('ganttTimelineBody');
+            const header = document.getElementById('ganttHeader');
+            const footer = document.getElementById('ganttFooter');
+            
+            document.querySelectorAll('.gantt-scale-btn').forEach(btn => {
+                btn.classList.remove('btn-primary', 'text-white', 'shadow-sm');
+                btn.classList.add('btn-light', 'text-secondary', 'shadow-none');
+            });
+            btnElement.classList.remove('btn-light', 'text-secondary', 'shadow-none');
+            btnElement.classList.add('btn-primary', 'text-white', 'shadow-sm');
+
+            header.className = 'gantt-calendar-header scale-' + scale;
+            if(footer) footer.className = 'gantt-calendar-footer scale-' + scale;
+
+            if(scale === 'day') {
+                timeline.style.minWidth = '1200%';
+                header.style.minWidth = '1200%';
+                if(footer) footer.style.minWidth = '1200%';
+            } else if(scale === 'week') {
+                timeline.style.minWidth = '300%';
+                header.style.minWidth = '300%';
+                if(footer) footer.style.minWidth = '300%';
+            } else {
+                timeline.style.minWidth = '100%';
+                header.style.minWidth = '100%';
+                if(footer) footer.style.minWidth = '100%';
+            }
+
+            // Auto-scroll to today
+            if (scale === 'day' || scale === 'week') {
+                setTimeout(() => {
+                    const todayPos = parseFloat("{{ today_pos|default:0 }}");
+                    const wrapper = document.querySelector('.gantt-timeline-column');
+                    const targetScroll = (wrapper.scrollWidth * (todayPos / 100)) - (wrapper.clientWidth / 2);
+                    wrapper.scrollTo({ left: targetScroll, behavior: 'smooth' });
+                }, 100);
+            }
+        }
+
+        function renderGanttPhase2() {
+            if(!window.ganttModules) return;
+            
+            let filtered = window.ganttModules.filter(m => m.title.includes(window.ganttSearchTerm));
+            
+            if (window.ganttSortBy === 'progress-asc') {
+                filtered.sort((a,b) => a.progress - b.progress);
+            } else if (window.ganttSortBy === 'progress-desc') {
+                filtered.sort((a,b) => b.progress - a.progress);
+            } else if (window.ganttSortBy === 'days-asc') {
+                filtered.sort((a,b) => a.daysLeft - b.daysLeft);
+            } else if (window.ganttSortBy === 'days-desc') {
+                filtered.sort((a,b) => b.daysLeft - a.daysLeft);
+            } else {
+                filtered.sort((a,b) => a.originalIndex - b.originalIndex);
+            }
+            
+            const totalPages = Math.ceil(filtered.length / window.ganttItemsPerPage) || 1;
+            if (window.ganttCurrentPage > totalPages) window.ganttCurrentPage = totalPages;
+            
+            const startIndex = (window.ganttCurrentPage - 1) * window.ganttItemsPerPage;
+            const endIndex = startIndex + window.ganttItemsPerPage;
+            const paginated = filtered.slice(startIndex, endIndex);
+
+            const cardsCol = document.querySelector('.gantt-cards-column');
+            const rowsCol = document.querySelector('.gantt-rows');
+            
+            Array.from(cardsCol.querySelectorAll('.gantt-modern-card')).forEach(e => e.remove());
+            Array.from(rowsCol.querySelectorAll('.gantt-row')).forEach(e => e.remove());
+
+            paginated.forEach(m => {
+                cardsCol.appendChild(m.card);
+                rowsCol.appendChild(m.row);
+            });
+
+            const pageDisp = document.getElementById('ganttPageDisplay');
+            if (pageDisp) pageDisp.textContent = `Page ${window.ganttCurrentPage || 1} of ${totalPages}`;
+            const btnP = document.getElementById('btnPrevPage');
+            if (btnP) btnP.disabled = (window.ganttCurrentPage <= 1);
+            const btnN = document.getElementById('btnNextPage');
+            if (btnN) btnN.disabled = (window.ganttCurrentPage >= totalPages);
+        }
+
+        function ganttPrevPage() {
+            if(window.ganttCurrentPage > 1) {
+                window.ganttCurrentPage--;
+                renderGanttPhase2();
+            }
+        }
+
+        function ganttNextPage() {
+            window.ganttCurrentPage++;
+            renderGanttPhase2();
+        }
+
+        function sortGantt(sortBy) {
+            window.ganttSortBy = sortBy;
+            window.ganttCurrentPage = 1;
+            renderGanttPhase2();
+            document.getElementById('ganttSortLabel').textContent = event.target.textContent;
+        }
+
+        function filterGanttCards(term) {
+            window.ganttSearchTerm = term.toLowerCase();
+            window.ganttCurrentPage = 1;
+            renderGanttPhase2();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.js-apply-style').forEach(el => {
+                const ds = el.dataset;
+                if (ds.styleLeft) el.style.left = ds.styleLeft;
+                if (ds.styleWidth) el.style.width = ds.styleWidth;
+                if (ds.styleBackground) el.style.background = ds.styleBackground;
+                if (ds.styleColor) el.style.color = ds.styleColor;
+                if (ds.styleProgress) el.style.setProperty('--progress', ds.styleProgress);
+                if (ds.stylePColor) el.style.setProperty('--p-color', ds.stylePColor);
+                if (ds.styleMc) el.style.setProperty('--mc', ds.styleMc);
+                if (ds.styleGColor) el.style.setProperty('--g-color', ds.styleGColor);
+                if (ds.styleGroupColor) el.style.setProperty('--group-color', ds.styleGroupColor);
+                if (ds.styleGroupBg) el.style.setProperty('--group-bg', ds.styleGroupBg);
+                if (ds.styleModColor) el.style.setProperty('--mod-color', ds.styleModColor);
+                if (ds.styleBoxShadow) el.style.boxShadow = ds.styleBoxShadow;
+                if (ds.styleBorder) el.style.border = ds.styleBorder;
+                if (ds.styleBorderLeft) el.style.borderLeft = ds.styleBorderLeft;
+                if (ds.styleHeight) el.style.height = ds.styleHeight;
+            });
+            window.ganttModules = [];
+            const cardsList = Array.from(document.querySelectorAll('.gantt-modern-card'));
+            const rowsList = Array.from(document.querySelectorAll('.gantt-row'));
+            
+            cardsList.forEach((card, i) => {
+                const row = rowsList[i];
+                if(!row) return;
+                const titleEl = card.querySelector('.gcard-title');
+                const title = titleEl ? titleEl.textContent.trim() : '';
+                const progressEl = card.querySelector('.gcard-donut-inner');
+                const progressStr = progressEl ? progressEl.textContent : '0';
+                const progress = parseInt(progressStr) || 0;
+                const daysLeftEl = card.querySelector('.gcard-days');
+                let daysLeft = 0;
+                if(daysLeftEl && daysLeftEl.textContent.match(/\d+/)) {
+                    daysLeft = parseInt(daysLeftEl.textContent.match(/\d+/)[0]);
+                }
+                if(daysLeftEl && daysLeftEl.textContent.includes('DEADLINE')) daysLeft = -1;
+
+                window.ganttModules.push({
+                    card: card, row: row, title: title.toLowerCase(), progress: progress, daysLeft: daysLeft, originalIndex: i
+                });
+                card.remove(); row.remove();
+            });
+
+            window.ganttCurrentPage = 1;
+            window.ganttItemsPerPage = 7;
+            window.ganttSearchTerm = '';
+            window.ganttSortBy = 'default';
+
+            renderGanttPhase2();
+
+            const timelineBody = document.getElementById('ganttTimelineBody');
+            const header = document.getElementById('ganttHeader');
+            
+            if(header && timelineBody) {
+                const footer = document.createElement('div');
+                footer.className = header.className.replace('gantt-calendar-header', 'gantt-calendar-footer');
+                footer.id = 'ganttFooter';
+                footer.style.transition = 'min-width 0.5s ease';
+                footer.innerHTML = header.innerHTML;
+                
+                timelineBody.parentNode.appendChild(footer);
+
+                document.querySelectorAll('.gantt-calendar-footer .cal-month').forEach(monthEl => {
+                    let weeksHTML = '<div class="sub-markers week-markers">';
+                    for(let i=1; i<=4; i++) weeksHTML += `<span>W${i}</span>`;
+                    weeksHTML += '</div>';
+                    
+                    let daysHTML = '<div class="sub-markers day-markers">';
+                    for(let i=1; i<=30; i++) daysHTML += `<span>${i}</span>`;
+                    daysHTML += '</div>';
+                    
+                    monthEl.innerHTML = weeksHTML + daysHTML;
+                });
+            }
+
+            const gridLines = document.querySelector('.gantt-grid-lines');
+            if (gridLines) {
+                let dayGrids = '<div class="day-grid" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:none; z-index:0;">';
+                for(let m=0; m<12; m++) {
+                    dayGrids += '<div style="flex:1; display:flex;">';
+                    for(let d=0; d<30; d++) dayGrids += '<div style="flex:1; border-right:1px dashed #f1f5f9;"></div>';
+                    dayGrids += '</div>';
+                }
+                dayGrids += '</div>';
+
+                let weekGrids = '<div class="week-grid" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:none; z-index:0;">';
+                for(let m=0; m<12; m++) {
+                    weekGrids += '<div style="flex:1; display:flex;">';
+                    for(let w=0; w<4; w++) weekGrids += '<div style="flex:1; border-right:1px dashed #e2e8f0;"></div>';
+                    weekGrids += '</div>';
+                }
+                weekGrids += '</div>';
+
+                gridLines.innerHTML += dayGrids + weekGrids;
+            }
+        });
+
+        function handleGanttHover(el, event) {
+            const data = el.dataset;
+            ttTitle.innerText = data.name;
+            ttDates.innerText = data.dates;
+            ttDaysLeft.innerText = data.days;
+            ttPercentText.innerText = data.progress + '%';
+
+            // Pie Chart Math: Circumference = 2 * PI * R (R=25) approx 157
+            const offset = 157 - (157 * data.progress / 100);
+            ttPieCircle.style.strokeDashoffset = offset;
+            ttPieCircle.style.stroke = data.color;
+
+            tooltip.style.display = 'block';
+        }
+
+        function handleBarMouseMove(e) {
+            tooltip.style.left = (e.clientX + 20) + 'px';
+            tooltip.style.top = (e.clientY + 20) + 'px';
+        }
+
+        function handleBarMouseLeave() {
+            tooltip.style.display = 'none';
+        }
+
+        function handleBarClick(el) {
+            const data = el.dataset;
+            showModulePopup(
+                data.name,
+                data.desc,
+                data.progress,
+                data.start,
+                data.end,
+                data.color,
+                data.icon,
+                data.slug
+            );
+        }
+
+        function showModulePopup(name, desc, progress, start, end, color, icon, slug) {
+            const overlay = document.getElementById('modulePopupOverlay');
+            const iconBox = document.getElementById('popupIcon');
+
+            document.getElementById('popupTitle').innerText = name;
+            document.getElementById('popupDesc').innerText = desc || "No detailed description provided for this operational module.";
+            document.getElementById('popupProgress').innerText = progress + "%";
+            document.getElementById('popupStart').innerText = start;
+            document.getElementById('popupDeadline').innerText = end;
+
+            iconBox.style.backgroundColor = color;
+            iconBox.innerHTML = `<i class="fas ${icon || 'fa-rocket'}"></i>`;
+
+            // Link - Fixed as per urls.py
+            document.getElementById('popupLink').href = `/module/${slug}/`;
+
+            overlay.classList.add('active');
+        }
+
+        function closeModulePopup(e) {
+            document.getElementById('modulePopupOverlay').classList.remove('active');
+        }
+    </script>
+</div>
+{% endblock %}

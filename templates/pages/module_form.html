@@ -1,0 +1,622 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .icon-picker-container {
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        background: #f8fafc;
+    }
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 10px;
+    }
+    .icon-option {
+        width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: white;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.25rem;
+        color: #64748b;
+    }
+    .icon-option:hover {
+        background: #f1f5f9;
+        color: #2563eb;
+    }
+    .icon-option.selected {
+        border-color: #2563eb;
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    .color-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 2px solid white;
+        box-shadow: 0 0 0 1px #e2e8f0;
+    }
+    .form-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    /* Banner image upload */
+    .banner-upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: #f8fafc;
+        transition: all .2s;
+        position: relative;
+    }
+    .banner-upload-zone:hover { border-color: #6366f1; background: #eef2ff; }
+    .banner-upload-zone input[type=file] {
+        position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .banner-preview {
+        width: 100%; max-height: 160px; object-fit: cover;
+        border-radius: 10px; display: none; margin-bottom: .75rem;
+    }
+    .existing-banner {
+        width: 100%; max-height: 140px; object-fit: cover;
+        border-radius: 10px; margin-bottom: .75rem;
+    }
+    /* Privacy Panel Styles */
+    .privacy-card {
+        background: linear-gradient(145deg, #ffffff, #f1f5f9);
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
+    }
+    .privacy-card.active {
+        border-color: var(--wt-bad);
+        background: linear-gradient(145deg, #fffcfc, #fef2f2);
+        box-shadow: 0 10px 25px rgba(192, 40, 58, 0.1);
+    }
+    
+    .custom-switch-lg .form-check-input {
+        width: 3.5rem;
+        height: 1.75rem;
+        cursor: pointer;
+    }
+    
+    .user-select-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 1.5rem;
+    }
+    
+    .user-card {
+        position: relative;
+        padding: 1rem;
+        border-radius: 16px;
+        background: white;
+        border: 2px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        user-select: none;
+    }
+    
+    .user-card:hover {
+        border-color: #cbd5e1;
+        transform: translateY(-3px);
+    }
+    
+    .user-card.selected {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    
+    .user-card .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: #f1f5f9;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+    }
+    
+    .user-card.selected .user-avatar {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .user-card .user-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .user-card .user-role {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    
+    .user-card .select-overlay {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: white;
+        transition: all 0.2s;
+    }
+    
+    .user-card.selected .select-overlay {
+        background: #3b82f6;
+    }
+    
+    #admin-select-panel {
+        overflow: hidden;
+        transition: max-height 0.4s ease-out, opacity 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card form-card">
+            <div class="card-header bg-white py-0 border-0 overflow-hidden" style="border-radius: 16px 16px 0 0;">
+                <!-- Premium Banner -->
+                <div class="module-form-hero" style="padding: 3rem 2.5rem; position: relative; overflow: hidden; color: white;">
+                    <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; opacity: 0.5;"></div>
+                    <div style="position: relative; z-index: 2;">
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="{% if module %}/module/{{ module.slug }}/{% else %}/dashboard/{% endif %}" class="btn btn-sm btn-light rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <h2 class="mb-0 fw-bold">{{ title }}</h2>
+                        </div>
+                        <p class="mt-2 mb-0 opacity-75">Configure your module's identity, access control, and specialized units.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body px-5 pb-5">
+                <form method="POST" id="moduleForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <!-- Module Basic Info -->
+                        <div class="col-md-7">
+                            <div class="mb-4">
+                                <label for="name" class="form-label fw-bold">Module Name</label>
+                                <input type="text" class="form-control form-control-lg rounded-3" id="name" name="name" 
+                                       value="{{ module.name|default:'' }}" placeholder="e.g. Legal Affairs" required>
+                            </div>
+                            
+                            {% if not module %}
+                            <div class="mb-4 border border-primary-subtle rounded-3 p-3 bg-primary bg-opacity-10 position-relative shadow-sm mt-3 mb-4">
+                                <div class="position-absolute" style="top: -12px; right: 20px; background: #eff6ff; padding: 2px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; color: #3b82f6; border: 1px solid #bfdbfe;">
+                                    <i class="fas fa-magic me-1"></i> Quick Start
+                                </div>
+                                <label for="template_id" class="form-label fw-bold text-primary"><i class="fas fa-cubes me-2"></i>Select Template (Optional)</label>
+                                <select class="form-select rounded-3 border-primary-subtle" id="template_id" name="template_id">
+                                    <option value="">-- No Template (Start Blank) --</option>
+                                    {% for tmpl in templates %}
+                                        <option value="{{ tmpl.id }}">{{ tmpl.name }} ({{ tmpl.tasks.count }} workflow tasks)</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text mt-2 text-primary opacity-75 small">Choosing a template will auto-generate its pre-defined tasks sequentially for this module.</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-4">
+                                <label for="description" class="form-label fw-bold">Description (Optional)</label>
+                                <textarea class="form-control rounded-3" id="description" name="description" rows="4" 
+                                          placeholder="A brief overview of this module's scope...">{{ module.description|default:'' }}</textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="group_id" class="form-label fw-bold">Module Group (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-layer-group text-primary"></i></span>
+                                    <select class="form-select form-control-lg rounded-start-0" id="group_id" name="group_id">
+                                        <option value="">-- No Group --</option>
+                                        {% for g in all_groups %}
+                                        <option value="{{ g.id }}" 
+                                            {% if module.group_link.id == g.id %}selected
+                                            {% elif not module and initial_group == g.name %}selected{% endif %}>
+                                            {{ g.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-text small">Select a group to categorize this module on the dashboard.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold d-block">Module Color Accent</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="color" class="form-control form-control-color" id="color" name="color" 
+                                           value="{{ module.color|default:'#2563eb' }}" title="Choose a color">
+                                    <span class="text-muted small">This color will be used for banners and buttons in this module.</span>
+                                </div>
+                            </div>
+
+                            <!-- New Timeline & Progress Section -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="start_date" class="form-label fw-bold">Start Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-primary"></i></span>
+                                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                                               value="{{ module.start_date|date:'Y-m-d'|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="deadline" class="form-label fw-bold">Deadline Target</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="fas fa-flag-checkered text-danger"></i></span>
+                                        <input type="date" class="form-control" id="deadline" name="deadline" 
+                                               value="{{ module.deadline|date:'Y-m-d'|default:'' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="progress" class="form-label fw-bold d-flex justify-content-between">
+                                    Progress Value
+                                    <span class="text-primary fw-900" id="progressVal">{{ module.progress|default:0 }}%</span>
+                                </label>
+                                <input type="range" class="form-range" id="progress" name="progress" min="0" max="100" 
+                                       value="{{ module.progress|default:0 }}" oninput="document.getElementById('progressVal').innerText = this.value + '%'">
+                                <div class="d-flex justify-content-between mt-1">
+                                    <span class="text-muted smallest fw-bold">START</span>
+                                    <span class="text-muted smallest fw-bold">COMPLETED</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon Picker -->
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold mb-3 d-flex justify-content-between align-items-center">
+                                Select System Icon
+                                <span class="badge bg-primary rounded-pill px-2 py-1" id="selectedIconLabel" style="font-size: 0.7rem;">
+                                    <i class="fas {{ module.icon_class|default:'fa-folder' }} me-1"></i> Selected
+                                </span>
+                            </label>
+                            
+                            <input type="hidden" id="icon_class" name="icon_class" value="{{ module.icon_class|default:'fa-folder' }}">
+                            
+                            <div class="icon-picker-container shadow-inner">
+                                <div class="icon-grid">
+                                    {% for icon in icon_list %}
+                                        <div class="icon-option {% if module.icon_class == icon %}selected{% elif not module and icon == 'fa-folder' %}selected{% endif %}" 
+                                             onclick="selectIcon('{{ icon }}', this)" title="{{ icon }}">
+                                            <i class="fas {{ icon }}"></i>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="text-muted small mt-2"><i class="fas fa-info-circle me-1"></i> Choose from 200+ amazing icons to represent this module.</p>
+                        </div>
+                    </div>
+
+                    <!-- Share to Portal -->
+                    <div class="mt-5 mb-4">
+                        <style>
+                            .shared-card {
+                                background: linear-gradient(145deg, #ffffff, #f1f5f9);
+                                border-radius: 20px;
+                                border: 1px solid rgba(226, 232, 240, 0.8);
+                                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                                transition: all 0.3s ease;
+                            }
+                            .shared-card.active {
+                                border-color: #3b82f6;
+                                background: linear-gradient(145deg, #f8fafc, #eff6ff);
+                                box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+                            }
+                        </style>
+                        <div class="shared-card p-4 mb-4 {% if module.is_shared %}active{% endif %}" id="sharedContainer">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                                        <i class="fas fa-globe-americas fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Share to Portal</h5>
+                                        <p class="text-muted small mb-0">Display this module in the worker portal even if no tasks are assigned.</p>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch custom-switch-lg">
+                                    <input class="form-check-input" type="checkbox" id="is_shared" name="is_shared" 
+                                           {% if module.is_shared %}checked{% endif %} onchange="document.getElementById('sharedContainer').classList.toggle('active', this.checked)">
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Open Enrollment -->
+                        <div class="shared-card p-4 mb-4 {% if module.allow_enrollment %}active{% endif %}" id="enrollmentContainer">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success" style="color: var(--color-primary, #10b981) !important;">
+                                        <i class="fas fa-user-plus fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Open Enrollment</h5>
+                                        <p class="text-muted small mb-0">Allow any user to discover and self-enroll in this module and its tasks.</p>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch custom-switch-lg">
+                                    <input class="form-check-input" type="checkbox" id="allow_enrollment" name="allow_enrollment" 
+                                           {% if module.allow_enrollment %}checked{% endif %} onchange="document.getElementById('enrollmentContainer').classList.toggle('active', this.checked)">
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Privacy & Access Control (Premium Redesign) -->
+                        <div class="privacy-card p-4 {% if module.is_private %}active{% endif %}" id="privacyContainer">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+                                        <i class="fas fa-shield-alt fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Privacy & Access Control</h5>
+                                        <p class="text-muted small mb-0">Restrict this module to authorized personnel only</p>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch custom-switch-lg">
+                                    <input class="form-check-input" type="checkbox" id="is_private" name="is_private" 
+                                           {% if module.is_private %}checked{% endif %} onchange="handlePrivacyToggle(this)">
+                                </div>
+                            </div>
+                            
+                            <div id="admin-select-panel" style="display: none;">
+                                <div class="pt-3 border-top border-dashed mt-3">
+                                    <label class="small fw-bold text-muted text-uppercase mb-2 d-block"><i class="fas fa-star text-warning me-1"></i> Favorite Users</label>
+                                    <div class="user-select-grid mb-4">
+                                        {% for admin in admins %}
+                                            {% if admin in request.user.favorite_users.all %}
+                                            <div class="user-card {% if admin.id in allowed_admin_ids %}selected{% endif %}" 
+                                                 onclick="toggleUserCard('{{ admin.id }}', this)">
+                                                <button type="button" class="btn btn-sm btn-link position-absolute top-0 start-0 p-2" onclick="toggleFavorite(event, '{{ admin.id }}', this)" style="z-index: 10;" title="Toggle Favorite">
+                                                    <i class="fas fa-star text-warning"></i>
+                                                </button>
+                                                <div class="select-overlay">
+                                                    <i class="fas fa-check"></i>
+                                                </div>
+                                                <div class="user-avatar mt-2">
+                                                    {{ admin.first_name|first }}{{ admin.last_name|first }}
+                                                </div>
+                                                <span class="user-name">{{ admin.get_full_name }}</span>
+                                                <span class="user-role">{{ admin.role }}</span>
+                                                <!-- Hidden checkbox for form submission -->
+                                                <input type="checkbox" name="allowed_admins" value="{{ admin.id }}" 
+                                                       id="admin_check_{{ admin.id }}" style="display: none;"
+                                                       {% if admin.id in allowed_admin_ids %}checked{% endif %}>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <label class="small fw-bold text-muted text-uppercase mb-3 d-block">Other Administrators & Managers</label>
+                                    <div class="user-select-grid">
+                                        {% for admin in admins %}
+                                            {% if admin not in request.user.favorite_users.all %}
+                                            <div class="user-card {% if admin.id in allowed_admin_ids %}selected{% endif %}" 
+                                                 onclick="toggleUserCard('{{ admin.id }}', this)">
+                                                <button type="button" class="btn btn-sm btn-link position-absolute top-0 start-0 p-2" onclick="toggleFavorite(event, '{{ admin.id }}', this)" style="z-index: 10;" title="Toggle Favorite">
+                                                    <i class="far fa-star text-muted"></i>
+                                                </button>
+                                                <div class="select-overlay">
+                                                    <i class="fas fa-check"></i>
+                                                </div>
+                                                <div class="user-avatar mt-2">
+                                                    {{ admin.first_name|first }}{{ admin.last_name|first }}
+                                                </div>
+                                                <span class="user-name">{{ admin.get_full_name }}</span>
+                                                <span class="user-role">{{ admin.role }}</span>
+                                                <!-- Hidden checkbox for form submission -->
+                                                <input type="checkbox" name="allowed_admins" value="{{ admin.id }}" 
+                                                       id="admin_check_{{ admin.id }}" style="display: none;"
+                                                       {% if admin.id in allowed_admin_ids %}checked{% endif %}>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="alert alert-info mt-4 mb-0 py-3 border-0 rounded-4 d-flex align-items-center gap-3">
+                                        <i class="fas fa-info-circle fa-lg text-primary"></i>
+                                        <div class="small">
+                                            <strong>Creator Access:</strong> As the creator, you ({{ request.user.get_full_name }}) always maintain full visibility and control over this module.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Banner Image Upload -->
+                    <div class="border-top pt-4 mt-2">
+                        <label class="form-label fw-bold mb-3">
+                            <i class="fas fa-image me-1 text-primary"></i> Module Banner Image <span class="text-muted fw-normal small">(Optional — shown on dashboard card)</span>
+                        </label>
+
+                        {% if module and module.banner_image %}
+                        <!-- Existing banner preview -->
+                        <div id="existing-banner-wrap" class="mb-3">
+                            <div class="small fw-bold text-muted mb-2"><i class="fas fa-check-circle text-success me-1"></i> Current Banner</div>
+                            <img src="{{ module.banner_image.url }}" alt="Current banner" class="existing-banner shadow-sm">
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" id="clear_banner" name="clear_banner_image" value="1"
+                                    onchange="toggleClearBanner(this)">
+                                <label class="form-check-label text-danger small fw-semibold" for="clear_banner">
+                                    <i class="fas fa-trash me-1"></i> Remove current banner image
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="banner-upload-zone" onclick="document.getElementById('banner_image').click()" id="uploadZone">
+                            <input type="file" id="banner_image" name="banner_image" accept="image/*" onchange="previewBanner(event)" onclick="event.stopPropagation()">
+                            <img id="banner-preview" class="banner-preview" alt="Preview">
+                            <div id="upload-prompt">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2" style="opacity:.4;"></i>
+                                <div class="fw-bold text-muted">Click to upload a banner image</div>
+                                <div class="small text-muted mt-1">JPG, PNG, WEBP — recommended: 800×250px or wider</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-4 mt-2 d-flex justify-content-end gap-3">
+                        <a href="{% if module %}/module/{{ module.slug }}/{% else %}/dashboard/{% endif %}" class="btn btn-light px-4 rounded-pill"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                        <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold">
+                            <i class="fas fa-save me-2"></i> Save Module
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectIcon(iconClass, element) {
+        document.getElementById('icon_class').value = iconClass;
+        const options = document.querySelectorAll('.icon-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        document.getElementById('selectedIconLabel').innerHTML = `<i class="fas ${iconClass} me-1"></i> Selected`;
+    }
+
+    function previewBanner(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('banner-preview');
+            const prompt = document.getElementById('upload-prompt');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            prompt.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function handlePrivacyToggle(checkbox) {
+        const panel = document.getElementById('admin-select-panel');
+        const container = document.getElementById('privacyContainer');
+        
+        if (checkbox.checked) {
+            container.classList.add('active');
+            panel.style.display = 'block';
+            setTimeout(() => {
+                panel.style.maxHeight = '1000px';
+                panel.style.opacity = '1';
+            }, 10);
+        } else {
+            container.classList.remove('active');
+            panel.style.maxHeight = '0';
+            panel.style.opacity = '0';
+            setTimeout(() => {
+                panel.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    function toggleUserCard(adminId, element) {
+        const checkbox = document.getElementById('admin_check_' + adminId);
+        checkbox.checked = !checkbox.checked;
+        
+        if (checkbox.checked) {
+            element.classList.add('selected');
+        } else {
+            element.classList.remove('selected');
+        }
+    }
+
+    function toggleClearBanner(checkbox) {
+        const existingWrap = document.getElementById('existing-banner-wrap');
+        if (existingWrap) {
+            existingWrap.style.opacity = checkbox.checked ? '0.4' : '1';
+        }
+    }
+
+    function toggleFavorite(e, userId, btn) {
+        e.stopPropagation();
+        const icon = btn.querySelector('i');
+        const isCurrentlyFavorite = icon.classList.contains('fas');
+        
+        if (isCurrentlyFavorite) {
+            icon.classList.remove('fas', 'text-warning');
+            icon.classList.add('far', 'text-muted');
+        } else {
+            icon.classList.remove('far', 'text-muted');
+            icon.classList.add('fas', 'text-warning');
+        }
+
+        fetch(`/api/users/${userId}/toggle_favorite/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (isCurrentlyFavorite) {
+                    icon.classList.remove('far', 'text-muted');
+                    icon.classList.add('fas', 'text-warning');
+                } else {
+                    icon.classList.remove('fas', 'text-warning');
+                    icon.classList.add('far', 'text-muted');
+                }
+            }
+        })
+        .catch(error => console.error('Error toggling favorite:', error));
+    }
+
+    // Initialize state on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const isPrivate = document.getElementById('is_private').checked;
+        const panel = document.getElementById('admin-select-panel');
+        if (isPrivate) {
+            panel.style.display = 'block';
+            panel.style.maxHeight = '1000px';
+            panel.style.opacity = '1';
+        }
+    });
+</script>
+{% endblock %}

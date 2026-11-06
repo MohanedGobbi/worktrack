@@ -1,0 +1,1880 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Command Center - {{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════════
+       AEGIS COMMAND CENTER — EXECUTIVE DESIGN SYSTEM (STITCH-INSPIRED)
+       Zero Background Images • High Density & Contrast • Pure Vector & CSS
+       ═══════════════════════════════════════════════════════════════════════ */
+    :root {
+        --cmd-canvas: #090d16;
+        --cmd-surface: #0f172a;
+        --cmd-surface-elevated: #1e293b;
+        --cmd-surface-high: #243048;
+        --cmd-border: rgba(255, 255, 255, 0.08);
+        --cmd-border-strong: rgba(255, 255, 255, 0.16);
+        --cmd-primary: var(--color-primary, #10b981);
+        --cmd-primary-rgb: var(--color-primary-rgb, 16, 185, 129);
+        --cmd-blue: #2563eb;
+        --cmd-cyan: #0284c7;
+        --cmd-amber: #d97706;
+        --cmd-emerald: var(--wt-brand);
+        --cmd-text-bright: #ffffff;
+        --cmd-text-body: #334155;
+        --cmd-text-muted: #64748b;
+        --font-headline: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Command Center Hero (Homepage Obsidian Emerald Style) */
+    .cmd-hero {
+        background: var(--wt-hero-bg) !important;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+        border-radius: 20px;
+        padding: 1.5rem 2.25rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        color: #ffffff !important;
+        box-shadow: none !important;
+        font-family: var(--font-headline);
+    }
+
+    /* Ambient lighting cones */
+    .cmd-hero::before {
+        display: none !important;
+    }
+
+    .cmd-hero::after {
+        display: none !important;
+    }
+
+    .cmd-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Status Badges & Live Indicators */
+    .cmd-live-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.35rem 0.9rem;
+        background: rgba(var(--cmd-primary-rgb), 0.18);
+        border: 1px solid rgba(var(--cmd-primary-rgb), 0.45);
+        border-radius: 9999px;
+        color: var(--color-accent, #34d399);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        box-shadow: none !important;
+    }
+
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-primary, #10b981);
+        display: inline-block;
+        box-shadow: 0 0 10px var(--color-primary, #10b981);
+        animation: pulseLive 2s infinite;
+    }
+
+    @keyframes pulseLive {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .cmd-title {
+        font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+        font-weight: 800;
+        color: #ffffff !important;
+        line-height: 1.15;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.5rem;
+        text-shadow: none !important;
+    }
+
+    .cmd-title-accent {
+        color: #ffffff !important;
+        text-shadow: none !important;
+    }
+
+    .cmd-desc {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        font-weight: 400;
+        max-width: 620px;
+        line-height: 1.5;
+        margin-bottom: 1.25rem;
+        font-family: var(--font-body);
+    }
+
+    /* Real-Time Live Clock Pill */
+    .cmd-clock-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.45rem 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 9999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        font-family: var(--font-body);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cmd-clock-pill i {
+        color: #38bdf8;
+    }
+
+    .cmd-clock-pill strong {
+        color: #ffffff;
+        font-weight: 700;
+    }
+
+    /* Telemetry KPI Cards Row */
+    .cmd-telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-top: 1.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .cmd-kpi-card {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 1.15rem 1.25rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(12px);
+    }
+
+    .cmd-kpi-card:hover {
+        background: rgba(30, 41, 59, 0.85);
+        border-color: rgba(255, 255, 255, 0.18);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.5);
+    }
+
+    .cmd-kpi-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .cmd-kpi-card.kpi-red .cmd-kpi-icon { background: rgba(var(--wt-brand-rgb), 0.18); color: #f87171; border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent); }
+    .cmd-kpi-card.kpi-blue .cmd-kpi-icon { background: rgba(37, 99, 235, 0.18); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.3); }
+    .cmd-kpi-card.kpi-amber .cmd-kpi-icon { background: rgba(217, 119, 6, 0.18); color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.3); }
+    .cmd-kpi-card.kpi-emerald .cmd-kpi-icon { background: rgba(var(--wt-brand-rgb), 0.18); color: var(--wt-accent); border: 1px solid rgba(var(--wt-brand-rgb), 0.3); }
+
+    .cmd-kpi-val {
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        font-family: var(--font-headline);
+    }
+
+    .cmd-kpi-lbl {
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+
+    .cmd-kpi-progress {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        margin-top: 0.75rem;
+        overflow: hidden;
+    }
+
+    .cmd-kpi-progress-bar {
+        height: 100%;
+        border-radius: 4px;
+    }
+
+    .cmd-kpi-card.kpi-red .cmd-kpi-progress-bar { background: var(--wt-bad); }
+    .cmd-kpi-card.kpi-blue .cmd-kpi-progress-bar { background: #3b82f6; }
+    .cmd-kpi-card.kpi-amber .cmd-kpi-progress-bar { background: #f59e0b; }
+    .cmd-kpi-card.kpi-emerald .cmd-kpi-progress-bar { background: var(--wt-brand); }
+
+    /* Integration Trust Strip */
+    .cmd-trust-strip {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.25rem 2rem;
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #cbd5e1;
+    }
+
+    .cmd-trust-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .cmd-trust-item i {
+        font-size: 0.85rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       QUICK TOOLS COMMAND GRID
+       ═══════════════════════════════════════════════════════════════════════ */
+    .cmd-section-title {
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
+        font-family: var(--font-headline);
+    }
+
+    .cmd-tool-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.15rem 1rem;
+        text-align: center;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .cmd-tool-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(37, 99, 235, 0.35);
+        box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
+        color: inherit;
+    }
+
+    .cmd-tool-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        margin-bottom: 0.75rem;
+        transition: transform 0.2s ease;
+    }
+
+    .cmd-tool-card:hover .cmd-tool-icon {
+        transform: scale(1.08);
+    }
+
+    .cmd-tool-title {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.2rem;
+        line-height: 1.3;
+        font-family: var(--font-headline);
+    }
+
+    .cmd-tool-sub {
+        font-size: 0.7rem;
+        color: #64748b;
+        font-weight: 500;
+        line-height: 1.25;
+        font-family: var(--font-body);
+    }
+
+    /* Distinct Tool Accent Tints */
+    .tint-purple .cmd-tool-icon { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
+    .tint-slate .cmd-tool-icon { background: rgba(100, 116, 139, 0.12); color: #475569; }
+    .tint-sky .cmd-tool-icon { background: rgba(14, 165, 233, 0.12); color: #0284c7; }
+    .tint-red .cmd-tool-icon { background: rgba(var(--wt-brand-rgb), 0.12); color: var(--color-primary, #10b981); }
+    .tint-blue .cmd-tool-icon { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+    .tint-amber .cmd-tool-icon { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+    .tint-emerald .cmd-tool-icon { background: rgba(var(--wt-brand-rgb), 0.12); color: var(--wt-brand); }
+    .tint-pink .cmd-tool-icon { background: rgba(236, 72, 153, 0.12); color: #db2777; }
+    .tint-indigo .cmd-tool-icon { background: rgba(99, 102, 241, 0.12); color: #4f46e5; }
+
+    /* Top Accent Stripe on tool cards */
+    .cmd-tool-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        opacity: 0.85;
+    }
+
+    .tint-purple::before { background: #8b5cf6; }
+    .tint-slate::before { background: #64748b; }
+    .tint-sky::before { background: #0ea5e9; }
+    .tint-red::before { background: var(--color-primary, #10b981); }
+    .tint-blue::before { background: #2563eb; }
+    .tint-amber::before { background: #f59e0b; }
+    .tint-emerald::before { background: var(--wt-brand); }
+    .tint-pink::before { background: #f472b6; }
+    .tint-indigo::before { background: #6366f1; }
+
+    /* Tool Search Bar */
+    .cmd-tool-search {
+        position: relative;
+        max-width: 320px;
+    }
+
+    .cmd-tool-search input {
+        width: 100%;
+        height: 36px;
+        padding-left: 2.25rem;
+        padding-right: 0.75rem;
+        font-size: 0.82rem;
+        border-radius: 9999px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #0f172a;
+        transition: all 0.2s ease;
+    }
+
+    .cmd-tool-search input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .cmd-tool-search i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.82rem;
+    }
+
+    .toggle-tools-chevron {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #btnToggleMoreTools:not(.collapsed) .toggle-tools-chevron,
+    #btnToggleMoreTools[aria-expanded="true"] .toggle-tools-chevron {
+        transform: rotate(180deg);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       COMMAND TABS & DATA TABLES
+       ═══════════════════════════════════════════════════════════════════════ */
+    .cmd-tabs-wrapper {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .cmd-nav-pills {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 0.35rem;
+        border-radius: 9999px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .cmd-nav-pills .nav-link {
+        border-radius: 9999px;
+        padding: 0.55rem 1.4rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #475569;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .cmd-nav-pills .nav-link:hover {
+        color: #0f172a;
+    }
+
+    .cmd-nav-pills .nav-link.active {
+        background: #0f172a;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    }
+
+    .cmd-table {
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .cmd-table thead th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .cmd-table tbody td {
+        padding: 1rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.88rem;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    .cmd-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .cmd-avatar-initial {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #ffffff;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .cmd-telemetry-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .cmd-hero {
+            padding: 1.5rem;
+        }
+        .cmd-telemetry-grid {
+            grid-template-columns: 1fr;
+        }
+        .cmd-trust-strip {
+            gap: 0.75rem 1.25rem;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       RTL ARABIC MODE PERFECTION
+       ═══════════════════════════════════════════════════════════════════ */
+    html[dir="rtl"] .cmd-hero,
+    body.rtl-mode .cmd-hero {
+        text-align: right;
+    }
+
+    html[dir="rtl"] .cmd-tool-search input,
+    body.rtl-mode .cmd-tool-search input {
+        padding-right: 2.25rem !important;
+        padding-left: 0.75rem !important;
+        text-align: right;
+    }
+
+    html[dir="rtl"] .cmd-tool-search i,
+    body.rtl-mode .cmd-tool-search i {
+        left: auto !important;
+        right: 0.85rem !important;
+    }
+
+    html[dir="rtl"] .cmd-table th,
+    html[dir="rtl"] .cmd-table td,
+    body.rtl-mode .cmd-table th,
+    body.rtl-mode .cmd-table td {
+        text-align: right !important;
+    }
+
+    html[dir="rtl"] .cmd-nav-pills,
+    body.rtl-mode .cmd-nav-pills {
+        flex-direction: row;
+    }
+
+    html[dir="rtl"] .cmd-nav-pills .nav-link i,
+    body.rtl-mode .cmd-nav-pills .nav-link i {
+        margin-right: 0 !important;
+        margin-left: 0.5rem !important;
+    }
+
+    html[dir="rtl"] .toggle-tools-chevron,
+    body.rtl-mode .toggle-tools-chevron {
+        margin-left: 0 !important;
+        margin-right: 0.5rem !important;
+    }
+
+    html[dir="rtl"] .cmd-tool-card,
+    body.rtl-mode .cmd-tool-card {
+        text-align: right;
+    }
+
+    html[dir="rtl"] .cmd-tool-card .cmd-tool-icon,
+    body.rtl-mode .cmd-tool-card .cmd-tool-icon {
+        margin-left: auto;
+        margin-right: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-2">
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         1. COMMAND CENTER HERO (SIMPLIFIED • TITLE & ACTIONS • SYSTEM BG)
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="cmd-hero mb-4">
+        <div class="cmd-hero-content">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                <div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <div class="cmd-live-pill mb-0">
+                            <span class="pulse-dot"></span>
+                            <span class="lang-en">LIVE CONTROL ROOM</span>
+                            <span class="lang-ar">غرفة التحكم النشطة</span>
+                        </div>
+                        <span class="badge rounded-pill bg-white bg-opacity-10 text-white border border-white border-opacity-10 px-2.5 py-1" style="font-size: 0.7rem;">
+                            <i class="fas fa-shield-alt text-emerald-400 me-1"></i> <span class="lang-en">Enterprise Secure</span><span class="lang-ar">نظام مؤمّن</span>
+                        </span>
+                        <div class="cmd-clock-pill d-inline-flex m-0 py-1 px-2.5">
+                            <i class="far fa-clock"></i>
+                            <strong id="liveCommandClock">{% now "H:i:s" %}</strong>
+                        </div>
+                    </div>
+
+                    <h1 class="cmd-title mb-2">
+                        <span class="lang-en">System <span class="cmd-title-accent">Command Center</span></span>
+                        <span class="lang-ar">مركز <span class="cmd-title-accent">القيادة والعمليات</span></span>
+                    </h1>
+                    <p class="cmd-desc mb-0" style="max-width: 650px;">
+                        <span class="lang-en">Institutional command dashboard for work tracking, user scoping, permission governance, and operational analytics.</span>
+                        <span class="lang-ar">لوحة القيادة المؤسسية لإدارة تتبع العمل، صلاحيات المستخدمين، الرقابة العملياتية والتحليلات الشاملة.</span>
+                    </p>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
+                    <button class="btn btn-outline-light rounded-pill px-4 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2" onclick="openSidebarVisibilityModal()" style="border-color: rgba(255,255,255,0.3); color: #ffffff !important;">
+                        <i class="fas fa-sliders-h" style="color: var(--color-primary, #10b981);"></i>
+                        <span class="lang-en" style="color: #ffffff !important;">Roles & Scoping</span>
+                        <span class="lang-ar" style="color: #ffffff !important;">الأدوار والصلاحيات</span>
+                    </button>
+                    <a href="{% url 'admin:index' %}" class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2" style="background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); border: none; color: #ffffff !important;">
+                        <i class="fas fa-cog" style="color: #ffffff !important;"></i>
+                        <span class="lang-en" style="color: #ffffff !important;">Django Admin</span>
+                        <span class="lang-ar" style="color: #ffffff !important;">لوحة التحكم دجانغو</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         2. QUICK COMMAND TOOLS (UNDER VIEW SELECTION BUTTON)
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="mb-5">
+        <!-- View Selection Button Card: For more tools click here -->
+        <div class="p-3 mb-3 rounded-4 border bg-white shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 44px; height: 44px; background: rgba(var(--cmd-primary-rgb), 0.12); color: var(--color-primary, #10b981); font-size: 1.2rem; flex-shrink: 0;">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 1.05rem; color: #0f172a;">
+                        <span class="lang-en">Administrative Quick Tools</span>
+                        <span class="lang-ar">أدوات الإدارة السريعة</span>
+                        <span class="badge rounded-pill bg-light text-secondary border px-2 py-0.5 fw-semibold" id="cmdToolCountBadge" style="font-size: 0.72rem;">23 Tools</span>
+                    </h5>
+                    <div class="text-muted small">
+                        <span class="lang-en">Access all quick management tools, matrices, and automations</span>
+                        <span class="lang-ar">الوصول السريع إلى أدوات التسيير والمصفوفات والعمليات المؤتمتة</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Selection Button that says: for more tools click here -->
+            <button class="btn btn-primary px-4 py-2.5 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#quickToolsCollapse" 
+                    aria-expanded="false" 
+                    aria-controls="quickToolsCollapse"
+                    id="btnToggleMoreTools"
+                    style="font-size: 0.9rem; background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); border: none; letter-spacing: 0.02em; color: #ffffff !important;">
+                <i class="fas fa-tools" style="color: #ffffff !important;"></i>
+                <span class="lang-en" style="color: #ffffff !important;">For more tools click here</span>
+                <span class="lang-ar" style="color: #ffffff !important;">للمزيد من الأدوات انقر هنا</span>
+                <i class="fas fa-chevron-down ms-1 toggle-tools-chevron" style="color: #ffffff !important;"></i>
+            </button>
+        </div>
+
+        <!-- Collapsible Container holding All Action Buttons -->
+        <div class="collapse" id="quickToolsCollapse">
+            <div class="p-4 rounded-4 border bg-white mb-3 shadow-sm">
+                <!-- Instant Search Input inside the container -->
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 pb-3 border-bottom">
+                    <div class="text-muted small fw-semibold d-flex align-items-center gap-2">
+                        <i class="fas fa-filter text-primary"></i>
+                        <span><span class="lang-en">Select an administrative action tool below:</span><span class="lang-ar">اختر أداة إدارية من الأدوات التالية:</span></span>
+                    </div>
+                    <div class="cmd-tool-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="toolSearchInput" placeholder="Filter quick tools (type to search)..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="row g-3" id="quickToolsContainer">
+
+            <!-- Tool: Reset & Seed Database (Featured Super Admin Tool) -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="reset database purge seed faculty تفريغ قاعدة البيانات تهيئة الكلية مسح النظام">
+                <div class="cmd-tool-card tint-red border-danger border-opacity-25" style="cursor: pointer;" onclick="openResetDatabaseModal()">
+                    <div class="cmd-tool-icon" style="background: rgba(var(--wt-brand-rgb), 0.15); color: var(--wt-brand);"><i class="fas fa-trash-restore"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Reset Database</span><span class="lang-ar">تفريغ وتهيئة النظام</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Purge & Faculty Seed</span><span class="lang-ar">تهيئة الكلية أو تفريغ</span></div>
+                    <span class="badge rounded-pill bg-danger text-white mt-2" style="font-size: 0.65rem;"><i class="fas fa-bolt me-1"></i>RESET</span>
+                </div>
+            </div>
+
+            <!-- Tool: User Groups (Featured) -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="user groups مجموعات العمل crud teams scope">
+                <a href="{% url 'manage-groups' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">User Groups</span><span class="lang-ar">مجموعات العمل</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">CRUD & Scopes</span><span class="lang-ar">الفرق والصلاحيات</span></div>
+                    <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 mt-2" style="font-size: 0.65rem;">NEW</span>
+                </a>
+            </div>
+
+            <!-- Tool: Impersonation -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="impersonation login as تقمص المستخدمين">
+                <a href="{% url 'login-as-page' %}" class="cmd-tool-card tint-purple">
+                    <div class="cmd-tool-icon"><i class="fas fa-user-secret"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Impersonation</span><span class="lang-ar">تقمص الهوية</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Login as staff</span><span class="lang-ar">تسجيل الدخول كمستخدم</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Django Admin -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="django admin database لوحة جانغو">
+                <a href="{% url 'admin:index' %}" class="cmd-tool-card tint-slate">
+                    <div class="cmd-tool-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Django Admin</span><span class="lang-ar">لوحة جانغو</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Database Engine</span><span class="lang-ar">قاعدة البيانات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: New User -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="new user registration إضافة مستخدم جديد">
+                <a href="{% url 'user-create' %}" class="cmd-tool-card tint-blue">
+                    <div class="cmd-tool-icon"><i class="fas fa-user-plus"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">New User</span><span class="lang-ar">مستخدم جديد</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Staff Onboarding</span><span class="lang-ar">تسجيل الكوادر</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Sidebar Control -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="sidebar control matrix role visibility التحكم بالشريط">
+                <div class="cmd-tool-card tint-red" style="cursor: pointer;" onclick="openSidebarVisibilityModal()">
+                    <div class="cmd-tool-icon"><i class="fas fa-sliders-h"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Sidebar Control</span><span class="lang-ar">التحكم بالشريط</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Role Visibility</span><span class="lang-ar">مصفوفة الصلاحيات</span></div>
+                </div>
+            </div>
+
+            <!-- Tool: System Profiles -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="system profiles privileges ملفات الصلاحيات">
+                <a href="{% url 'system-profiles' %}" class="cmd-tool-card tint-emerald">
+                    <div class="cmd-tool-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">System Profiles</span><span class="lang-ar">ملفات الصلاحيات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Privilege Engine</span><span class="lang-ar">إدارة الامتيازات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Shift Attendance (Interactive Form) -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="attendance check in out تسجيل الحضور">
+                {% if not my_today_record or not my_today_record.check_in %}
+                <form action="{% url 'attendance-check-in' %}" method="POST" class="h-100">
+                    {% csrf_token %}
+                    <button type="submit" class="w-100 h-100 p-0 m-0 border-0 bg-transparent text-decoration-none">
+                        <div class="cmd-tool-card tint-red">
+                            <div class="cmd-tool-icon"><i class="fas fa-sign-in-alt"></i></div>
+                            <div class="cmd-tool-title"><span class="lang-en">Check In</span><span class="lang-ar">تسجيل حضور</span></div>
+                            <div class="cmd-tool-sub"><span class="lang-en">Start Daily Shift</span><span class="lang-ar">بدء الوردية</span></div>
+                        </div>
+                    </button>
+                </form>
+                {% elif my_today_record.check_in and not my_today_record.check_out %}
+                <form action="{% url 'attendance-check-out' %}" method="POST" class="h-100">
+                    {% csrf_token %}
+                    <button type="submit" class="w-100 h-100 p-0 m-0 border-0 bg-transparent text-decoration-none">
+                        <div class="cmd-tool-card tint-amber">
+                            <div class="cmd-tool-icon"><i class="fas fa-sign-out-alt"></i></div>
+                            <div class="cmd-tool-title"><span class="lang-en">Check Out</span><span class="lang-ar">تسجيل انصراف</span></div>
+                            <div class="cmd-tool-sub"><span class="lang-en">End Daily Shift</span><span class="lang-ar">إنهاء الوردية</span></div>
+                        </div>
+                        <input type="hidden" name="notes" value="">
+                    </button>
+                </form>
+                {% else %}
+                <div class="cmd-tool-card tint-slate opacity-75">
+                    <div class="cmd-tool-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Shift Logged</span><span class="lang-ar">تم التسجيل</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Complete today</span><span class="lang-ar">مكتمل لليوم</span></div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tool: Attendance Dashboard -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="attendance monitor سجل الحضور والغياب">
+                <a href="{% url 'attendance-dashboard' %}" class="cmd-tool-card tint-purple">
+                    <div class="cmd-tool-icon"><i class="fas fa-clock"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Attendance</span><span class="lang-ar">الحضور والغياب</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Monitor Logs</span><span class="lang-ar">المتابعة المباشرة</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Translation Manager -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="translation manager i18n languages إدارة الترجمة">
+                <a href="{% url 'translation-manager' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-language"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Translation</span><span class="lang-ar">إدارة الترجمة</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Central UI Text</span><span class="lang-ar">نصوص الواجهات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Worker Portal -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="worker portal tasks بوابة الموظف">
+                <a href="{% url 'worker-portal' %}" class="cmd-tool-card tint-sky">
+                    <div class="cmd-tool-icon"><i class="fas fa-briefcase"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Worker Portal</span><span class="lang-ar">بوابة الموظف</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Personal Tasks</span><span class="lang-ar">المهام الفردية</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Archived Units -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="archived units modules الوحدات المؤرشفة">
+                <a href="{% url 'archived-modules' %}" class="cmd-tool-card tint-slate">
+                    <div class="cmd-tool-icon"><i class="fas fa-archive"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Archived Units</span><span class="lang-ar">الأرشيف</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">{{ archived_count }} Modules</span><span class="lang-ar">{{ archived_count }} وحدة</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Email Notifications -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="email notifications templates البريد الإلكتروني">
+                <a href="{% url 'notifications:email-list' %}" class="cmd-tool-card tint-blue">
+                    <div class="cmd-tool-icon"><i class="fas fa-envelope-open-text"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Email Alerts</span><span class="lang-ar">إشعارات البريد</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Notification Engine</span><span class="lang-ar">قوالب الإشعارات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Team Analytics -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="team analytics performance تحليلات الفريق">
+                <a href="{% url 'manager-analytics' %}" class="cmd-tool-card tint-purple">
+                    <div class="cmd-tool-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Team Analytics</span><span class="lang-ar">تحليلات الأداء</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Metric Deep Dive</span><span class="lang-ar">مؤشرات الإنجاز</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Kanban Board -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="kanban board drag drop لوحة كانبان">
+                <a href="{% url 'task-kanban' %}" class="cmd-tool-card tint-blue">
+                    <div class="cmd-tool-icon"><i class="fas fa-columns"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Kanban Board</span><span class="lang-ar">لوحة كانبان</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Agile Pipeline</span><span class="lang-ar">إدارة تدفق المهام</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Task Calendar -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="task calendar deadlines التقويم">
+                <a href="{% url 'task-calendar' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Task Calendar</span><span class="lang-ar">تقويم المهام</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Deadlines & Sprints</span><span class="lang-ar">المواعيد النهائية</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Export Tasks CSV -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="export tasks csv تصدير المهام">
+                <a href="{% url 'export-tasks-csv' %}" class="cmd-tool-card tint-amber">
+                    <div class="cmd-tool-icon"><i class="fas fa-file-csv"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Export Tasks</span><span class="lang-ar">تصدير المهام</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">CSV Dataset</span><span class="lang-ar">تنزيل البيانات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Export Submissions CSV -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="export submissions csv تصدير التسليمات">
+                <a href="{% url 'export-submissions-csv' %}" class="cmd-tool-card tint-sky">
+                    <div class="cmd-tool-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Submissions CSV</span><span class="lang-ar">تصدير التسليمات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Full Review Log</span><span class="lang-ar">سجل المراجعات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: My Performance -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="my performance kpi أداء المستخدم">
+                <a href="{% url 'worker-performance' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Performance</span><span class="lang-ar">مؤشر أدائي</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Personal Stats</span><span class="lang-ar">الإحصائيات الشخصية</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Messages -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="messages chat المراسلات">
+                <a href="{% url 'messaging:index' %}" class="cmd-tool-card tint-blue">
+                    <div class="cmd-tool-icon"><i class="fas fa-comments"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Messages</span><span class="lang-ar">المراسلات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Institutional Chat</span><span class="lang-ar">الدردشة الداخلية</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Offline Map Hub -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="offline map manager gis الخرائط">
+                <a href="{% url 'offline-map-manager' %}" class="cmd-tool-card tint-indigo">
+                    <div class="cmd-tool-icon"><i class="fas fa-map-marked-alt"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Offline Maps</span><span class="lang-ar">مركز الخرائط</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">GIS Batch Caching</span><span class="lang-ar">التخزين الجغرافي</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Security & Hosts -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="security hosts access الأمان والمضيفين">
+                <a href="{% url 'host-management' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Security & Hosts</span><span class="lang-ar">الأمان والشبكة</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">IP Access Control</span><span class="lang-ar">حماية العناوين</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Detailed Audit -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="audit logs system activity سجل التدقيق">
+                <a href="{% url 'audit-logs' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Detailed Audit</span><span class="lang-ar">سجل العمليات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Full Audit Trail</span><span class="lang-ar">التدقيق الكامل</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Global System Settings -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="global settings system configuration registration إعدادات النظام العامة">
+                <a href="{% url 'admin-settings' %}" class="cmd-tool-card tint-pink">
+                    <div class="cmd-tool-icon"><i class="fas fa-sliders-h"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Global Settings</span><span class="lang-ar">الإعدادات العامة</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">System Configs</span><span class="lang-ar">تكوينات المنصة</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Messaging Config -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="messaging config chat permissions channels تهيئة المحادثات الصلاحيات">
+                <a href="{% url 'messaging:config' %}" class="cmd-tool-card tint-blue">
+                    <div class="cmd-tool-icon"><i class="fas fa-comment-dots"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Msg Config</span><span class="lang-ar">تهيئة المحادثات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Chat Permissions</span><span class="lang-ar">قنوات وتصاريح الدردشة</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Global GIS Operations Map -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="global gis map spatial operations tracking الخريطة الجغرافية العمليات">
+                <a href="{% url 'global-map' %}" class="cmd-tool-card tint-emerald">
+                    <div class="cmd-tool-icon"><i class="fas fa-globe-africa"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Global GIS Map</span><span class="lang-ar">الخريطة الجغرافية</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Operations Map</span><span class="lang-ar">مركز العمليات الحي</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Task Templates Hub -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="task templates pipelines workflows automation قوالب المهام النماذج">
+                <a href="{% url 'template-dashboard' %}" class="cmd-tool-card tint-purple">
+                    <div class="cmd-tool-icon"><i class="fas fa-cubes-stacked"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Task Templates</span><span class="lang-ar">قوالب المهام</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Pipelines & SOPs</span><span class="lang-ar">نماذج ومسارات العمل</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Administrative Correspondence -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="administrative correspondence official letters memos المراسلات الإدارية الخطابات">
+                <a href="{% url 'admin-correspondence' %}" class="cmd-tool-card tint-amber">
+                    <div class="cmd-tool-icon"><i class="fas fa-file-signature"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات الإدارية</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Official Letters</span><span class="lang-ar">الخطابات والتكليفات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Todo Notes Hub -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="todo notes action items directives الملاحظات المهام">
+                <a href="{% url 'organizational-intelligence' %}" class="cmd-tool-card tint-indigo">
+                    <div class="cmd-tool-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Todo Notes</span><span class="lang-ar">الملاحظات والمهام</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Action Items</span><span class="lang-ar">قوائم المهام المركزية</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: KPI Telemetry & Analytics Hub -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="kpi dashboard telemetry analytics institutional metrics مؤشرات الأداء">
+                <a href="{% url 'kpi-dashboard' %}" class="cmd-tool-card tint-red">
+                    <div class="cmd-tool-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">KPI Telemetry</span><span class="lang-ar">مؤشرات الأداء KPI</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Institutional Metrics</span><span class="lang-ar">لوحة القياس الشاملة</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Version Data Archive -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="version data archive revision history audit logs أرشيف الإصدارات">
+                <a href="{% url 'version-data-archive' %}" class="cmd-tool-card tint-slate">
+                    <div class="cmd-tool-icon"><i class="fas fa-history"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Version Archive</span><span class="lang-ar">أرشيف الإصدارات</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Revision Logs</span><span class="lang-ar">سجل النسخ والتعديلات</span></div>
+                </a>
+            </div>
+
+            <!-- Tool: Site Settings -->
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="site settings config إعدادات الموقع">
+                <a href="{% url 'site-settings' %}" class="cmd-tool-card tint-slate">
+                    <div class="cmd-tool-icon"><i class="fas fa-palette"></i></div>
+                    <div class="cmd-tool-title"><span class="lang-en">Site Settings</span><span class="lang-ar">إعدادات الموقع</span></div>
+                    <div class="cmd-tool-sub"><span class="lang-en">Theme & Brand</span><span class="lang-ar">المظهر والألوان</span></div>
+                </a>
+            </div>
+
+        </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         3. UNIFIED COMMAND TABS (STAFF DIRECTORY, ACTIVITY, PERFORMANCE)
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div class="cmd-tabs-wrapper mb-5">
+        <!-- Tab Pill Switchers Header -->
+        <div class="p-4 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div>
+                <nav class="nav cmd-nav-pills" id="adminCommandTabs" role="tablist">
+                    <button class="nav-link active" id="tab-users" data-bs-toggle="pill" data-bs-target="#panel-users" type="button" role="tab">
+                        <i class="fas fa-user-friends me-1.5"></i>
+                        <span class="lang-en">Staff Directory</span>
+                        <span class="lang-ar">سجل الكوادر</span>
+                    </button>
+                    <button class="nav-link" id="tab-activity" data-bs-toggle="pill" data-bs-target="#panel-activity" type="button" role="tab">
+                        <i class="fas fa-wave-square me-1.5"></i>
+                        <span class="lang-en">System Activity</span>
+                        <span class="lang-ar">سجل النشاط</span>
+                    </button>
+                    <button class="nav-link" id="tab-performance" data-bs-toggle="pill" data-bs-target="#panel-performance" type="button" role="tab">
+                        <i class="fas fa-medal me-1.5"></i>
+                        <span class="lang-en">Top Performers</span>
+                        <span class="lang-ar">رواد الأداء</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Context Action -->
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'user-create' %}" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
+                    <i class="fas fa-plus me-1"></i> <span class="lang-en">Add New Staff</span><span class="lang-ar">إضافة موظف</span>
+                </a>
+                <a href="{% url 'audit-logs' %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+                    <i class="fas fa-history me-1"></i> <span class="lang-en">All Audits</span><span class="lang-ar">كل السجلات</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="tab-content" id="adminCommandTabsContent">
+
+            <!-- ── PANEL 1: STAFF DIRECTORY ───────────────────────────── -->
+            <div class="tab-pane fade show active p-4" id="panel-users" role="tabpanel">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            <span class="lang-en">Institutional Staff Registry</span>
+                            <span class="lang-ar">سجل الكوادر المؤسسية</span>
+                        </h5>
+                        <p class="text-muted small mb-0">
+                            <span class="lang-en">Active staff profiles, roles, and administrative access controls.</span>
+                            <span class="lang-ar">الملفات الشخصية، الأدوار الإدارية وصلاحيات الوصول للنظام.</span>
+                        </p>
+                    </div>
+
+                    <div class="cmd-tool-search" style="max-width: 280px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="userRegistrySearch" placeholder="Search by name, email, or role...">
+                    </div>
+                </div>
+
+                <div class="table-responsive border rounded-3 overflow-hidden shadow-sm">
+                    <table class="table cmd-table align-middle" id="staffRegistryTable">
+                        <thead>
+                            <tr>
+                                <th class="ps-3"><span class="lang-en">Staff Member</span><span class="lang-ar">الموظف</span></th>
+                                <th><span class="lang-en">Department</span><span class="lang-ar">القسم</span></th>
+                                <th><span class="lang-en">Role</span><span class="lang-ar">الدور</span></th>
+                                <th><span class="lang-en">Account Status</span><span class="lang-ar">حالة الحساب</span></th>
+                                <th><span class="lang-en">Date Joined</span><span class="lang-ar">تاريخ الانضمام</span></th>
+                                <th class="text-end pe-3"><span class="lang-en">Actions</span><span class="lang-ar">إجراءات</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="cmd-avatar-initial">
+                                            {{ u.first_name|first|upper|default:u.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.92rem;">{{ u.get_full_name|default:u.username }}</div>
+                                            <div class="small text-muted font-monospace" style="font-size: 0.78rem;">{{ u.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if u.department %}
+                                    <span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.78rem;">
+                                        <i class="fas fa-building text-secondary me-1"></i>{{ u.department.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted small italic">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.role == 'super_admin' %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-crown me-1"></i> Super Admin
+                                    </span>
+                                    {% elif u.role == 'manager' %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-user-tie me-1"></i> Manager
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-user me-1"></i> Staff Worker
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-check-circle me-1"></i> Active
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-ban me-1"></i> Disabled
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small font-monospace">
+                                    {{ u.date_joined|date:"M d, Y" }}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group btn-group-sm rounded-pill shadow-sm border bg-white">
+                                        <a href="{% url 'user-edit' u.id %}" class="btn btn-light px-2.5" title="Edit Profile">
+                                            <i class="fas fa-pen text-primary" style="font-size: 0.75rem;"></i>
+                                        </a>
+                                        <form action="{% url 'user-toggle-status' u.id %}" method="post" class="d-inline m-0">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-light px-2.5" title="{% if u.is_active %}Disable Account{% else %}Activate Account{% endif %}">
+                                                <i class="fas fa-power-off {% if u.is_active %}text-danger{% else %}text-success{% endif %}" style="font-size: 0.75rem;"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'profile' %}?user_id={{ u.id }}" class="btn btn-light px-2.5" title="View Full Profile">
+                                            <i class="fas fa-external-link-alt text-muted" style="font-size: 0.75rem;"></i>
+                                        </a>
+                                        <button class="btn btn-light px-2.5 text-danger" title="Delete User Completely" onclick="deleteUser('{{ u.id }}', '{{ u.get_full_name|escapejs }}')">
+                                            <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-users-slash fa-2x mb-3 text-secondary opacity-50"></i>
+                                    <p class="mb-0 fw-semibold">No registered staff users found.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if users.has_other_pages %}
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <p class="text-muted small mb-0">Showing {{ users.start_index }} to {{ users.end_index }} of {{ users.paginator.count }} staff profiles</p>
+                    <nav class="d-inline-flex gap-1">
+                        {% if users.has_previous %}
+                        <a href="?page={{ users.previous_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3"><i class="fas fa-chevron-left me-1"></i> Prev</a>
+                        {% endif %}
+
+                        {% for num in users.paginator.page_range %}
+                            {% if users.number == num %}
+                            <span class="btn btn-sm btn-dark rounded-pill px-3 fw-bold">{{ num }}</span>
+                            {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                            <a href="?page={{ num }}" class="btn btn-sm btn-light border rounded-pill px-3">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if users.has_next %}
+                        <a href="?page={{ users.next_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3">Next <i class="fas fa-chevron-right ms-1"></i></a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── PANEL 2: SYSTEM ACTIVITY LOG ───────────────────────── -->
+            <div class="tab-pane fade p-4" id="panel-activity" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            <span class="lang-en">Real-Time Audit Trail</span>
+                            <span class="lang-ar">سجل العمليات والتدقيق</span>
+                        </h5>
+                        <p class="text-muted small mb-0">
+                            <span class="lang-en">Chronological feed of critical administrative operations and state transitions.</span>
+                            <span class="lang-ar">سجل متسلسل للعمليات الإدارية الحرجة وحركات التعديل على النظام.</span>
+                        </p>
+                    </div>
+                    <a href="{% url 'audit-logs' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                        <i class="fas fa-external-link-alt me-1"></i> Full Audit Console
+                    </a>
+                </div>
+
+                <div class="table-responsive border rounded-3 overflow-hidden shadow-sm">
+                    <table class="table cmd-table align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Timestamp</th>
+                                <th>Executor</th>
+                                <th>Operation</th>
+                                <th>Affected Entity</th>
+                                <th class="pe-3 text-end">Origin IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in recent_activity %}
+                            <tr>
+                                <td class="ps-3 font-monospace small text-muted">
+                                    <i class="far fa-clock me-1 text-primary"></i>{{ activity.created_at|date:"M d, H:i:s" }}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-sm rounded-circle bg-light border d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.75rem; font-weight: bold;">
+                                            {{ activity.user.first_name|first|upper|default:"S" }}
+                                        </div>
+                                        <span class="fw-semibold text-dark" style="font-size: 0.85rem;">{{ activity.user.get_full_name|default:"System Engine" }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.7rem; 
+                                        {% if 'creation' in activity.action|lower or 'create' in activity.action|lower %}background: rgba(var(--wt-brand-rgb),0.12); color: var(--wt-brand); border: 1px solid rgba(var(--wt-brand-rgb),0.25);
+                                        {% elif 'deletion' in activity.action|lower or 'delete' in activity.action|lower %}background: rgba(192, 40, 58,0.12); color: var(--color-primary, #10b981); border: 1px solid rgba(192, 40, 58,0.25);
+                                        {% elif 'update' in activity.action|lower %}background: rgba(217,119,6,0.12); color: #d97706; border: 1px solid rgba(217,119,6,0.25);
+                                        {% else %}background: rgba(37,99,235,0.12); color: #2563eb; border: 1px solid rgba(37,99,235,0.25);{% endif %}">
+                                        {{ activity.action|upper }}
+                                    </span>
+                                </td>
+                                <td class="text-truncate" style="max-width: 320px;" title="{{ activity.description|default:activity.object_str }}">
+                                    {{ activity.description|default:activity.object_str|truncatechars:60 }}
+                                </td>
+                                <td class="pe-3 text-end font-monospace small text-muted">
+                                    {{ activity.ip_address|default:"127.0.0.1" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fas fa-clipboard-check fa-2x mb-3 text-secondary opacity-50"></i>
+                                    <p class="mb-0 fw-semibold">No recent activity recorded.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── PANEL 3: PERFORMANCE BENCHMARKS ────────────────────── -->
+            <div class="tab-pane fade p-4" id="panel-performance" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            <span class="lang-en">Operational Performance Benchmarks</span>
+                            <span class="lang-ar">لوحة التميز العملياتي</span>
+                        </h5>
+                        <p class="text-muted small mb-0">
+                            <span class="lang-en">Top team performers evaluated on completion rates, timeliness, and submission quality.</span>
+                            <span class="lang-ar">تقييم الرواد وفق معدلات الإنجاز، الالتزام بالوقت وجودة المخرجات.</span>
+                        </p>
+                    </div>
+                    <span class="badge bg-dark rounded-pill px-3 py-1.5 font-monospace">{{ month|default:now|date:"F Y" }}</span>
+                </div>
+
+                <div class="row g-4">
+                    {% for performer in top_performers %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border rounded-4 shadow-sm h-100 overflow-hidden" style="transition: all 0.2s ease;">
+                            <div class="p-3 text-white text-center" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                                <div class="cmd-avatar-initial mx-auto mb-2" style="width: 52px; height: 52px; font-size: 1.25rem; background: linear-gradient(135deg, #2563eb 0%, var(--color-primary, #10b981) 100%);">
+                                    {{ performer.user.first_name|first|upper|default:performer.user.username|first|upper }}
+                                </div>
+                                <h6 class="fw-bold mb-1 text-white">{{ performer.user.get_full_name|default:performer.user.username }}</h6>
+                                <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-2.5 py-0.5 text-xs">
+                                    {{ performer.user.role|title }}
+                                </span>
+                            </div>
+                            <div class="p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                    <span class="text-muted fw-bold">COMPLETION RATE</span>
+                                    <span class="fw-bold text-dark">{{ performer.completion_rate }}%</span>
+                                </div>
+                                <div class="progress mb-3" style="height: 6px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ performer.completion_rate|default:0 }}%;"></div>
+                                </div>
+
+                                <div class="row g-2 mb-3 text-center">
+                                    <div class="col-6">
+                                        <div class="p-2 bg-light rounded-3 border">
+                                            <small class="text-muted d-block text-xs">On-Time</small>
+                                            <strong class="text-success">{{ performer.on_time_rate }}%</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 bg-light rounded-3 border">
+                                            <small class="text-muted d-block text-xs">Quality</small>
+                                            <strong class="text-warning">{{ performer.quality_score }}/5</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                    <span class="text-muted small">OVERALL SCORE</span>
+                                    <h5 class="fw-bold text-primary mb-0">{{ performer.total_score }}%</h5>
+                                </div>
+                                <a href="{% url 'kpi-dashboard' %}?user={{ performer.user.id }}" class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-3 fw-bold">
+                                    View Full Report
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-chart-bar fa-3x text-muted mb-3 opacity-25"></i>
+                        <h6 class="text-muted fw-bold">Awaiting Monthly Productivity Metrics</h6>
+                        <p class="small text-muted mb-0">Calculated scores will automatically rank top performers here.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     4. MODAL: SIDEBAR FEATURE VISIBILITY CONTROLLER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalSidebarVisibility" tabindex="-1" aria-labelledby="modalSidebarVisibilityLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #090d16 0%, #171f33 60%, var(--color-primary, #10b981) 100%); padding: 1.5rem 2rem;">
+                <div>
+                    <div class="badge rounded-pill bg-danger px-3 py-1 mb-1 text-xs fw-bold">
+                        <i class="fas fa-sliders-h me-1"></i> <span class="lang-en">Left Panel Controller</span><span class="lang-ar">التحكم بالشريط الجانبي</span>
+                    </div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="modalSidebarVisibilityLabel">
+                        <span class="lang-en">Sidebar Feature Visibility Matrix</span>
+                        <span class="lang-ar">مصفوفة ظهور عناصر الشريط الجانبي</span>
+                    </h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background: #f8fafc;">
+                <div class="alert alert-info border-0 rounded-3 d-flex align-items-center gap-3 py-2 px-3 mb-3" style="background: #e0f2fe; color: #0369a1; font-size: 0.85rem;">
+                    <i class="fas fa-info-circle fs-5"></i>
+                    <div>
+                        <span class="lang-en">Toggle the visibility of navigation buttons in the left sidebar for each role. Check <strong>Allowed</strong> to enable the feature globally. Changes take effect across user sessions.</span>
+                        <span class="lang-ar">حدد ظهور أزرار الشريط الجانبي لكل نوع مستخدم (مدير النظام، المدير، الموظف)، مع خيار التفعيل الكلي (Allowed). يتم تطبيق التعديلات فوراً.</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive bg-white rounded-3 border shadow-sm">
+                    <table class="table table-hover align-middle mb-0" id="tableSidebarRules">
+                        <thead class="table-light text-uppercase text-secondary" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                            <tr>
+                                <th class="ps-4 py-3"><span class="lang-en">Sidebar Feature</span><span class="lang-ar">عنصر الشريط</span></th>
+                                <th class="text-center py-3"><span class="lang-en">Key</span><span class="lang-ar">المفتاح</span></th>
+                                <th class="text-center py-3"><i class="fas fa-crown text-warning me-1"></i> <span class="lang-en">Admin</span><span class="lang-ar">المدير العام</span></th>
+                                <th class="text-center py-3"><i class="fas fa-user-tie text-primary me-1"></i> <span class="lang-en">Manager</span><span class="lang-ar">المدير</span></th>
+                                <th class="text-center py-3"><i class="fas fa-hard-hat text-info me-1"></i> <span class="lang-en">Worker</span><span class="lang-ar">الموظف</span></th>
+                                <th class="text-center py-3"><i class="fas fa-power-off text-success me-1"></i> <span class="lang-en">Allowed (Global)</span><span class="lang-ar">مسموح به</span></th>
+                                <th class="text-center pe-4 py-3"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="sidebarRulesTbody">
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <div class="spinner-border spinner-border-sm text-danger me-2"></div>
+                                    <span class="lang-en">Loading visibility rules...</span><span class="lang-ar">جارٍ تحميل القواعد...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-white px-4 py-3 border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 btn-sm fw-bold" onclick="resetSidebarDefaults()">
+                    <i class="fas fa-undo-alt me-1"></i> <span class="lang-en">Reset Defaults</span><span class="lang-ar">استعادة الافتراضي</span>
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 btn-sm fw-bold" onclick="location.reload()">
+                    <i class="fas fa-sync-alt me-1"></i> <span class="lang-en">Apply & Refresh</span><span class="lang-ar">تطبيق وتحديث الصفحة</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reset Database & Faculty Seeder -->
+<div class="modal fade" id="modalResetDatabase" tabindex="-1" aria-labelledby="modalResetDatabaseLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <!-- Header -->
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #1e1b4b 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 60%, var(--wt-brand) 100%); padding: 1.5rem 2rem;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                        <i class="fas fa-trash-restore"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white mb-0" id="modalResetDatabaseLabel">
+                            <span class="lang-en">System Database Reset & Faculty Structure</span>
+                            <span class="lang-ar">إعادة ضبط وتفريغ النظام وهيكل الكلية</span>
+                        </h5>
+                        <div class="text-white-50 small mt-1">
+                            <span class="lang-en">Purge records, initialize Faculty of Law & Political Science data, or wipe empty</span>
+                            <span class="lang-ar">تفريغ السجلات وتهيئة كلية الحقوق والعلوم السياسية (جامعة غرداية) أو تفريغ شامل</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body p-4" style="background: #f8fafc;">
+                <!-- Security Warning Alert -->
+                <div class="alert alert-danger border-0 d-flex align-items-start gap-3 rounded-4 shadow-sm mb-4" style="background: #fef2f2; border-left: 4px solid var(--wt-bad) !important;">
+                    <div class="text-danger fs-4 mt-1"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="small text-danger-emphasis">
+                        <div class="fw-bold fs-6 mb-1">
+                            <span class="lang-en">Critical Administrative Warning</span>
+                            <span class="lang-ar">تحذير أمني وإداري فائق الأهمية</span>
+                        </div>
+                        <div>
+                            <span class="lang-en">This action will delete all existing tasks, submissions, chats, attendance records, and non-protected users. Your current super-admin account and the default Contact Submissions module will be safely preserved.</span>
+                            <span class="lang-ar">هذه العملية ستقوم بحذف كافة المهام، التسليمات، المراسلات، المحادثات، وسجلات الحضور السابقة، مع الإبقاء الحصري على حساب المسؤول الحالي ووحدة الاتصال (Contact Submissions).</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode Selection -->
+                <label class="form-label fw-bold text-dark mb-2">
+                    <i class="fas fa-list-check me-1 text-danger"></i>
+                    <span class="lang-en">Choose Operation Mode:</span>
+                    <span class="lang-ar">اختر نمط العملية:</span>
+                </label>
+
+                <div class="row g-3 mb-4">
+                    <!-- Mode 1: Faculty Seed (Recommended) -->
+                    <div class="col-12 col-md-6">
+                        <label class="p-3 rounded-4 border bg-white d-block cursor-pointer position-relative h-100 shadow-sm" style="cursor: pointer;" for="modeFacultySeed">
+                            <div class="d-flex align-items-start gap-3">
+                                <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="resetMode" id="modeFacultySeed" value="faculty_seeded" checked>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-dark">
+                                            <span class="lang-en">Seed Faculty Structure</span>
+                                            <span class="lang-ar">تهيئة هيكل الكلية</span>
+                                        </span>
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size: 0.65rem;">موصى به</span>
+                                    </div>
+                                    <p class="text-muted small mb-0 lh-sm">
+                                        <span class="lang-en">5 Groups, 20 Modules in Arabic, staff users, realistic tasks, submissions, chat & attendance for Univ. of Ghardaia.</span>
+                                        <span class="lang-ar">5 مجموعات و 20 مصلحة وقسم باللغة العربية، كوادر الكلية، مهام وتسليمات واقعية، محادثات وسجلات حضور.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Mode 2: Clean Wipe -->
+                    <div class="col-12 col-md-6">
+                        <label class="p-3 rounded-4 border bg-white d-block cursor-pointer position-relative h-100 shadow-sm" style="cursor: pointer;" for="modeEmptyClean">
+                            <div class="d-flex align-items-start gap-3">
+                                <input class="form-check-input mt-1 flex-shrink-0" type="radio" name="resetMode" id="modeEmptyClean" value="empty_only">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="fw-bold text-dark">
+                                            <span class="lang-en">Complete Clean Wipe</span>
+                                            <span class="lang-ar">تفريغ شامل للنظام</span>
+                                        </span>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25" style="font-size: 0.65rem;">فارغ تماماً</span>
+                                    </div>
+                                    <p class="text-muted small mb-0 lh-sm">
+                                        <span class="lang-en">Wipe everything leaving strictly 1 super admin and the protected contact module. Empty database.</span>
+                                        <span class="lang-ar">تفريغ كل شيء والإبقاء فقط على مستخدم مسؤول واحد ووحدة الاتصال المحمية (قاعدة بيانات خالية).</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Confirmation Word Input -->
+                <div class="bg-white p-3 rounded-4 border shadow-sm">
+                    <label class="form-label fw-bold text-dark mb-1 small" for="resetConfirmInput">
+                        <i class="fas fa-key text-warning me-1"></i>
+                        <span class="lang-en">Type <strong>RESET</strong> or <strong>تأكيد</strong> to confirm authorization:</span>
+                        <span class="lang-ar">لتأكيد العملية، يرجى كتابة كلمة <strong>RESET</strong> أو <strong>تأكيد</strong> أدناه:</span>
+                    </label>
+                    <input type="text" class="form-control form-control-lg rounded-3 text-center fw-bold text-danger border-2" id="resetConfirmInput" placeholder="RESET" autocomplete="off" onkeyup="checkResetConfirmation()">
+                    <div class="form-text text-muted small mt-1 text-center">
+                        <span class="lang-en">The execution button will activate once the confirmation keyword is typed.</span>
+                        <span class="lang-ar">سوف يتم تفعيل زر التنفيذ تلقائياً بمجرد إدخال كلمة التأكيد.</span>
+                    </div>
+                </div>
+
+                <!-- Status & Progress Container -->
+                <div id="resetProgressBox" class="mt-3 d-none">
+                    <div class="alert alert-info border-0 rounded-4 d-flex align-items-center gap-3 mb-0">
+                        <div class="spinner-border text-danger spinner-border-sm flex-shrink-0" role="status"></div>
+                        <div class="small fw-semibold text-dark">
+                            <span class="lang-en">Executing database reset and rebuilding structures, please wait...</span>
+                            <span class="lang-ar">جارٍ تنفيذ إعادة الضبط وإعادة بناء الهيكل والبيانات، يرجى الانتظار لحظات...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer bg-white px-4 py-3 border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">
+                    <span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span>
+                </button>
+                <button type="button" id="btnExecuteReset" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" disabled onclick="executeDatabaseReset()">
+                    <i class="fas fa-trash-restore me-1"></i>
+                    <span class="lang-en">Execute Reset Now</span><span class="lang-ar">تنفيذ إعادة الضبط الآن</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const CSRF_TOKEN = "{{ csrf_token }}";
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Live Real-Time Clock Runner
+        function updateLiveClock() {
+            const el = document.getElementById('liveCommandClock');
+            if (!el) return;
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            el.innerText = `${h}:${m}:${s}`;
+        }
+        setInterval(updateLiveClock, 1000);
+
+        // Quick Tools Search Filter
+        const toolInput = document.getElementById('toolSearchInput');
+        const toolCards = document.querySelectorAll('.cmd-tool-col');
+        const toolCountBadge = document.getElementById('cmdToolCountBadge');
+
+        if (toolCountBadge && toolCards.length) {
+            toolCountBadge.innerText = `${toolCards.length} Tools`;
+        }
+
+        if (toolInput) {
+            toolInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                const collapseEl = document.getElementById('quickToolsCollapse');
+                if (query && collapseEl && !collapseEl.classList.contains('show') && typeof bootstrap !== 'undefined') {
+                    bootstrap.Collapse.getOrCreateInstance(collapseEl).show();
+                }
+
+                toolCards.forEach(col => {
+                    const text = (col.getAttribute('data-tool') || '' + col.innerText).toLowerCase();
+                    if (!query || text.includes(query)) {
+                        col.style.display = '';
+                        visibleCount++;
+                    } else {
+                        col.style.display = 'none';
+                    }
+                });
+
+                if (toolCountBadge) {
+                    toolCountBadge.innerText = `${visibleCount} Tools`;
+                }
+            });
+        }
+
+        // Staff Directory Search Filter
+        const userRegistrySearch = document.getElementById('userRegistrySearch');
+        const staffTable = document.getElementById('staffRegistryTable');
+
+        if (userRegistrySearch && staffTable) {
+            userRegistrySearch.addEventListener('input', function () {
+                const q = this.value.toLowerCase().trim();
+                const rows = staffTable.querySelectorAll('tbody tr');
+                rows.forEach(r => {
+                    const txt = r.innerText.toLowerCase();
+                    r.style.display = (!q || txt.includes(q)) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // Delete User Confirmation
+    async function deleteUser(userId, userName) {
+        let confirmed = false;
+        if (typeof amazingConfirm === 'function') {
+            confirmed = await amazingConfirm({
+                title: 'Delete User',
+                text: `Are you sure you want to permanently delete user: ${userName}? This action cannot be undone.`,
+                icon: 'warning',
+                confirmButtonText: 'Yes, Delete'
+            });
+        } else if (typeof Swal !== 'undefined') {
+            const res = await Swal.fire({
+                title: 'Delete User?',
+                text: `Are you sure you want to delete ${userName}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--color-primary, #10b981)',
+                confirmButtonText: 'Yes, Delete'
+            });
+            confirmed = res.isConfirmed;
+        } else {
+            confirmed = confirm(`Delete user ${userName}? This cannot be undone.`);
+        }
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/management/users/${userId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', data.message || 'Could not delete user.', 'error');
+                } else {
+                    alert(data.message || 'Could not delete user.');
+                }
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // SIDEBAR VISIBILITY CONTROLLER JAVASCRIPT
+    // ══════════════════════════════════════════════════════════════════
+    window.openSidebarVisibilityModal = function() {
+        const modalEl = document.getElementById('modalSidebarVisibility');
+        if (modalEl) {
+            const m = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            m.show();
+            loadSidebarRules();
+        }
+    };
+
+    window.loadSidebarRules = async function() {
+        const tbody = document.getElementById('sidebarRulesTbody');
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-danger me-2"></div> Loading...</td></tr>`;
+
+        try {
+            const res = await fetch('/api/sidebar-visibility/');
+            const data = await res.json();
+            if (data.status === 'success' && data.rules) {
+                renderSidebarRulesTable(data.rules);
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-3">${data.message || 'Error loading rules'}</td></tr>`;
+            }
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-3">Network error loading rules.</td></tr>`;
+        }
+    };
+
+    function renderSidebarRulesTable(rules) {
+        const tbody = document.getElementById('sidebarRulesTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        rules.forEach(r => {
+            const key = r.feature_key || r.key;
+            const labelEn = r.label_en || r.label || key;
+            const labelAr = r.label_ar || '';
+            const icon = r.icon || 'fas fa-circle';
+            const isAllowed = (r.is_allowed !== false);
+            const vAdmin = (r.visible_admin !== false && r.show_admin !== false);
+            const vMgr = (r.visible_manager !== false && r.show_manager !== false);
+            const vWrk = (r.visible_worker !== false && r.show_worker !== false);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="ps-4 fw-semibold text-dark">
+                    <i class="${icon} text-danger me-2" style="font-size: 0.85rem; width: 18px; text-align: center;"></i>
+                    <span class="lang-en">${labelEn}</span>
+                    ${labelAr ? `<span class="lang-ar ms-1 text-muted" dir="rtl">(${labelAr})</span>` : ''}
+                </td>
+                <td class="text-center"><code class="small text-muted bg-light px-2 py-0.5 rounded">${key}</code></td>
+                <td class="text-center">
+                    <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" ${vAdmin ? 'checked' : ''} onchange="updateSidebarRule('${key}', 'visible_admin', this.checked)">
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" ${vMgr ? 'checked' : ''} onchange="updateSidebarRule('${key}', 'visible_manager', this.checked)">
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" ${vWrk ? 'checked' : ''} onchange="updateSidebarRule('${key}', 'visible_worker', this.checked)">
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="form-check form-switch d-inline-block">
+                        <input class="form-check-input" type="checkbox" ${isAllowed ? 'checked' : ''} onchange="updateSidebarRule('${key}', 'is_allowed', this.checked)">
+                    </div>
+                </td>
+                <td class="text-center pe-4">
+                    <span class="badge rounded-pill ${isAllowed ? 'bg-success' : 'bg-secondary'}" style="font-size: 0.68rem;">
+                        ${isAllowed ? 'Active' : 'Disabled'}
+                    </span>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    window.updateSidebarRule = async function(featureKey, field, value) {
+        try {
+            const res = await fetch('/api/sidebar-visibility/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ feature_key: featureKey, [field]: value })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                if (window.showToast) {
+                    window.showToast('Sidebar rule updated', 'success', 2000);
+                }
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', data.message || 'Could not update rule', 'error');
+                }
+            }
+        } catch (e) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', 'Network error updating rule', 'error');
+            }
+        }
+    };
+
+    window.resetSidebarDefaults = async function() {
+        let confirmed = false;
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title: 'Reset Sidebar Rules?',
+                text: 'Restore all sidebar visibility rules to default system settings?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--color-primary, #10b981)',
+                confirmButtonText: 'Yes, Restore Defaults'
+            });
+            confirmed = result.isConfirmed;
+        } else {
+            confirmed = confirm('Reset all sidebar rules to default system settings?');
+        }
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch('/api/sidebar-visibility/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({ reset_defaults: true })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                if (window.showToast) window.showToast('Sidebar defaults restored', 'success');
+                loadSidebarRules();
+            }
+        } catch (e) {
+            if (window.showToast) window.showToast('Reset failed', 'error');
+        }
+    };
+
+    // Database Reset Engine
+    let resetModalInstance = null;
+
+    window.openResetDatabaseModal = function() {
+        const modalEl = document.getElementById('modalResetDatabase');
+        if (!modalEl) return;
+        
+        // Reset fields
+        const confirmInput = document.getElementById('resetConfirmInput');
+        if (confirmInput) confirmInput.value = '';
+        const btnExec = document.getElementById('btnExecuteReset');
+        if (btnExec) {
+            btnExec.disabled = true;
+            btnExec.innerHTML = '<i class="fas fa-trash-restore me-1"></i> <span class="lang-en">Execute Reset Now</span><span class="lang-ar">تنفيذ إعادة الضبط الآن</span>';
+        }
+        const progressBox = document.getElementById('resetProgressBox');
+        if (progressBox) progressBox.classList.add('d-none');
+        const defaultRadio = document.getElementById('modeFacultySeed');
+        if (defaultRadio) defaultRadio.checked = true;
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            resetModalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            resetModalInstance.show();
+        } else {
+            $(modalEl).modal('show');
+        }
+    };
+
+    window.checkResetConfirmation = function() {
+        const input = document.getElementById('resetConfirmInput');
+        const btnExec = document.getElementById('btnExecuteReset');
+        if (!input || !btnExec) return;
+        const val = input.value.trim().toUpperCase();
+        if (val === 'RESET' || input.value.trim() === 'تأكيد') {
+            btnExec.disabled = false;
+        } else {
+            btnExec.disabled = true;
+        }
+    };
+
+    window.executeDatabaseReset = async function() {
+        const btnExec = document.getElementById('btnExecuteReset');
+        const progressBox = document.getElementById('resetProgressBox');
+        const selectedModeEl = document.querySelector('input[name="resetMode"]:checked');
+        const mode = selectedModeEl ? selectedModeEl.value : 'faculty_seeded';
+
+        if (btnExec) {
+            btnExec.disabled = true;
+            btnExec.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> جارٍ التنفيذ...';
+        }
+        if (progressBox) progressBox.classList.remove('d-none');
+
+        try {
+            const response = await fetch('/management/reset-database/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: JSON.stringify({ mode: mode })
+            });
+
+            const data = await response.json();
+            if (data.status === 'success') {
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        title: 'تم بنجاح! / Success!',
+                        text: data.message || 'تمت إعادة ضبط قاعدة البيانات بنجاح.',
+                        icon: 'success',
+                        confirmButtonColor: '#dc2626',
+                        confirmButtonText: 'تحديث لوحة التحكم'
+                    });
+                } else if (window.showToast) {
+                    window.showToast(data.message, 'success', 3000);
+                }
+                window.location.reload();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'خطأ / Error',
+                        text: data.message || 'فشلت العملية، يرجى المحاولة لاحقاً.',
+                        icon: 'error'
+                    });
+                } else {
+                    alert(data.message || 'Error executing reset.');
+                }
+                if (btnExec) {
+                    btnExec.disabled = false;
+                    btnExec.innerHTML = '<i class="fas fa-trash-restore me-1"></i> إعادة المحاولة';
+                }
+                if (progressBox) progressBox.classList.add('d-none');
+            }
+        } catch (err) {
+            console.error('Reset error:', err);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('خطأ في الاتصال', 'تعذر الاتصال بالخادم لإتمام العملية.', 'error');
+            } else {
+                alert('Connection error occurred.');
+            }
+            if (btnExec) {
+                btnExec.disabled = false;
+                btnExec.innerHTML = '<i class="fas fa-trash-restore me-1"></i> إعادة المحاولة';
+            }
+            if (progressBox) progressBox.classList.add('d-none');
+        }
+    };
+</script>
+{% endblock %}

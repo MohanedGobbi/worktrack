@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load core_tags %}
+
+{% block title %}{{ title }} - Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .icon-picker-container {
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        background: #f8fafc;
+    }
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 10px;
+    }
+    .icon-option {
+        width: 100%;
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: white;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.25rem;
+        color: #64748b;
+    }
+    .icon-option:hover {
+        background: #f1f5f9;
+        color: #2563eb;
+    }
+    .icon-option.selected {
+        border-color: #2563eb;
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    .form-card {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card form-card">
+            <div class="card-header bg-white py-0 border-0 overflow-hidden" style="border-radius: 16px 16px 0 0;">
+                <div class="module-form-hero" style="padding: 3rem 2.5rem; position: relative; overflow: hidden; color: white;">
+                    <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; opacity: 0.5;"></div>
+                    <div style="position: relative; z-index: 2;">
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="{% url 'template-dashboard' %}" class="btn btn-sm btn-light rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <h2 class="mb-0 fw-bold">{{ title }}</h2>
+                        </div>
+                        <p class="mt-2 mb-0 opacity-75">Configure your template's settings.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body px-5 pb-5 pt-0">
+                <form method="POST" id="templateForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div class="mb-4">
+                                <label for="name" class="form-label fw-bold">Template Name</label>
+                                <input type="text" class="form-control form-control-lg rounded-3" id="name" name="name" 
+                                       value="{{ template.name|default:'' }}" placeholder="e.g. Content Production Pipeline" required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="description" class="form-label fw-bold">Description (Optional)</label>
+                                <textarea class="form-control rounded-3" id="description" name="description" rows="5" 
+                                          placeholder="A brief overview of this template's use case...">{{ template.description|default:'' }}</textarea>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="banner_image" class="form-label fw-bold">Banner Image (Optional)</label>
+                                {% if template.banner_image %}
+                                <div class="mb-2">
+                                    <img src="{{ template.banner_image.url }}" alt="Current Banner" class="img-thumbnail" style="max-height: 100px;">
+                                </div>
+                                {% endif %}
+                                <input type="file" class="form-control" id="banner_image" name="banner_image" accept="image/*">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold d-block">Template Color Accent</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <input type="color" class="form-control form-control-color border-0 shadow-sm" id="color" name="color" 
+                                           value="{{ template.color|default:'#2563eb' }}" title="Choose a color">
+                                    <span class="text-muted small">This color will be used visually for this template icon.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visibility & Assignment Panel -->
+                        <div class="col-12 mt-4 pt-4 border-top">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center"><i class="fas fa-shield-alt text-primary me-2"></i> Visibility & Assigment</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="visibility" class="form-label fw-bold">Overall Visibility</label>
+                                    <select class="form-select text-dark" id="visibility" name="visibility">
+                                        <option value="private" {% if template.visibility == 'private' %}selected{% endif %}>Private (Me Only)</option>
+                                        <option value="shared" {% if template.visibility == 'shared' or not template %}selected{% endif %}>Shared / Assigned</option>
+                                        <option value="global" {% if template.visibility == 'global' %}selected{% endif %}>Global (All Users)</option>
+                                    </select>
+                                    <div class="form-text">Who can see this template?</div>
+                                </div>
+                                
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label fw-bold">Assign to Specific Roles</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        {% for r in roles %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="assigned_roles" value="{{ r }}" id="role_{{ r }}" {% if r in assigned_roles %}checked{% endif %}>
+                                            <label class="form-check-label text-capitalize" for="role_{{ r }}">{{ r|replace:"_,' '" }}</label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="form-text">Choose the roles that can access this template when 'Shared' is selected.</div>
+                                </div>
+                                
+                                <div class="col-12 mb-3">
+                                    <label for="assigned_users" class="form-label fw-bold">Assign to Specific Users</label>
+                                    <select class="form-select form-select-lg" id="assigned_users" name="assigned_users" multiple style="height: 120px;">
+                                        {% for u in users %}
+                                        <option value="{{ u.id }}" {% if u.id in assigned_user_ids %}selected{% endif %}>
+                                            {{ u.username }} ({{ u.get_role_display }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple users. Users must be explicitly assigned or hold an assigned role to view shared templates.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon Picker -->
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold mb-3 d-flex justify-content-between align-items-center">
+                                Select System Icon
+                                <span class="badge bg-primary rounded-pill px-2 py-1" id="selectedIconLabel" style="font-size: 0.7rem;">
+                                    <i class="fas {{ template.icon_class|default:'fa-folder' }} me-1"></i> Selected
+                                </span>
+                            </label>
+                            
+                            <input type="hidden" id="icon_class" name="icon_class" value="{{ template.icon_class|default:'fa-folder' }}">
+                            
+                            <div class="icon-picker-container shadow-sm">
+                                <div class="icon-grid">
+                                    {% for icon in icon_list %}
+                                        <div class="icon-option {% if template.icon_class == icon %}selected{% elif not template and icon == 'fa-folder' %}selected{% endif %}" 
+                                             onclick="selectIcon('{{ icon }}', this)" title="{{ icon }}">
+                                            <i class="fas {{ icon }}"></i>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-4 mt-3 d-flex justify-content-end gap-3">
+                        <a href="{% url 'template-dashboard' %}" class="btn btn-light px-4 rounded-pill fw-semibold"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                        <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm">
+                            <i class="fas fa-save me-2"></i> Save Template
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectIcon(iconClass, element) {
+        document.getElementById('icon_class').value = iconClass;
+        const options = document.querySelectorAll('.icon-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        document.getElementById('selectedIconLabel').innerHTML = `<i class="fas ${iconClass} me-1"></i> Selected`;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% load static %}<header class="lp-header">
+    <a class="lp-brand" href="{% url 'home' %}">
+        {% include 'includes/wt_logo_chip.html' %}
+        <span class="lp-brand-name"><span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></span>
+    </a>
+    <nav class="lp-nav" aria-label="Page">
+        {% if show_story_nav %}
+        <a href="#how"><span class="lang-en">How it works</span><span class="lang-ar">كيف تعمل</span></a>
+        <a href="#score"><span class="lang-en">Scoring</span><span class="lang-ar">مؤشر الأداء</span></a>
+        {% else %}
+        <a href="{% url 'home' %}" class="lp-nav-keep"><span class="lang-en">About the platform</span><span class="lang-ar">عن المنصة</span></a>
+        {% endif %}
+    </nav>
+    <div class="lang-switcher-placeholder"></div>
+</header>

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Notifications - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Email Notifications</h2>
+            <p class="text-muted mb-0">Manage system-wide email templates and branding.</p>
+        </div>
+        
+        <div class="d-flex gap-3 align-items-center">
+            <div class="btn-group shadow-sm rounded-pill p-1 bg-white border me-2">
+                <button type="button" class="btn btn-sm px-4 rounded-pill active" id="btn-grid-view" onclick="setViewMode('grid')">
+                    <i class="fas fa-th-large me-2"></i>Grid
+                </button>
+                <button type="button" class="btn btn-sm px-4 rounded-pill" id="btn-list-view" onclick="setViewMode('list')">
+                    <i class="fas fa-list me-2"></i>List
+                </button>
+            </div>
+            <a href="{% url 'notifications:email-style-edit' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="fas fa-paint-brush me-2"></i> Configure Branding
+            </a>
+        </div>
+    </div>
+
+    <!-- Global Style Summary -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5" style="background: linear-gradient(135deg, white 0%, #f8fafc 100%);">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center border-md-end">
+                    <div style="width: 70px; height: 70px; background: {{ style.primary_color }}; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: white; font-size: 1.8rem; box-shadow: 0 10px 15px -3px {{ style.primary_color }}40;">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0">{{ style.company_name }}</h5>
+                </div>
+                <div class="col-md-9 ps-md-4 mt-3 mt-md-0">
+                    <div class="row g-4">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1 small">Primary Brand</small>
+                            <div class="d-flex align-items-center">
+                                <span style="width: 20px; height: 20px; background: {{ style.primary_color }}; border-radius: 5px; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.1);"></span>
+                                <code class="fw-bold small">{{ style.primary_color }}</code>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1 small">Secondary Brand</small>
+                            <div class="d-flex align-items-center">
+                                <span style="width: 20px; height: 20px; background: {{ style.secondary_color }}; border-radius: 5px; display: inline-block; margin-right: 8px; border: 1px solid rgba(0,0,0,0.1);"></span>
+                                <code class="fw-bold small">{{ style.secondary_color }}</code>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase fw-bold d-block mb-1 small">Asset Logo</small>
+                            <div class="text-truncate">
+                                <small class="text-muted small">{{ style.logo_url|default:"Default Logo"|truncatechars:30 }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+        <h4 class="fw-bold mb-0">Notification Templates</h4>
+        <span class="badge bg-light text-dark border rounded-pill px-3">{{ templates|length }} Templates Found</span>
+    </div>
+
+    <div class="row g-4 transition-container" id="templates-grid">
+        {% for template in templates %}
+        <div class="template-col col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative template-card" style="transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                <div class="accent-bar" style="height: 5px; background: linear-gradient(90deg, {{ style.primary_color }}, {{ style.secondary_color }});"></div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 rounded-pill px-3">
+                            {{ template.get_notification_type_display }}
+                        </span>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                <li><a class="dropdown-item py-2" href="{% url 'notifications:email-edit' template.id %}"><i class="fas fa-edit me-2 text-primary"></i>Designer View</a></li>
+                                <li><a class="dropdown-item py-2" target="_blank" href="{% url 'notifications:email-preview' template.id %}"><i class="fas fa-external-link-alt me-2 text-info"></i>Direct Preview</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="template-content-wrapper mb-4">
+                        <h5 class="fw-bold mb-2 text-dark">{{ template.subject }}</h5>
+                        <p class="text-muted small mb-0 template-description">
+                            {{ template.body|striptags|truncatechars:180 }}
+                        </p>
+                    </div>
+
+                    <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="far fa-clock me-1"></i>
+                            Updated {{ template.updated_at|timesince }} ago
+                        </div>
+                        <a href="{% url 'notifications:email-edit' template.id %}" class="btn btn-primary rounded-pill px-4 btn-sm shadow-sm transition-btn">
+                            Edit Template
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function setViewMode(mode) {
+        const grid = document.getElementById('templates-grid');
+        const cols = document.querySelectorAll('.template-col');
+        const btnGrid = document.getElementById('btn-grid-view');
+        const btnList = document.getElementById('btn-list-view');
+        
+        if (mode === 'grid') {
+            grid.classList.remove('list-view-active');
+            cols.forEach(col => {
+                col.className = 'template-col col-md-6 col-lg-4';
+            });
+            btnGrid.classList.add('active');
+            btnList.classList.remove('active');
+        } else {
+            grid.classList.add('list-view-active');
+            cols.forEach(col => {
+                col.className = 'template-col col-12';
+            });
+            btnList.classList.add('active');
+            btnGrid.classList.remove('active');
+        }
+        
+        // Save preference
+        localStorage.setItem('email_manager_view_mode', mode);
+    }
+
+    // Load preference
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedMode = localStorage.getItem('email_manager_view_mode') || 'grid';
+        setViewMode(savedMode);
+    });
+</script>
+
+<style>
+    .template-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px -5px rgba(0,0,0,0.1) !important;
+    }
+    
+    .list-view-active .template-card {
+        flex-direction: row;
+        height: auto !important;
+    }
+    
+    .list-view-active .accent-bar {
+        width: 5px;
+        height: auto !important;
+    }
+    
+    .list-view-active .card-body {
+        flex-direction: row !important;
+        align-items: center;
+        gap: 2rem;
+    }
+    
+    .list-view-active .template-content-wrapper {
+        margin-bottom: 0 !important;
+        flex: 1;
+    }
+    
+    .list-view-active .mt-auto {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: 0 !important;
+        width: auto !important;
+    }
+
+    .btn-group .btn {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        color: #64748b;
+        border: none;
+    }
+    
+    .btn-group .btn.active {
+        background-color: #2563eb !important;
+        color: white !important;
+    }
+    
+    .transition-container {
+        transition: all 0.5s ease;
+    }
+</style>
+{% endblock %}

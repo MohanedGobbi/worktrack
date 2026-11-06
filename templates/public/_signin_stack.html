@@ -1,0 +1,40 @@
+{% comment %}
+  The stack: two 3D modules (slots a and c, drawn by the scene) around the middle module, which is the sign-in form.
+  Field names match core.template_views.login_view: email, password, remember, next.
+{% endcomment %}
+{% if messages %}
+    {% for message in messages %}
+    <div class="lp-alert{% if 'success' in message.tags %} is-ok{% endif %}" role="alert">
+        <i class="fas {% if 'success' in message.tags %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+        <span>{% if message.message == 'Invalid email or password.' %}<span class="lang-en">That email and password don't match an account. Check both and try again.</span><span class="lang-ar">البريد الإلكتروني وكلمة المرور لا يطابقان أي حساب. تحقق منهما وأعد المحاولة.</span>{% else %}{{ message }}{% endif %}</span>
+    </div>
+    {% endfor %}
+{% endif %}
+<div class="lp-stack" data-stack>
+    <div class="lp-slot lp-slot--a" data-slot="a" aria-hidden="true"></div>
+    <form method="post" action="{% url 'login' %}" class="lp-module" id="loginForm" data-module novalidate>
+        {% csrf_token %}
+        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+        <div class="lp-field">
+            <label for="signin-email"><span class="lang-en">Work email</span><span class="lang-ar">بريد العمل</span></label>
+            <input id="signin-email" name="email" type="email" required autocomplete="username" inputmode="email" spellcheck="false" placeholder="name@organisation.com" dir="ltr">
+        </div>
+        <div class="lp-field lp-field--pw">
+            <label for="signin-password"><span class="lang-en">Password</span><span class="lang-ar">كلمة المرور</span></label>
+            <input id="signin-password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+            <button type="button" class="lp-reveal" data-reveal="signin-password" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+        </div>
+        <button type="submit" class="lp-submit">
+            <span class="lang-en">Sign in</span><span class="lang-ar">دخول</span>
+            <i class="fas fa-arrow-right rtl-flip" aria-hidden="true"></i>
+        </button>
+    </form>
+    <div class="lp-slot lp-slot--c" data-slot="c" aria-hidden="true"></div>
+</div>
+<div class="lp-meta">
+    <label class="lp-check"><input type="checkbox" name="remember" form="loginForm"> <span><span class="lang-en">Keep me signed in</span><span class="lang-ar">تذكرني على هذا الجهاز</span></span></label>
+    <span class="lp-meta-links">
+        <a href="{% url 'password_reset' %}"><span class="lang-en">Forgot password?</span><span class="lang-ar">نسيت كلمة المرور؟</span></a>
+        {% if allow_registration %}<a href="{% url 'register' %}"><span class="lang-en">Request an account</span><span class="lang-ar">طلب حساب</span></a>{% endif %}
+    </span>
+</div>

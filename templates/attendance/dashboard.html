@@ -1,0 +1,696 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance Tracking - Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Banner (Unified Homepage Green Obsidian Style) */
+    .dash-hero {
+        background: var(--wt-hero-bg) !important;
+        position: relative;
+        border-radius: 24px;
+        padding: 2.5rem 3rem;
+        margin-bottom: 2rem;
+        color: white;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+        box-shadow: none !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .hero-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(40px);
+        z-index: 0;
+    }
+    .hero-orb1 { width: 300px; height: 300px; background: rgba(56, 189, 248, 0.4); top: -100px; right: -50px; }
+    .hero-orb2 { width: 250px; height: 250px; background: rgba(99, 102, 241, 0.4); bottom: -80px; left: 10%; }
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .hero-greeting { font-size: 0.95rem; font-weight: 600; opacity: 0.9; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; color: #ffffff !important; }
+    .hero-title { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.5px; color: #ffffff !important; text-shadow: none !important; }
+    .hero-sub { opacity: 0.8; font-size: 1.05rem; margin-bottom: 0; max-width: 600px; color: #ffffff !important; }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 576px) { .stats-grid { grid-template-columns: 1fr; } }
+    
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .stat-icon {
+        width: 54px; height: 54px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; flex-shrink: 0;
+        background: var(--bg-color); color: var(--text-color);
+    }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-label { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1.1; color: #0f172a; }
+    
+    /* Table / Panel */
+    .panel-card {
+        background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        border: 1px solid #f1f5f9; padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1rem; }
+    .panel-title { font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    
+    /* Check In / Out Buttons */
+    .check-action-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        z-index: 10;
+        min-width: 250px;
+    }
+    .btn-check-giant {
+        width: 100%;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border: none;
+        transition: all 0.3s;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .btn-checkin { background: var(--primary); color: white; }
+    .btn-checkin:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(var(--primary-rgb, 16, 185, 129), 0.4); }
+    .btn-checkout { background: #3b82f6; color: white; }
+    .btn-checkout:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); }
+    .btn-disabled { background: rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.6); cursor: not-allowed; box-shadow: none; }
+    
+    .status-pill {
+        display: inline-flex; align-items: center; gap: 6px; padding: 0.35rem 0.85rem;
+        border-radius: 99px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .status-present { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
+    .status-late { background: #fee2e2; color: color-mix(in oklab, var(--wt-bad) 70%, #000); }
+    .status-absent { background: #f1f5f9; color: #475569; }
+    
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0 0.5rem; }
+    .table-modern th { background: transparent; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 0.5rem 1rem; border: none; }
+    .table-modern td { background: white; padding: 1rem; vertical-align: middle; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
+    .table-modern td:first-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .table-modern td:last-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+    .table-modern tr:hover td { background: #f8fafc; cursor: default; }
+
+    /* Custom form styling for filter */
+    .filter-input {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #475569;
+        transition: all 0.2s;
+    }
+    .filter-input:focus { border-color: #6366f1; outline: none; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+    
+    /* Calendar Heatmap */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+    .calendar-header {
+        text-align: center;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        padding-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+    .cal-day {
+        aspect-ratio: 1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: transform 0.2s;
+        cursor: default;
+        position: relative;
+    }
+    .cal-day:not(.cal-empty):not(.cal-future):hover {
+        transform: scale(1.1);
+        z-index: 10;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .cal-empty { background: transparent; }
+    .cal-weekend { background: #f8fafc; color: #cbd5e1; }
+    .cal-future { background: #f1f5f9; color: #cbd5e1; border: 1px dashed #e2e8f0; }
+    .cal-present { background: var(--primary); color: white; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+    .cal-late { background: #f59e0b; color: white; }
+    .cal-absent { background: var(--wt-bad); color: white; }
+    
+    .cal-tooltip {
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e293b;
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+    .cal-day:hover .cal-tooltip { opacity: 1; }
+    
+</style>
+    <script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dash-hero">
+    <div class="hero-orb hero-orb1"></div>
+    <div class="hero-orb hero-orb2"></div>
+    
+    <div class="hero-content" style="flex:1;">
+        {% if target_user %}
+            <div class="hero-greeting"><i class="fas fa-user-clock"></i> User Attendance View</div>
+            <h1 class="hero-title">{{ target_user.get_full_name }}'s Attendance</h1>
+            <p class="hero-sub mb-3">Viewing historic attendance records for {{ target_user.first_name }}.</p>
+        {% else %}
+            <div class="hero-greeting"><i class="fas fa-clock"></i> Daily Attendance</div>
+            <h1 class="hero-title">Track your daily shift</h1>
+            <p class="hero-sub mb-3">Ensure your hours are logged accurately for performance reviews.</p>
+        {% endif %}
+        
+        {% if my_today_record %}
+            <div class="d-flex align-items-center gap-2 mt-3 p-2 px-3" style="background: rgba(255,255,255,0.15); border-radius: 12px; display: inline-flex; width: max-content; backdrop-filter: blur(10px);">
+                <i class="fas fa-info-circle"></i> Today's Status: 
+                <span class="badge bg-white text-dark ms-1" style="font-size: 0.85rem;">
+                    {{ my_today_record.get_status_display }}
+                </span>
+                {% if my_today_record.check_in %}
+                    <span class="ms-2">In: {{ my_today_record.check_in|time:"H:i" }}</span>
+                {% endif %}
+                {% if my_today_record.check_out %}
+                    <span class="ms-2">Out: {{ my_today_record.check_out|time:"H:i" }}</span>
+                    <span class="ms-2 fw-bold">({{ my_today_record.total_hours }} hrs)</span>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        {% if request.user.role == 'super_admin' %}
+        <div class="mt-4">
+            <a href="{% url 'attendance-settings' %}" class="btn btn-light rounded-pill px-4 shadow-sm text-danger fw-bold">
+                <i class="fas fa-business-time me-2"></i> Configure Policy
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="hero-content">
+        <div class="check-action-card shadow-lg">
+            <h5 class="mb-3 fw-bold" style="letter-spacing: 0.5px;">Action Required</h5>
+            
+            {% if not my_today_record or not my_today_record.check_in %}
+                <!-- Check IN form -->
+                <form action="{% url 'attendance-check-in' %}" method="POST" class="w-100">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-check-giant btn-checkin">
+                        <i class="fas fa-sign-in-alt"></i> Check In Now
+                    </button>
+                </form>
+            {% elif my_today_record.check_in and not my_today_record.check_out %}
+                <!-- Check OUT form -->
+                <form action="{% url 'attendance-check-out' %}" method="POST" class="w-100">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-check-giant btn-checkout">
+                        <i class="fas fa-sign-out-alt"></i> Check Out
+                    </button>
+                    <!-- Optional Notes -->
+                    <textarea name="notes" class="form-control mt-3" placeholder="End of shift notes (optional)" rows="2" style="font-size:0.8rem; background:rgba(255,255,255,0.9); border:none;"></textarea>
+                </form>
+            {% else %}
+                <!-- Done for the day -->
+                <button type="button" class="btn-check-giant btn-disabled" disabled>
+                    <i class="fas fa-check-circle"></i> Shift Logged
+                </button>
+                <div class="mt-2 text-white-50" style="font-size:0.8rem;">You have completely logged today's hours.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Admin Advanced Analytics Area -->
+{% if request.user.role == 'super_admin' or request.user.role == 'admin' %}
+<div class="row mb-4">
+    <!-- Monthly Heatmap Calendar -->
+    <div class="col-lg-6">
+        <div class="panel-card h-100 mb-0">
+            <div class="panel-header d-flex justify-content-between align-items-center">
+                <h4 class="panel-title mb-0"><i class="fas fa-calendar-alt text-indigo"></i> Org Heatmap ({{ heatmap_month_name }})</h4>
+                <form method="GET" class="d-flex">
+                    <!-- Preserve existing filters -->
+                    <input type="hidden" name="date" value="{{ filter_date|date:'Y-m-d' }}">
+                    <input type="hidden" name="user_filter" value="{{ request.GET.user_filter|default:'all' }}">
+                    <input type="month" name="month" class="form-control form-control-sm border-0 bg-light" value="{{ heatmap_month_value }}" onchange="this.form.submit()" style="width: 130px; font-weight: 500;">
+                </form>
+            </div>
+            
+            <div class="mb-3 d-flex gap-3 justify-content-center" style="font-size: 0.8rem;">
+                <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;border-radius:3px;background:var(--primary);"></span> On Track</span>
+                <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;border-radius:3px;background:#f59e0b;"></span> Minor Issues</span>
+                <span class="d-flex align-items-center gap-1"><span style="width:12px;height:12px;border-radius:3px;background:var(--wt-bad);"></span> Major Absenteeism</span>
+            </div>
+            
+            <div class="calendar-grid">
+                <div class="calendar-header">Mon</div>
+                <div class="calendar-header">Tue</div>
+                <div class="calendar-header">Wed</div>
+                <div class="calendar-header">Thu</div>
+                <div class="calendar-header">Fri</div>
+                <div class="calendar-header">Sat</div>
+                <div class="calendar-header">Sun</div>
+                
+                {% for week in calendar_data %}
+                    {% for day in week %}
+                        {% if day.day == 0 %}
+                            <div class="cal-day cal-empty"></div>
+                        {% else %}
+                            <div class="cal-day 
+                                {% if day.status == 'present' %}cal-present
+                                {% elif day.status == 'late' %}cal-late
+                                {% elif day.status == 'absent' %}cal-absent
+                                {% elif day.status == 'weekend' %}cal-weekend
+                                {% elif day.status == 'future' %}cal-future
+                                {% else %}cal-empty{% endif %}">
+                                {{ day.day }}
+                                
+                                {% if day.status == 'present' or day.status == 'late' or day.status == 'absent' %}
+                                <div class="cal-tooltip text-center">
+                                    <div class="fw-bold border-bottom border-light pb-1 mb-1">Org Status</div>
+                                    <div class="text-success"><i class="fas fa-check-circle"></i> Present: {{ day.present_count }}</div>
+                                    <div class="text-warning"><i class="fas fa-clock"></i> Late: {{ day.late_count }}</div>
+                                    <div class="text-danger"><i class="fas fa-minus-circle"></i> Absent: {{ day.absent_count }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Department Benchmarks -->
+    <div class="col-lg-6">
+        <div class="panel-card h-100 mb-0">
+            <div class="panel-header">
+                <h4 class="panel-title"><i class="fas fa-chart-bar" style="color:#8b5cf6;"></i> Department Punctuality</h4>
+            </div>
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if is_manager_or_admin and team_stats %}
+<!-- Manager / Admin Team Overview -->
+<div class="row">
+    <div class="col-12">
+        <div class="panel-header mb-3">
+            <h4 class="panel-title"><i class="fas fa-users" style="color:#f59e0b;"></i> Team Daily Status (Today)</h4>
+        </div>
+        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Present Today</div>
+                    <div class="stat-value">{{ team_stats.present_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Late Today</div>
+                    <div class="stat-value">{{ team_stats.late_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card" style="--bg-color: #f1f5f9; --text-color: #475569;">
+                <div class="stat-icon"><i class="fas fa-user-minus"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Absent Today</div>
+                    <div class="stat-value">{{ team_stats.absent_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chronic Late Identification -->
+    <div class="col-lg-12 mt-4">
+        <div class="panel-card mb-0" style="border-left: 4px solid var(--wt-bad);">
+            <div class="panel-header mb-3">
+                <h4 class="panel-title text-danger"><i class="fas fa-exclamation-triangle"></i> Chronic Late Arrivals (This Month)</h4>
+                <div class="badge bg-danger rounded-pill">{{ chronic_late_users|length }} Users Flagged</div>
+            </div>
+            {% if chronic_late_users %}
+            <div class="table-responsive">
+                <table class="table table-modern mb-0">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th><span class="lang-en">Department</span><span class="lang-ar">القسم</span></th>
+                            <th>Times Late</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in chronic_late_users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width: 35px; height: 35px; border-radius: 50%; background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                        {{ u.user__first_name|first|upper }}
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ u.user__first_name }} {{ u.user__last_name }}</span>
+                                </div>
+                            </td>
+                            <td>{{ u.user__department__name|default:"Unassigned" }}</td>
+                            <td><span class="badge bg-danger rounded-pill px-3 py-2" style="font-size: 0.9rem;">{{ u.late_count }} Incidents</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <div class="text-success mb-2"><i class="fas fa-check-circle fa-2x"></i></div>
+                <div class="fw-bold text-success">Excellent Punctuality</div>
+                <div class="text-muted small">No users have been late 3 or more times this month.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-12">
+        <div class="panel-header mb-3">
+            <h4 class="panel-title"><i class="fas fa-chart-pie text-indigo"></i> My Monthly Overview</h4>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Days Present</div>
+                    <div class="stat-value">{{ my_stats.present_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Late Arrivals</div>
+                    <div class="stat-value">{{ my_stats.late_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card" style="--bg-color: #f1f5f9; --text-color: #475569;">
+                <div class="stat-icon"><i class="fas fa-calendar-minus"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Days Absent</div>
+                    <div class="stat-value">{{ my_stats.absent_count }}</div>
+                </div>
+            </div>
+            <div class="stat-card" style="--bg-color: #dbeafe; --text-color: #1e40af;">
+                <div class="stat-icon"><i class="fas fa-stopwatch"></i></div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Hours</div>
+                    <div class="stat-value">{{ my_stats.total_hours }}<span style="font-size:1rem;color:#94a3b8;font-weight:600;">h</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Table -->
+<div class="panel-card">
+    <div class="panel-header d-flex justify-content-between flex-wrap align-items-center gap-3">
+        <h4 class="panel-title mb-0">
+            <i class="fas fa-history text-indigo"></i> 
+            {% if is_manager_or_admin %}Team Attendance Records{% else %}My Attendance History{% endif %}
+        </h4>
+        <div class="d-flex flex-wrap gap-2">
+            <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+                {% if is_manager_or_admin %}
+                <select name="user_filter" class="filter-input" onchange="this.form.submit()" style="width:auto;">
+                    <option value="all" {% if request.GET.user_filter != 'me' %}selected{% endif %}>All Records</option>
+                    <option value="me" {% if request.GET.user_filter == 'me' %}selected{% endif %}>My Records Only</option>
+                </select>
+                {% endif %}
+                <div class="d-flex align-items-center gap-1">
+                    <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="filter-input" onchange="this.form.submit()" title="Start Date">
+                    <span class="text-muted">to</span>
+                    <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="filter-input" onchange="this.form.submit()" title="End Date">
+                </div>
+                <select name="status" class="filter-input" onchange="this.form.submit()" style="width:auto;">
+                    <option value="">All Status</option>
+                    <option value="present" {% if request.GET.status == 'present' %}selected{% endif %}>Present</option>
+                    <option value="late" {% if request.GET.status == 'late' %}selected{% endif %}>Late</option>
+                    <option value="absent" {% if request.GET.status == 'absent' %}selected{% endif %}>Absent</option>
+                </select>
+                {% if request.GET.start_date or request.GET.status or request.GET.user_filter %}
+                    <a href="{% url 'attendance-dashboard' %}" class="btn btn-light border" style="padding: 0.4rem 0.8rem;">Clear</a>
+                {% endif %}
+            </form>
+            
+            <!-- Export Button -->
+            <form action="{% url 'attendance-export-csv' %}" method="GET">
+                <input type="hidden" name="user_filter" value="{{ user_filter }}">
+                <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                <button type="submit" class="btn btn-success" style="padding: 0.4rem 0.8rem; border-radius: 8px;">
+                    <i class="fas fa-file-excel"></i> Export XLS
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    {% if is_manager_or_admin %}<th>User</th>{% endif %}
+                    <th><span class="lang-en">Date</span><span class="lang-ar">التاريخ</span></th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
+                    <th>Total Hours</th>
+                    <th>Notes</th>
+                    {% if is_manager_or_admin %}
+                    <th class="text-end"><span class="lang-en">Actions</span><span class="lang-ar">الإجراءات</span></th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in page_obj %}
+                <tr>
+                    {% if is_manager_or_admin %}
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#0ea5e9); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem;">
+                                {{ record.user.first_name|first|upper }}{{ record.user.last_name|first|upper }}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">{{ record.user.get_full_name }}</div>
+                                {% if record.user.department %}<div style="font-size: 0.75rem; color: #64748b;">{{ record.user.department.name }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    {% endif %}
+                    <td>
+                        <span class="fw-bold text-dark">{{ record.date|date:"M d, Y" }}</span>
+                    </td>
+                    <td>
+                        {% if record.check_in %}
+                            <span style="font-family: monospace; font-size: 0.9rem; background: #f8fafc; padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <i class="fas fa-sign-in-alt text-success me-1"></i> {{ record.check_in|time:"H:i" }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if record.check_out %}
+                            <span style="font-family: monospace; font-size: 0.9rem; background: #f8fafc; padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                <i class="fas fa-sign-out-alt text-primary me-1"></i> {{ record.check_out|time:"H:i" }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if record.status == 'present' %}
+                            <span class="status-pill status-present"><i class="fas fa-check-circle"></i> Present</span>
+                        {% elif record.status == 'late' %}
+                            <span class="status-pill status-late"><i class="fas fa-clock"></i> Late</span>
+                        {% else %}
+                            <span class="status-pill status-absent"><i class="fas fa-minus-circle"></i> {{ record.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="fw-bold" style="color: #0f172a;">{{ record.total_hours }} hr</span>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.85rem; color: #64748b;">{{ record.notes|default:"-" }}</span>
+                    </td>
+                    {% if is_manager_or_admin %}
+                    <td class="text-end">
+                        <form method="GET" action="{% url 'attendance-dashboard' %}">
+                            <input type="hidden" name="user_filter" value="{{ record.user.id }}">
+                            <input type="hidden" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                            <button type="submit" class="btn btn-sm btn-light border" title="View History for {{ record.user.first_name }}">
+                                <i class="fas fa-search text-primary"></i>
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if is_manager_or_admin %}8{% else %}6{% endif %}" class="text-center py-5">
+                        <div style="color: #94a3b8; font-size: 3rem; margin-bottom: 1rem;"><i class="fas fa-calendar-times"></i></div>
+                        <h5 class="fw-bold text-slate">No records found</h5>
+                        <p class="text-muted">There are no attendance logs matching your current filters.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+        <div class="px-4 py-3 border-top bg-light d-flex justify-content-between align-items-center">
+            <span class="text-muted small">Showing Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&status={{ status_filter }}&user_filter={{ user_filter }}">&laquo; Prev</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+                {% endif %}
+                
+                {% for n in page_obj.paginator.page_range %}
+                    {% if n > page_obj.number|add:"-3" and n < page_obj.number|add:"3" %}
+                    <li class="page-item {% if page_obj.number == n %}active{% endif %}">
+                        <a class="page-link" href="?page={{ n }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&status={{ status_filter }}&user_filter={{ user_filter }}">{{ n }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&status={{ status_filter }}&user_filter={{ user_filter }}">Next &raquo;</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- IDE safely ignores this -->
+{% if request.user.role == 'super_admin' or request.user.role == 'admin' %}
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_present|json_script:"chartPresent" }}
+{{ chart_late|json_script:"chartLate" }}
+{% endif %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var ctx = document.getElementById('deptChart');
+        if (ctx) {
+            // Only admins will have these elements in the DOM
+            var lblEl = document.getElementById('chartLabels');
+            var prsEl = document.getElementById('chartPresent');
+            var lteEl = document.getElementById('chartLate');
+            
+            if (lblEl && prsEl && lteEl) {
+                var labels = JSON.parse(lblEl.textContent);
+                var presentData = JSON.parse(prsEl.textContent);
+                var lateData = JSON.parse(lteEl.textContent);
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Present (On Time)',
+                                data: presentData,
+                                backgroundColor: 'var(--primary)',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Late',
+                                data: lateData,
+                                backgroundColor: '#f59e0b',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        scales: {
+                            x: { stacked: true, grid: { display: false } },
+                            y: { stacked: true, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}

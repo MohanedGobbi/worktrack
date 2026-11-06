@@ -1,0 +1,155 @@
+{% comment %}
+  Home (manager / admin): greeting, roadmap of the year's modules with what needs attention pinned to each bar,
+  then the "Needs you" list and today's numbers. Data comes from core.template_views._wt_home_context.
+{% endcomment %}
+{% with c=wt_counts rm=wt_roadmap %}
+<div class="wt-home">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1>
+                <span class="lang-en">Good {{ wt_greeting }}, {{ user.first_name|default:user.username }}</span>
+                <span class="lang-ar">{% if wt_greeting == 'morning' %}صباح الخير{% else %}مساء الخير{% endif %}، {{ user.first_name|default:user.username }}</span>
+            </h1>
+            <p>
+                <span class="lang-en">{{ wt_today_date|date:"l j F" }} · {% if c.review %}{{ c.review }} submission{{ c.review|pluralize }} wait{{ c.review|pluralize:"s," }} for your review{% else %}nothing is waiting for your review{% endif %}</span>
+                <span class="lang-ar">{{ wt_today_date|date:"j/n/Y" }} · {% if c.review %}بانتظار مراجعتك: {{ c.review }}{% else %}لا شيء بانتظار مراجعتك{% endif %}</span>
+            </p>
+        </div>
+        <div class="wt-home-actions">
+            <div class="dropdown">
+                <button type="button" class="btn btn-light" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis"></i><span class="lang-en">More</span><span class="lang-ar">المزيد</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'submission-list' %}"><i class="fas fa-folder-open"></i><span class="lang-en">All submissions</span><span class="lang-ar">كل التقديمات</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'task-list' %}"><i class="fas fa-list-check"></i><span class="lang-en">All tasks</span><span class="lang-ar">كل المهام</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'admin-correspondence' %}"><i class="fas fa-envelope-open-text"></i><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'template-dashboard' %}"><i class="fas fa-cubes"></i><span class="lang-en">Module templates</span><span class="lang-ar">قوالب الوحدات</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'archived-modules' %}"><i class="fas fa-box-archive"></i><span class="lang-en">Archived modules</span><span class="lang-ar">الوحدات المؤرشفة</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'offline-map-manager' %}"><i class="fas fa-map-location-dot"></i><span class="lang-en">Offline maps</span><span class="lang-ar">الخرائط دون اتصال</span></a></li>
+                    <li><a class="dropdown-item" href="{% url 'attendance-dashboard' %}"><i class="fas fa-clock"></i><span class="lang-en">Attendance</span><span class="lang-ar">الحضور</span></a></li>
+                    {% if user.role == 'super_admin' or user.role == 'manager' %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'user-create' %}"><i class="fas fa-user-plus"></i><span class="lang-en">New user</span><span class="lang-ar">مستخدم جديد</span></a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% if user.role == 'super_admin' or user.role == 'manager' %}
+            <a class="btn btn-light" href="{% url 'module-create' %}"><i class="fas fa-layer-group"></i><span class="lang-en">New module</span><span class="lang-ar">وحدة جديدة</span></a>
+            {% endif %}
+            <a class="btn btn-primary" href="{% url 'task-create' %}"><i class="fas fa-plus"></i><span class="lang-en">New task</span><span class="lang-ar">مهمة جديدة</span></a>
+        </div>
+    </header>
+
+    <section class="wt-panel wt-road" id="wt-roadmap" aria-labelledby="wt-road-title" style="--t: {{ rm.today_pct }};">
+        <div class="wt-panel-head">
+            <h2 id="wt-road-title"><span class="lang-en">Roadmap</span><span class="lang-ar">خارطة الطريق</span> <span class="wt-num">{{ rm.year }}</span></h2>
+            <span class="wt-panel-meta">
+                <span class="lang-en">{{ rm.rows|length }} module{{ rm.rows|length|pluralize }}</span><span class="lang-ar">الوحدات: {{ rm.rows|length }}</span>
+                <a href="#system-modules-panel"><span class="lang-en">Manage modules</span><span class="lang-ar">إدارة الوحدات</span></a>
+            </span>
+        </div>
+        {% if rm.rows %}
+        <div class="wt-road-scroll">
+            <div class="wt-road-body">
+                <div class="wt-road-months" aria-hidden="true">
+                    <span></span>
+                    {% for en, ar in rm.months %}<span class="{% if forloop.counter == rm.month_now %}is-now{% elif forloop.counter|add:1 == rm.month_now or forloop.counter|add:-1 == rm.month_now %}is-near{% endif %}"><span class="lang-en">{{ en }}</span><span class="lang-ar">{{ ar }}</span></span>{% endfor %}
+                </div>
+                <div class="wt-road-guides" aria-hidden="true">{% for m in rm.months %}<i></i>{% endfor %}<b class="wt-road-today" title="Today"></b></div>
+                {% for r in rm.rows %}
+                {% ifchanged r.dated %}{% if not r.dated %}<div class="wt-road-divider{% if forloop.counter > 8 %} is-extra{% endif %}"><span class="lang-en">Not scheduled yet</span><span class="lang-ar">غير مجدولة بعد</span></div>{% endif %}{% endifchanged %}
+                <a class="wt-road-row{% if forloop.counter > 8 %} is-extra{% endif %}" href="{% url 'module-dashboard' r.slug %}">
+                    <span class="wt-road-name">
+                        <b dir="auto">{{ r.name }}</b>
+                        <small><span class="wt-num">{{ r.done }} / {{ r.total }}</span> <span class="lang-en">tasks done</span><span class="lang-ar">مهام منجزة</span></small>
+                    </span>
+                    <span class="wt-road-track">
+                        {% if r.dated %}
+                        <span class="wt-road-bar" style="--l: {{ r.left }}%; --w: {{ r.width }}%;" title="{{ r.start|date:'j/n/Y' }} – {{ r.end|date:'j/n/Y' }} · {{ r.rate }}%">
+                            <span class="wt-road-fill" style="--p: {{ r.rate }}%;"></span>
+                        </span>
+                        <span class="wt-road-chips{% if not r.chip_after %} is-before{% endif %}" style="--at: {% if r.chip_after %}calc({{ r.left }}% + {{ r.width }}% + 10px){% else %}calc({{ r.left }}% - 10px){% endif %};">
+                            {% if r.reviews %}<span class="wt-chip is-review"><span class="wt-num">{{ r.reviews }}</span> <span class="lang-en">to review</span><span class="lang-ar">للمراجعة</span></span>{% endif %}
+                            {% if r.overdue %}<span class="wt-chip is-alert"><span class="wt-num">{{ r.overdue }}</span> <span class="lang-en">overdue</span><span class="lang-ar">متأخرة</span></span>{% endif %}
+                            {% if r.late and not r.overdue %}<span class="wt-chip is-alert"><span class="lang-en">Past deadline</span><span class="lang-ar">تجاوزت الموعد</span></span>{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="wt-road-ghost">
+                            <span class="wt-road-ghost-label"><span class="lang-en">No dates set</span><span class="lang-ar">بلا تواريخ</span></span>
+                            {% if r.reviews %}<span class="wt-chip is-review"><span class="wt-num">{{ r.reviews }}</span> <span class="lang-en">to review</span><span class="lang-ar">للمراجعة</span></span>{% endif %}
+                            {% if r.overdue %}<span class="wt-chip is-alert"><span class="wt-num">{{ r.overdue }}</span> <span class="lang-en">overdue</span><span class="lang-ar">متأخرة</span></span>{% endif %}
+                        </span>
+                        {% endif %}
+                    </span>
+                    <span class="wt-road-pct wt-num">{{ r.rate }}%</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% if rm.rows|length > 8 %}
+        <button type="button" class="wt-road-more" onclick="this.closest('.wt-road').classList.toggle('show-all'); this.querySelector('.when-closed').hidden = !this.querySelector('.when-closed').hidden; this.querySelector('.when-open').hidden = !this.querySelector('.when-open').hidden;">
+            <span class="when-closed"><span class="lang-en">Show all {{ rm.rows|length }} modules</span><span class="lang-ar">عرض كل الوحدات ({{ rm.rows|length }})</span></span>
+            <span class="when-open" hidden><span class="lang-en">Show fewer</span><span class="lang-ar">عرض أقل</span></span>
+        </button>
+        {% endif %}
+        {% else %}
+        <div class="wt-empty">
+            <p><span class="lang-en">No modules yet. Modules group a stream of work: its tasks, people and documents.</span><span class="lang-ar">لا توجد وحدات بعد. تجمع الوحدة مسارًا من العمل: مهامه وأشخاصه ووثائقه.</span></p>
+            {% if user.role == 'super_admin' or user.role == 'manager' %}<a class="btn btn-primary" href="{% url 'module-create' %}"><i class="fas fa-plus"></i><span class="lang-en">Create the first module</span><span class="lang-ar">أنشئ أول وحدة</span></a>{% endif %}
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="wt-home-grid">
+        <section class="wt-panel wt-needs" aria-labelledby="wt-needs-title">
+            <div class="wt-panel-head">
+                <h2 id="wt-needs-title"><span class="lang-en">Needs you</span><span class="lang-ar">بانتظارك</span> {% if c.total %}<span class="wt-count-pill wt-num">{{ c.total }}</span>{% endif %}</h2>
+                <span class="wt-panel-meta"><a href="{% url 'submission-list' %}"><span class="lang-en">All submissions</span><span class="lang-ar">كل التقديمات</span></a></span>
+            </div>
+            {% if wt_needs %}
+            <ul class="wt-needs-list">
+                {% for n in wt_needs %}
+                <li>
+                    <a href="{{ n.url }}" class="wt-need is-{{ n.kind }}">
+                        <span class="wt-need-mark" aria-hidden="true">{% if n.kind == 'review' %}{{ n.initials }}{% elif n.kind == 'overdue' %}<i class="fas fa-triangle-exclamation"></i>{% else %}<i class="fas fa-list-check"></i>{% endif %}</span>
+                        <span class="wt-need-main">
+                            <b dir="auto">{{ n.title }}</b>
+                            <small>
+                                {% if n.kind == 'review' %}<span class="lang-en">Version {{ n.version }} · {{ n.who }}</span><span class="lang-ar">النسخة {{ n.version }} · {{ n.who }}</span>
+                                {% elif n.kind == 'overdue' %}<span class="lang-en">Overdue task</span><span class="lang-ar">مهمة متأخرة</span>
+                                {% else %}<span class="lang-en">To-do on</span><span class="lang-ar">مهمة فرعية في</span>{% endif %}{% if n.module %} · {{ n.module }}{% endif %}
+                            </small>
+                        </span>
+                        <span class="wt-need-when">
+                            {% if n.kind == 'review' %}<span class="wt-chip is-review"><span class="lang-en">To review</span><span class="lang-ar">للمراجعة</span></span>
+                            {% elif n.kind == 'overdue' %}<span class="wt-chip is-alert"><span class="lang-en">Since {{ n.when|date:"j M" }}</span><span class="lang-ar">منذ {{ n.when|date:"j/n" }}</span></span>
+                            {% else %}<span class="wt-chip is-muted"><span class="lang-en">To-do</span><span class="lang-ar">قائمة المهام</span></span>{% endif %}
+                            {% if n.kind == 'review' and n.when %}<small class="wt-num"><span class="lang-en">{{ n.when|timesince }} ago</span><span class="lang-ar">{{ n.when|date:"j/n H:i" }}</span></small>{% endif %}
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="wt-empty is-good">
+                <i class="fas fa-circle-check" aria-hidden="true"></i>
+                <p><span class="lang-en">Nothing needs you right now. Reviews, overdue tasks and to-dos will show up here.</span><span class="lang-ar">لا شيء بانتظارك الآن. ستظهر هنا المراجعات والمهام المتأخرة وقوائم المهام.</span></p>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="wt-panel wt-today" aria-labelledby="wt-today-title">
+            <div class="wt-panel-head"><h2 id="wt-today-title"><span class="lang-en">Today</span><span class="lang-ar">اليوم</span></h2></div>
+            <dl class="wt-today-list">
+                <div><dt><span class="lang-en">Tasks completed</span><span class="lang-ar">المهام المنجزة</span></dt><dd class="wt-num">{{ c.completion }}%</dd>
+                    <span class="wt-today-bar" aria-hidden="true"><i style="--p: {{ c.completion }}%;"></i></span></div>
+                <div><dt><span class="lang-en">Waiting for your review</span><span class="lang-ar">بانتظار مراجعتك</span></dt><dd class="wt-num">{{ c.review }}</dd></div>
+                <div><dt><span class="lang-en">Overdue tasks</span><span class="lang-ar">مهام متأخرة</span></dt><dd class="wt-num{% if c.overdue %} is-alert{% endif %}">{{ c.overdue }}</dd></div>
+                <div><dt><span class="lang-en">Open to-dos</span><span class="lang-ar">مهام فرعية مفتوحة</span></dt><dd class="wt-num">{{ c.todo }}</dd></div>
+                <div><dt><span class="lang-en">Team members</span><span class="lang-ar">أعضاء الفريق</span></dt><dd class="wt-num">{{ c.team }}</dd></div>
+            </dl>
+        </section>
+    </div>
+</div>
+{% endwith %}

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}System Audit Logs · Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ========= HERO BANNER ========= */
+.audit-hero {
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+.audit-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none; opacity: 0.3;
+}
+.hero-content { position: relative; z-index: 2; padding: 3rem 2.5rem; color: white; }
+.hero-title { font-size: 2.25rem; font-weight: 800; letter-spacing: -.8px; margin-bottom: .5rem; }
+.hero-subtitle { opacity: .7; font-size: 1rem; margin: 0; }
+
+/* ========= FILTER CARD ========= */
+.filter-card {
+    background: white; border-radius: 20px; padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    margin-bottom: 2rem; border: 1px solid #f1f5f9;
+}
+.filter-form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+.filter-group { flex: 1; min-width: 180px; }
+.filter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: .5rem; display: block; }
+.filter-select, .filter-input {
+    width: 100%; border: 1.5px solid #e2e8f0; border-radius: 12px;
+    padding: .6rem 1rem; font-size: .875rem; color: #1e293b;
+    transition: all .2s; background-color: #f8fafc;
+}
+.filter-select:focus, .filter-input:focus { border-color: #6366f1; outline: none; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.filter-btn {
+    padding: .65rem 1.5rem; border-radius: 12px; font-weight: 700; font-size: .875rem;
+    background: #6366f1; color: white; border: none; cursor: pointer; transition: all .2s;
+}
+.filter-btn:hover { background: #4f46e5; transform: translateY(-1px); }
+
+/* ========= TABLE PANEL ========= */
+.panel-card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid #f1f5f9; }
+.panel-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+.panel-title { font-weight: 800; font-size: 1.1rem; color: #0f172a; margin: 0; display: flex; align-items: center; gap: .75rem; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th {
+    background: #f8fafc; padding: .9rem 1.25rem;
+    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #64748b;
+    border-bottom: 1px solid #f1f5f9;
+}
+.data-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .15s; }
+.data-table tbody tr:hover { background: #fbfcfe; }
+.data-table tbody td { padding: 1rem 1.25rem; vertical-align: middle; font-size: .875rem; color: #334155; }
+
+/* ========= CHIPS & BADGES ========= */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: .3rem .75rem; border-radius: 50px; font-size: .75rem; font-weight: 700; }
+.chip-create { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
+.chip-update { background: #dbeafe; color: #1e40af; }
+.chip-delete { background: #fee2e2; color: color-mix(in oklab, var(--wt-bad) 70%, #000); }
+.chip-login  { background: #fef9c3; color: #854d0e; }
+
+.user-pill { display: flex; align-items: center; gap: .75rem; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; }
+.time-stamp { font-size: .75rem; color: #94a3b8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="audit-hero">
+    <div class="hero-content">
+        <h1 class="hero-title"><i class="fas fa-history me-2"></i> System Audit Logs</h1>
+        <p class="hero-subtitle">Comprehensive tracking of all system activities and administrative changes.</p>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label">Action Type</label>
+                <select name="action" class="filter-select">
+                    <option value="">All Actions</option>
+                    {% for val, label in action_choices %}
+                    <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Object Type</label>
+                <input type="text" name="object_type" class="filter-input" placeholder="e.g. Task, User" value="{{ object_type_filter }}">
+            </div>
+            <div class="filter-group" style="flex: 0 0 auto;">
+                <button type="submit" class="filter-btn">
+                    <i class="fas fa-filter me-1"></i> Apply Filters
+                </button>
+                <a href="?" class="btn btn-link text-muted fw-bold text-decoration-none small ms-2">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="panel-card">
+        <div class="panel-header">
+            <h2 class="panel-title"><i class="fas fa-list-ul" style="color:#6366f1;"></i> Activity History</h2>
+            <span class="badge bg-light text-dark rounded-pill px-3">{{ logs.count }} entries</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></th>
+                        <th>Object</th>
+                        <th>IP Address</th>
+                        <th>Changes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ log.created_at|date:"M d, Y" }}</div>
+                            <div class="time-stamp">{{ log.created_at|time:"H:i:s" }}</div>
+                        </td>
+                        <td>
+                            <div class="user-pill">
+                                <div class="user-avatar">{{ log.user.first_name|first|upper }}</div>
+                                <div>
+                                    <div class="fw-bold">{{ log.user.get_full_name }}</div>
+                                    <div class="time-stamp">{{ log.user.get_role_display }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if log.action == 'create' %}
+                                <span class="chip chip-create"><i class="fas fa-plus-circle"></i><span class="lang-en">Create</span><span class="lang-ar">إنشاء</span></span>
+                            {% elif log.action == 'update' %}
+                                <span class="chip chip-update"><i class="fas fa-edit"></i><span class="lang-en">Update</span><span class="lang-ar">تحديث</span></span>
+                            {% elif log.action == 'delete' %}
+                                <span class="chip chip-delete"><i class="fas fa-trash-alt"></i><span class="lang-en">Delete</span><span class="lang-ar">حذف</span></span>
+                            {% elif 'login' in log.action %}
+                                <span class="chip chip-login"><i class="fas fa-sign-in-alt"></i><span class="lang-en">Login</span><span class="lang-ar">تسجيل الدخول</span></span>
+                            {% else %}
+                                <span class="chip chip-update">{{ log.action|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ log.object_type }}</div>
+                            <div class="small text-muted">ID: #{{ log.object_id|default:"N/A" }}</div>
+                        </td>
+                        <td>
+                            <code class="small text-muted">{{ log.ip_address|default:"-" }}</code>
+                        </td>
+                        <td style="max-width:300px;">
+                            <div class="small text-truncate" title="{{ log.changes|default:'' }}">
+                                {{ log.description|default:"No details provided." }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted mb-2"><i class="fas fa-info-circle fa-2x opacity-25"></i></div>
+                            <h6 class="fw-bold">No activity logs found</h6>
+                            <p class="small text-muted">Try adjusting your filters or check back later.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

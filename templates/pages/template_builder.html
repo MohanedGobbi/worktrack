@@ -1,0 +1,999 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Template Builder: {{ template.name }} - Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── PREMIUM BANNER ─────────────────────────────────────────── */
+.builder-hero {
+    background: radial-gradient(60% 70% at 78% 42%, rgba(var(--wt-brand-rgb),.45), transparent 70%), radial-gradient(50% 60% at 15% 100%, rgba(var(--wt-brand-rgb),.35), transparent 70%), linear-gradient(160deg, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 55%, #0c0306 100%);
+    border-radius: 24px;
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(var(--wt-brand-rgb),0.15);
+}
+.hero-pattern {
+    display: none !important;
+}
+.hero-icon-box {
+    width: 64px; height: 64px;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    background: #2563eb;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* ─── TASK LISTS ────────────────────────────────────────────── */
+.task-container-label {
+    font-size: 0.85rem; font-weight: 900; letter-spacing: 0.5px;
+    color: #1e293b; margin-bottom: 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 0.75rem; border-bottom: 2px solid #f1f5f9;
+}
+.task-column {
+    background: #fcfdfe;
+    border-radius: 24px;
+    padding: 1rem;
+    min-height: 300px;
+    border: 1px solid #f1f5f9;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.01);
+    transition: all 0.3s ease;
+}
+.task-column:empty::after {
+    content: 'Drop items here or use the form to add units';
+    display: flex; height: 100px; align-items: center; justify-content: center;
+    color: #94a3b8; font-size: 0.75rem; font-weight: 600; font-style: italic;
+    border: 2px dashed #e2e8f0; border-radius: 16px; margin: 10px;
+}
+.task-column.active-drop { background: #f0f7ff; border-color: #3b82f6; }
+
+/* ─── AMAZING PREMIUM TASK CARDS ──────────────────────────────── */
+/* ─── AMAZING PREMIUM TASK CARDS ──────────────────────────────── */
+/* ─── PREMIUM COMPACT TASK CARDS ──────────────────────────────── */
+.task-item {
+    background: white;
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    gap: 1rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    cursor: grab;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+.task-item:hover { 
+    transform: translateX(6px);
+    border-color: rgba(59, 130, 246, 0.5); 
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08); 
+}
+.sortable-ghost { opacity: 0.4; background: #f8fafc !important; border: 2px dashed #cbd5e1 !important; }
+.sortable-drag { background: white !important; box-shadow: 0 20px 50px rgba(0,0,0,0.15) !important; transform: scale(1.05); }
+.task-item::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--node-color, #3b82f6);
+}
+
+.drag-handle {
+    width: 20px; display: flex; align-items: center; justify-content: center;
+    color: #cbd5e1; cursor: grab; font-size: 0.8rem;
+}
+.task-item:hover .drag-handle { color: #94a3b8; }
+
+.task-img-preview {
+    width: 60px; height: 60px; border-radius: 12px;
+    object-fit: cover; background: #f8fafc; flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;
+}
+.task-icon-lg {
+    width: 60px; height: 60px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    color: #64748b; flex-shrink: 0; position: relative;
+    border: 1px solid #e2e8f0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.task-item:hover .task-icon-lg {
+    background: var(--node-color, #3b82f6);
+    color: white; transform: rotate(5deg) scale(1.1);
+    box-shadow: 0 10px 20px rgba(59,130,246,0.15);
+}
+
+.seq-num {
+    position: absolute; bottom: 0.6rem; right: 0.6rem;
+    font-size: 0.65rem; font-weight: 900; color: #94a3b8;
+    background: #f8fafc; padding: 2px 8px; border-radius: 6px;
+    border: 1px solid #f1f5f9; opacity: 0.7;
+}
+
+.task-id-badge {
+    position: absolute; top: 0.6rem; right: 0.6rem;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: #fff; padding: 3px 8px; border-radius: 6px;
+    font-size: 0.6rem; font-weight: 900; letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.task-item:hover .task-id-badge {
+    background: var(--node-color, #3b82f6);
+    transform: scale(1.1) rotate(-2deg);
+}
+
+.task-info-inline {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem;
+}
+.info-tag {
+    background: #f1f5f9; padding: 2px 8px; border-radius: 6px;
+    font-size: 0.65rem; color: #475569; font-weight: 700;
+    display: flex; align-items: center; gap: 4px;
+}
+.info-tag i { font-size: 0.7rem; opacity: 0.7; }
+
+.task-actions-side {
+    display: flex; gap: 0.25rem; padding: 4px;
+    background: #f8fafc; border-radius: 12px;
+    align-items: center; border: 1px solid #f1f5f9;
+    flex-shrink: 0; margin-left: auto;
+}
+.task-item:hover .task-actions-side {
+    background: #eff6ff;
+    border-color: #dbeafe;
+}
+.btn-action-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: white; color: #64748b; border: 1px solid #f1f5f9;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 0.75rem;
+}
+.btn-action-icon:hover {
+    color: #2563eb; transform: scale(1.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-color: #3b82f6;
+}
+.btn-action-icon.danger:hover { color: var(--wt-bad); border-color: #fca5a5; }
+
+.priority-line {
+    width: 30px; height: 3px; border-radius: 50px; margin-top: 4px;
+}
+.priority-high { background: var(--wt-bad); box-shadow: 0 1px 4px rgba(192, 40, 58, 0.4); }
+.priority-medium { background: #f59e0b; box-shadow: 0 1px 4px rgba(245, 158, 11, 0.4); }
+.priority-low { background: var(--color-primary, #10b981); box-shadow: 0 1px 4px color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent); }
+.priority-critical { background: #7c3aed; box-shadow: 0 1px 4px rgba(124, 58, 237, 0.4); }
+
+.reorder-controls { display: flex; flex-direction: column; gap: 4px; }
+
+/* ─── FILE PILLS ────────────────────────────────────────────── */
+.file-pill {
+    background: #eff6ff; border: 1px solid #dbeafe;
+    padding: 4px 12px; border-radius: 50px;
+    font-size: 0.72rem; color: #1e40af; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+
+/* ─── ADVANCED BUILDER UI ────────────────────────────────────── */
+:root { --timeline-zoom: 1; }
+.timeline-viz-container {
+    background: white; border-radius: 24px;
+    margin-bottom: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    overflow-x: auto; position: relative; border: 1px solid #f1f5f9;
+}
+.timeline-controls {
+    display: flex; align-items: center; gap: 1rem;
+    background: white; padding: 0.75rem 1.5rem; border-radius: 100px;
+    width: fit-content; border: 1px solid #e2e8f0;
+}
+.timeline-viz-flow {
+    display: flex; align-items: center; min-width: max-content;
+    position: relative; transform-origin: left center;
+    transition: transform 0.2s ease-out;
+}
+.timeline-viz-flow::before {
+    content: ''; position: absolute; top: 32px; left: 0; right: 0;
+    height: 12px; background: #f1f5f9; z-index: 1; border-radius: 50px;
+}
+.timeline-node {
+    position: relative; z-index: 2; display: flex; flex-direction: column;
+    align-items: center; width: calc(280px * var(--timeline-zoom));
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-shrink: 0;
+    padding-top: 2rem;
+}
+.timeline-node:hover { transform: translateY(-10px); }
+.node-marker-wrap { position: relative; margin-bottom: 2.5rem; }
+.node-date-label {
+    position: absolute; top: -3.5rem; left: 50%; transform: translateX(-50%);
+    font-size: 0.65rem; font-weight: 900; color: white; white-space: nowrap;
+    background: var(--node-color, #3b82f6); padding: 4px 12px; border-radius: 50px; 
+    box-shadow: 0 4px 12px var(--node-color-light, rgba(59,130,246,0.3));
+    letter-spacing: 1px; text-transform: uppercase;
+}
+.node-triangle {
+    width: 4px; height: 60px; background: linear-gradient(to bottom, var(--node-color, #3b82f6), #f1f5f9);
+    border-radius: 50px; position: relative;
+}
+.node-triangle::after {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 12px; height: 12px; background: white; border: 3px solid var(--node-color, #3b82f6);
+    border-radius: 50%; box-shadow: 0 0 10px var(--node-color-light, rgba(59,130,246,0.3));
+}
+
+.node-main-icon-wrap {
+    width: 84px; height: 84px; border-radius: 24px; background: white;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08); display: flex;
+    align-items: center; justify-content: center; border: 2px solid #f1f5f9;
+    font-size: 1.8rem; color: var(--node-color, #3b82f6); position: relative;
+    transition: all 0.4s; transform: rotate(-5deg);
+}
+.timeline-node:hover .node-main-icon-wrap {
+    transform: rotate(0deg) scale(1.1);
+    border-color: var(--node-color, #3b82f6);
+    background: var(--node-color, #3b82f6);
+    color: white;
+}
+.node-label { text-align: center; padding: 0 1.5rem; background: white; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); padding: 1rem; margin-top: 1rem; width: 90%; }
+.node-title { font-size: 1rem; font-weight: 900; color: #1e293b; margin-bottom: 0.4rem; display: block; }
+.node-desc {
+    font-size: 0.72rem; color: #64748b; display: -webkit-box;
+    -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; line-height: 1.6; font-weight: 500;
+}
+
+/* ─── EMPTY STATE ────────────────────────────────────────────── */
+.timeline-empty-state {
+    padding: 4rem 2rem; text-align: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 24px; border: 2px dashed #e2e8f0;
+}
+.empty-state-icon { font-size: 3rem; color: #cbd5e1; margin-bottom: 1.5rem; }
+
+/* ─── ICON PICKER ────────────────────────────────────────────── */
+.icon-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px; max-height: 400px; overflow-y: auto; padding: 10px;
+}
+.icon-item {
+    height: 60px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; border: 1px solid #e2e8f0; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s;
+}
+.icon-item:hover { background: #f8fafc; border-color: #3b82f6; color: #3b82f6; }
+.icon-item.active { background: #eff6ff; border-color: #3b82f6; color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.icon-item i { font-size: 1.25rem; margin-bottom: 4px; }
+.icon-item span { font-size: 0.6rem; color: #64748b; }
+
+/* ─── FORM & SEARCH ──────────────────────────────────────────── */
+.builder-form-card {
+    border-radius: 24px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);
+}
+.form-section-title {
+    font-size: 0.85rem; font-weight: 700; color: #1e293b;
+    margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f1f5f9;
+}
+.search-wrapper { position: relative; margin-bottom: 2rem; }
+.search-wrapper i { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+.search-input {
+    padding-left: 3rem !important; border-radius: 100px !important;
+    border: 1.5px solid #e2e8f0 !important; font-weight: 500;
+}
+.search-input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important; }
+#autosave-indicator { 
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+    z-index: 9999; display: flex !important; align-items: center; 
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+#autosave-indicator.show { opacity: 1 !important; pointer-events: auto !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    <!-- ===== HERO BANNER ===== -->
+    <div class="builder-hero">
+        <div class="hero-pattern"></div>
+        <div style="position: relative; z-index: 2;">
+            <div class="d-flex align-items-center gap-4">
+                <div class="hero-icon-box text-white" data-bg-color="{{ template.color|default:'#2563eb' }}">
+                    <i class="fas {{ template.icon_class|default:'fa-folder' }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <a href="{% url 'template-dashboard' %}" class="btn btn-sm btn-link p-0 text-white opacity-50 text-decoration-none">
+                            <i class="fas fa-arrow-left"></i> Back to Templates
+                        </a>
+                    </div>
+                    <h1 class="text-white fw-900 mb-1" style="font-size: 2.2rem; letter-spacing: -1px;">{{ template.name }}</h1>
+                    <p class="text-white opacity-75 mb-0 small">Module Builder: Sequencing workflow units & correspondence.</p>
+                </div>
+                <div class="d-none d-lg-flex flex-column align-items-end gap-2">
+                    <a href="{% url 'template-dashboard' %}" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-lg transform-hover">
+                        <i class="fas fa-check-circle me-2"></i> Save & Finish
+                    </a>
+                    <span class="badge bg-white bg-opacity-10 text-white rounded-pill px-3 py-2 border border-white border-opacity-10">
+                        <i class="fas fa-stream me-2"></i> <span id="master-count">0</span> Units Defined
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Search & Actions -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="builder-search" class="form-control form-control-lg search-input shadow-sm" placeholder="Search workflow units by title or description...">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== AMAZING TIMELINE VIZ ===== -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="timeline-controls shadow-sm">
+            <i class="fas fa-search-minus text-muted"></i>
+            <input type="range" class="form-range" id="timeline-zoom" min="0.5" max="2" step="0.1" value="1" style="width: 150px;">
+            <i class="fas fa-search-plus text-muted"></i>
+            <span class="ms-3 small fw-bold text-muted">Timeline Scale</span>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                <i class="fas fa-calendar-alt me-2 text-primary"></i> Relative Sequence
+            </span>
+        </div>
+    </div>
+
+    <div class="timeline-viz-container shadow-sm p-0 overflow-hidden">
+        <div class="timeline-viz-flow p-5" id="visual-timeline-flow">
+            <!-- Progress Line Placeholder -->
+            <div class="timeline-empty-state w-100" id="timeline-empty-msg">
+                <div class="empty-state-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <h5 class="fw-bold text-dark">Your Timeline is Empty</h5>
+                <p class="text-muted small mb-0">Start by adding workflow units in the form below to visualize your process.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- ===== LEFT: ADD TASK FORM ===== -->
+        <div class="col-lg-4">
+            <div class="card builder-form-card">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 d-flex align-items-center">
+                        <i class="fas fa-plus-circle text-primary me-2"></i> <span id="form-mode-title">Add Workflow Unit</span>
+                    </h5>
+                    <form id="add-task-form">
+                        <input type="hidden" id="task-id" value="">
+                        <div class="mb-3">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Unit Identity</label>
+                            <input type="text" id="task-title" class="form-control rounded-3 py-2" placeholder="e.g. Assessment Report" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Logistics & Intensity</label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <select id="task-type" class="form-select rounded-3 py-2">
+                                        <option value="standard">Standard Task</option>
+                                        <option value="correspondence"><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <select id="task-priority" class="form-select rounded-3 py-2">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Correspondence Category -->
+                        <div id="correspondence-type-wrapper" class="mb-3" style="display:none;">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Administrative Category</label>
+                            <select id="task-correspondence-type" class="form-select rounded-3 py-2" style="background-color: #f0f9ff; border-color: #bae6fd;">
+                                <option value="">-- Choose Category --</option>
+                                <option value="circular">Circular</option>
+                                <option value="directive">Directive</option>
+                                <option value="memo">Memo</option>
+                                <option value="notice">Notice</option>
+                                <option value="decision">Decision</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <label class="form-label fw-800 small text-muted text-uppercase">Hours</label>
+                                    <input type="number" id="task-hours" class="form-control rounded-3" value="0" step="0.5" min="0">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label fw-800 small text-muted text-uppercase">Weight</label>
+                                    <input type="number" id="task-weight" class="form-control rounded-3" value="1.0" step="0.1" min="0.1">
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label fw-800 small text-muted text-uppercase">Offset</label>
+                                    <input type="number" id="task-offset" class="form-control rounded-3" value="7" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Icon & Progress</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <button type="button" id="icon-picker-trigger" class="btn btn-outline-secondary rounded-3 px-3 py-2 flex-grow-0" style="min-width: 50px;">
+                                    <i id="selected-icon-preview" class="fas fa-tasks"></i>
+                                </button>
+                                <input type="hidden" id="task-icon-class" value="fa-tasks">
+                                <div class="flex-grow-1">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0 rounded-start-3" style="font-size: 0.75rem; font-weight: 700;">PROG</span>
+                                        <input type="number" id="task-progress" class="form-control rounded-end-3" value="0" min="0" max="100">
+                                        <span class="input-group-text bg-white border-start-0">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Context/Description</label>
+                            <textarea id="task-desc" class="form-control rounded-3" rows="3" placeholder="Define the requirements for this unit..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-800 small text-muted text-uppercase">Documentation & Media</label>
+                            <div class="p-3 border rounded-3 bg-light" style="border-style: dashed !important;">
+                                <div class="mb-2">
+                                    <label class="small fw-bold text-muted mb-1">Cover Image</label>
+                                    <input type="file" id="task-cover" class="form-control form-control-sm bg-white" accept="image/*">
+                                </div>
+                                <div>
+                                    <label class="small fw-bold text-muted mb-1">Resource Attachments</label>
+                                    <input type="file" id="task-attachments" class="form-control form-control-sm bg-white" name="attachments[]" multiple>
+                                    <div class="mt-1 small text-muted">You can select multiple files.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Forms Section -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-800 small text-muted text-uppercase mb-0">Submission Fields (Forms)</label>
+                                <button type="button" id="add-field-btn" class="btn btn-link btn-sm p-0 text-decoration-none fw-bold">
+                                    <i class="fas fa-plus-circle me-1"></i> Add Field
+                                </button>
+                            </div>
+                            <div id="custom-fields-container" class="bg-white rounded-3 p-2 border" style="min-height: 50px;">
+                                <!-- Fields will be added here -->
+                            </div>
+                        </div>
+
+
+                        <div class="d-flex gap-2">
+                            <button type="button" id="cancel-edit-btn" class="btn btn-light rounded-pill py-2 fw-bold flex-grow-1" style="display:none;"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                            <button type="submit" id="add-task-btn" class="btn btn-dark rounded-pill py-2 fw-bold shadow-sm flex-grow-2 w-100">
+                                <i class="fas fa-plus me-2"></i> <span id="submit-btn-text">Append to Workflow</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RIGHT: SPLIT PANELS ===== -->
+        <div class="col-lg-8">
+            <!-- TASKS PANEL -->
+            <div class="mb-4">
+                <div class="task-container-label">
+                    <i class="fas fa-tasks text-primary"></i> Standard Tasks
+                    <span class="badge bg-primary rounded-pill" id="std-count">0</span>
+                </div>
+                <div id="standard-tasks-list" class="task-column">
+                    <!-- Standard tasks go here -->
+                </div>
+            </div>
+
+            <!-- CORRESPONDINGS PANEL -->
+            <div>
+                <div class="task-container-label">
+                    <i class="fas fa-envelope-open-text text-info"></i> Corresponding Items
+                    <span class="badge bg-info rounded-pill" id="corr-count">0</span>
+                </div>
+                <div id="correspondence-list" class="task-column">
+                    <!-- Correspondence items go here -->
+                </div>
+            </div>
+
+            <!-- FINAL BUILDER ACTIONS -->
+            <div class="mt-5 p-4 rounded-4 bg-white border shadow-sm d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-900 text-dark mb-1">Workflow Complete?</h5>
+                    <p class="text-muted small mb-0">Review your visual timeline or deploy this template to a module.</p>
+                </div>
+                <div class="d-flex gap-3">
+                    <button onclick="document.getElementById('visual-timeline-flow').scrollIntoView({behavior: 'smooth', block: 'center'})" class="btn btn-outline-dark rounded-pill px-4 fw-bold">
+                        <i class="fas fa-project-diagram me-2"></i> View Full Workflow
+                    </button>
+                    <a href="{% url 'template-dashboard' %}" class="btn btn-success rounded-pill px-4 fw-bold shadow">
+                        <i class="fas fa-check-circle me-2"></i> Save & Exit
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Auto-save Indicator (Hidden as requested) -->
+<div id="autosave-indicator" style="display: none !important;"></div>
+
+<!-- Sortable JS -->
+<script src="{% static 'vendor/sortablejs/Sortable.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateId = '{{ template.id }}';
+    let tasks = [];
+    
+    // UI Elements
+    const stdListEl = document.getElementById('standard-tasks-list');
+    const corrListEl = document.getElementById('correspondence-list');
+    const masterCountEl = document.getElementById('master-count');
+    const stdCountEl = document.getElementById('std-count');
+    const corrCountEl = document.getElementById('corr-count');
+    
+    // Icon Data
+    const iconList = [
+        { c: 'fa-tasks', n: 'Task' }, { c: 'fa-file-alt', n: 'Doc' }, { c: 'fa-check-double', n: 'Check' },
+        { c: 'fa-envelope-open-text', n: 'Email' }, { c: 'fa-phone-alt', n: 'Call' }, { c: 'fa-users', n: 'Team' },
+        { c: 'fa-search', n: 'Review' }, { c: 'fa-upload', n: 'Submit' }, { c: 'fa-image', n: 'Photo' },
+        { c: 'fa-file-pdf', n: 'PDF' }, { c: 'fa-signature', n: 'Sign' }, { c: 'fa-calculator', n: 'Math' },
+        { c: 'fa-calendar-check', n: 'Meet' }, { c: 'fa-tools', n: 'Fix' }, { c: 'fa-shipping-fast', n: 'Ship' }
+    ];
+
+    // Toggle correspondence wrapper
+    document.getElementById('task-type').addEventListener('change', function() {
+        document.getElementById('correspondence-type-wrapper').style.display = this.value === 'correspondence' ? 'block' : 'none';
+    });
+
+    // Initialize Sortable
+    [stdListEl, corrListEl].forEach(el => {
+        if (el) {
+            new Sortable(el, {
+                group: 'workflow', animation: 150, ghostClass: 'bg-light',
+                handle: '.drag-handle', onEnd: updateOrder
+            });
+        }
+    });
+
+    const customFieldsEl = document.getElementById('custom-fields-container');
+    if (customFieldsEl) {
+        new Sortable(customFieldsEl, {
+            animation: 150, ghostClass: 'bg-light', handle: '.field-drag-handle'
+        });
+    }
+
+    // Icon Picker logic
+    const iconModal = new bootstrap.Modal(document.getElementById('iconPickerModal'));
+    document.getElementById('icon-picker-trigger').onclick = () => {
+        renderIconGrid();
+        iconModal.show();
+    };
+
+    function renderIconGrid(query = '') {
+        const grid = document.getElementById('icon-grid');
+        grid.innerHTML = '';
+        iconList.filter(i => i.n.toLowerCase().includes(query.toLowerCase())).forEach(icon => {
+            const div = document.createElement('div');
+            div.className = `icon-item ${document.getElementById('task-icon-class').value === icon.c ? 'active' : ''}`;
+            div.innerHTML = `<i class="fas ${icon.c}"></i><span>${icon.n}</span>`;
+            div.onclick = () => {
+                document.getElementById('task-icon-class').value = icon.c;
+                document.getElementById('selected-icon-preview').className = `fas ${icon.c}`;
+                iconModal.hide();
+            };
+            grid.appendChild(div);
+        });
+    }
+    document.getElementById('icon-search').oninput = (e) => renderIconGrid(e.target.value);
+
+    // Form logic
+    window.addCustomField = function(data = {}) {
+        const container = document.getElementById('custom-fields-container');
+        const row = document.createElement('div');
+        row.className = 'custom-field-row flex-column mb-3 bg-light p-3 rounded-3 border';
+        row.innerHTML = `
+            <div class="d-flex gap-2 align-items-center mb-2">
+                <span class="field-drag-handle text-muted" style="cursor: move;"><i class="fas fa-grip-vertical"></i></span>
+                <input type="text" class="form-control form-control-sm field-label-input" placeholder="Field Label (e.g. Serial Number)" value="${escapeHTML(data.label || '')}" style="max-width: 250px;">
+                <select class="form-select form-select-sm field-type-input" style="max-width: 150px;" onchange="toggleOptionsForField(this)">
+                    <option value="text" ${data.field_type === 'text' ? 'selected' : ''}>Short Text</option>
+                    <option value="textarea" ${data.field_type === 'textarea' ? 'selected' : ''}>Long Text</option>
+                    <option value="number" ${data.field_type === 'number' ? 'selected' : ''}>Number</option>
+                    <option value="select" ${data.field_type === 'select' ? 'selected' : ''}>Select Menu</option>
+                    <option value="checkbox" ${data.field_type === 'checkbox' ? 'selected' : ''}>Single Checkbox</option>
+                    <option value="checkbox_group" ${data.field_type === 'checkbox_group' ? 'selected' : ''}>Checkboxes</option>
+                    <option value="radio" ${data.field_type === 'radio' ? 'selected' : ''}>Radio Buttons</option>
+                    <option value="date" ${data.field_type === 'date' ? 'selected' : ''}><span class="lang-en">Date</span><span class="lang-ar">التاريخ</span></option>
+                    <option value="file" ${data.field_type === 'file' ? 'selected' : ''}>File Upload</option>
+                    <option value="section" ${data.field_type === 'section' ? 'selected' : ''}>Section / Page Break</option>
+                </select>
+                <div class="form-check mb-0 ms-2 field-required-wrapper" style="display: ${data.field_type === 'section' ? 'none' : 'block'}">
+                    <input class="form-check-input field-required-input" type="checkbox" ${data.required ? 'checked' : ''}>
+                    <label class="form-check-label small">Required</label>
+                </div>
+                <button type="button" class="btn btn-sm text-danger ms-auto" onclick="this.closest('.custom-field-row').remove()"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="field-options-wrapper" style="display: ${['select', 'radio', 'checkbox_group', 'section'].includes(data.field_type) ? 'block' : 'none'}">
+                <input type="text" class="form-control form-control-sm field-options-input" placeholder="${data.field_type === 'section' ? 'Section Description (Optional)' : 'Options (comma separated, e.g. High, Medium, Low)'}" value="${escapeHTML(data.options || '')}">
+            </div>
+        `;
+        container.appendChild(row);
+    };
+
+    window.toggleOptionsForField = function(select) {
+        const row = select.closest('.custom-field-row');
+        const wrapper = row.querySelector('.field-options-wrapper');
+        const optionsInput = row.querySelector('.field-options-input');
+        const requiredWrapper = row.querySelector('.field-required-wrapper');
+        
+        const showOptions = ['select', 'radio', 'checkbox_group', 'section'].includes(select.value);
+        wrapper.style.display = showOptions ? 'block' : 'none';
+        
+        if (select.value === 'section') {
+            optionsInput.placeholder = 'Section Description (Optional)';
+            requiredWrapper.style.display = 'none';
+        } else {
+            optionsInput.placeholder = 'Options (comma separated, e.g. High, Medium, Low)';
+            requiredWrapper.style.display = 'block';
+        }
+    };
+
+
+    document.getElementById('add-field-btn').addEventListener('click', () => { window.addCustomField(); });
+
+    function showAutoSave(status = 'saving') {
+        // Disabled visual indicator as requested
+        return;
+    }
+
+    function updateOrder() {
+        showAutoSave('saving');
+        const sequence = [];
+        [...stdListEl.querySelectorAll('.task-item'), ...corrListEl.querySelectorAll('.task-item')].forEach((item, index) => {
+            sequence.push({ id: item.dataset.id, order: index });
+            const t = tasks.find(x => x.id == item.dataset.id);
+            if(t) t.sequence_order = index;
+        });
+        tasks.sort((a,b) => a.sequence_order - b.sequence_order);
+        fetch(`/templates/manage/${templateId}/`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ sequence })
+        })
+        .then(r => r.json())
+        .then(data => { 
+            if(data.status === 'success') {
+                showAutoSave('saved'); 
+                render(); 
+            } else {
+                showAutoSave('error');
+                console.error("Order update failed:", data.message);
+            }
+        })
+        .catch(err => {
+            showAutoSave('error');
+            console.error("Fetch error during order update:", err);
+        });
+    }
+
+    // Interactive Controls
+    const zoomInput = document.getElementById('timeline-zoom');
+    if (zoomInput) {
+        zoomInput.addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--timeline-zoom', e.target.value);
+        });
+    }
+
+    const builderSearch = document.getElementById('builder-search');
+    if (builderSearch) {
+        builderSearch.addEventListener('input', (e) => {
+            render(e.target.value.toLowerCase());
+        });
+    }
+
+    function loadTasks() {
+        fetch(`/templates/manage/${templateId}/`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP error ' + r.status);
+            return r.json();
+        })
+        .then(data => { 
+            if(data.status === 'success') { 
+                tasks = data.tasks; 
+                render(); 
+            } else {
+                console.error("Load tasks failed:", data.message);
+            }
+        })
+        .catch(err => console.error("Fetch error during load tasks:", err));
+    }
+    loadTasks();
+
+    function render(query = '') {
+        if (!Array.isArray(tasks)) tasks = [];
+        
+        stdListEl.innerHTML = ''; 
+        corrListEl.innerHTML = '';
+        const vFlow = document.getElementById('visual-timeline-flow');
+        const emptyMsg = document.getElementById('timeline-empty-msg');
+        
+        if (!vFlow) return;
+
+        // Clear only timeline nodes, keeping the empty message reference
+        vFlow.querySelectorAll('.timeline-node').forEach(n => n.remove());
+        
+        const filteredTasks = tasks.filter(t => !query || t.title.toLowerCase().includes(query));
+        
+        if (filteredTasks.length === 0) {
+            if (emptyMsg) {
+                emptyMsg.style.display = 'block';
+                if (!vFlow.contains(emptyMsg)) vFlow.appendChild(emptyMsg);
+            }
+        } else {
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            
+            let cumulative = 0;
+            const colors = ['#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b', 'var(--color-primary, #10b981)', '#06b6d4'];
+            
+            // Sort by order and render
+            [...tasks].sort((a,b) => (a.sequence_order || 0) - (b.sequence_order || 0)).forEach((t, i) => {
+                // We still process the cumulative even if filtered for search, 
+                // but we hide the node if it doesn't match?
+                // Actually, for search, let's keep the sequence but only show matches.
+                
+                const matches = !query || t.title.toLowerCase().includes(query);
+                cumulative += parseInt(t.deadline_offset_days || 0);
+                
+                if (matches) {
+                    const color = colors[i % colors.length];
+                    vFlow.appendChild(createTimelineNode(t, cumulative, color));
+                    
+                    const card = createTaskElement(t, i, color);
+                    (t.task_type === 'correspondence' ? corrListEl : stdListEl).appendChild(card);
+                }
+            });
+        }
+        
+        // Update counts (based on total tasks, not filtered)
+        stdCountEl.innerText = tasks.filter(t => t.task_type !== 'correspondence').length;
+        corrCountEl.innerText = tasks.filter(t => t.task_type === 'correspondence').length;
+        masterCountEl.innerText = tasks.length;
+    }
+
+    function createTimelineNode(t, cumulative, color) {
+        const node = document.createElement('div');
+        node.className = 'timeline-node';
+        node.style.setProperty('--node-color', color);
+        const icon = t.icon_class || (t.task_type === 'correspondence' ? 'fa-file-alt' : 'fa-tasks');
+        node.innerHTML = `
+            <div class="node-marker-wrap">
+                <div class="node-date-label">Step Day +${cumulative}</div>
+                <div class="node-triangle"></div>
+            </div>
+            <div class="node-main-icon-wrap shadow-sm">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="node-label">
+                <strong class="node-title">${escapeHTML(t.title)}</strong>
+                <p class="node-desc">${escapeHTML(t.description || 'No description provided.')}</p>
+            </div>`;
+        return node;
+    }
+
+    function createTaskElement(t, index, color) {
+        const div = document.createElement('div');
+        div.className = 'task-item';
+        div.dataset.id = t.id;
+        div.style.setProperty('--node-color', color);
+        const icon = t.icon_class || (t.task_type === 'correspondence' ? 'fa-file-alt' : 'fa-tasks');
+        
+        const prioMap = { 'low': 'priority-low', 'medium': 'priority-medium', 'high': 'priority-high', 'critical': 'priority-critical' };
+        const prioClass = prioMap[t.priority] || 'priority-medium';
+        const typeLabel = t.task_type === 'correspondence' ? 'Correspondence' : 'Unit';
+
+        div.innerHTML = `
+            <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
+            <div class="d-flex flex-column" style="width: 60px; flex-shrink: 0;">
+                ${t.cover_image ? 
+                    `<img src="${t.cover_image}" class="task-img-preview">` : 
+                    `<div class="task-icon-lg"><i class="fas ${icon}" style="color:${color}"></i></div>`
+                }
+                <div class="priority-line ${prioClass}" title="Priority: ${t.priority}"></div>
+            </div>
+            
+            <div class="flex-grow-1 min-w-0" style="overflow: hidden; padding-right: 15px;">
+                <div class="d-flex align-items-center gap-2 mb-0">
+                    <span class="badge border text-uppercase" style="font-size: 0.55rem; padding: 2px 6px; color: ${color}; border-color: ${color}40; background: ${color}08;">${typeLabel}</span>
+                    <h6 class="mb-0 fw-800 text-dark text-truncate" style="font-size: 0.95rem; width: 100%; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHTML(t.title)}</h6>
+                </div>
+                
+                <p class="text-muted small mb-0 overflow-hidden" style="font-size: 0.7rem; opacity: 0.8; margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2;">
+                    ${escapeHTML(t.description || 'No description.')}
+                </p>
+
+                <div class="task-info-inline">
+                    <div class="info-tag" title="Execution Time"><i class="far fa-clock"></i>${t.estimated_hours}h</div>
+                    <div class="info-tag" title="KPI Weight"><i class="fas fa-balance-scale"></i>${t.kpi_weight}</div>
+                    <div class="info-tag" title="Schedule Offset"><i class="fas fa-calendar-day"></i>+${t.deadline_offset_days}d</div>
+                    <div class="info-tag" title="Default Progress"><i class="fas fa-tasks"></i>${t.progress}%</div>
+                    ${t.custom_fields && t.custom_fields.length ? `<div class="info-tag" title="Custom Fields"><i class="fas fa-layer-group"></i>${t.custom_fields.length}</div>` : ''}
+                </div>
+            </div>
+
+            <div class="task-actions-wrapper" style="width: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; border-left: 1px dashed #f1f5f9; padding-left: 10px;">
+                <div class="task-actions-side shadow-sm">
+                    <button onclick="editTask(${t.id})" class="btn-action-icon" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button onclick="cloneTask(${t.id}, event)" class="btn-action-icon" title="Duplicate"><i class="fas fa-clone"></i></button>
+                    <button onclick="deleteTask(${t.id})" class="btn-action-icon danger" title="Remove"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            
+            <div class="task-id-badge" style="top: 2px; right: 2px; transform: scale(0.8);">ID: ${t.id}</div>
+            <div class="seq-num" style="bottom: 4px; right: 4px; font-size: 0.6rem; opacity: 0.4;">#${index + 1}</div>
+        `;
+        return div;
+    }
+
+    window.editTask = function(id) {
+        const t = tasks.find(x => x.id == id);
+        if(!t) return;
+        document.getElementById('task-id').value = t.id;
+        document.getElementById('task-title').value = t.title;
+        document.getElementById('task-type').value = t.task_type;
+        document.getElementById('task-priority').value = t.priority;
+        document.getElementById('task-hours').value = t.estimated_hours;
+        document.getElementById('task-weight').value = t.kpi_weight;
+        document.getElementById('task-offset').value = t.deadline_offset_days;
+        document.getElementById('task-desc').value = t.description || '';
+        document.getElementById('task-progress').value = t.progress || 0;
+        document.getElementById('task-icon-class').value = t.icon_class || 'fa-tasks';
+        document.getElementById('selected-icon-preview').className = `fas ${t.icon_class || 'fa-tasks'}`;
+        
+        document.getElementById('custom-fields-container').innerHTML = '';
+        (t.custom_fields || []).forEach(f => addCustomField(f));
+
+        document.getElementById('correspondence-type-wrapper').style.display = t.task_type === 'correspondence' ? 'block' : 'none';
+        document.getElementById('task-correspondence-type').value = t.correspondence_type || '';
+        document.getElementById('form-mode-title').innerText = 'Edit Workflow Unit';
+        document.getElementById('submit-btn-text').innerText = 'Update Unit';
+        document.getElementById('cancel-edit-btn').style.display = 'block';
+        document.querySelector('.builder-form-card').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    document.getElementById('cancel-edit-btn').onclick = function() {
+        document.getElementById('add-task-form').reset();
+        document.getElementById('task-id').value = '';
+        document.getElementById('custom-fields-container').innerHTML = '';
+        document.getElementById('form-mode-title').innerText = 'Add Workflow Unit';
+        document.getElementById('submit-btn-text').innerText = 'Append to Workflow';
+        this.style.display = 'none';
+    };
+
+    window.cloneTask = function(id, event) {
+        if(event) { event.preventDefault(); event.stopPropagation(); }
+        showAutoSave('saving');
+        fetch(`/templates/manage/${templateId}/`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ action: 'clone', task_id: id })
+        }).then(r => r.json()).then(data => { 
+            if(data.status === 'success') { 
+                loadTasks(); 
+                showAutoSave('saved'); 
+            } else {
+                alert('Clone failed: ' + data.message);
+            }
+        }).catch(err => alert('Clone request failed: ' + err));
+    };
+
+    document.getElementById('add-task-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('add-task-btn');
+        // Removed button disabling to prevent blocking UI
+        const fd = new FormData();
+        const taskId = document.getElementById('task-id').value;
+        if(taskId) fd.append('id', taskId);
+        fd.append('title', document.getElementById('task-title').value);
+        fd.append('description', document.getElementById('task-desc').value);
+        fd.append('task_type', document.getElementById('task-type').value);
+        fd.append('correspondence_type', document.getElementById('task-correspondence-type').value);
+        fd.append('priority', document.getElementById('task-priority').value);
+        fd.append('estimated_hours', document.getElementById('task-hours').value);
+        fd.append('kpi_weight', document.getElementById('task-weight').value);
+        fd.append('deadline_offset_days', document.getElementById('task-offset').value);
+        fd.append('progress', document.getElementById('task-progress').value);
+        fd.append('icon_class', document.getElementById('task-icon-class').value);
+
+
+        const customFields = Array.from(document.querySelectorAll('.custom-field-row')).map(row => ({
+            label: row.querySelector('.field-label-input').value,
+            field_type: row.querySelector('.field-type-input').value,
+            options: row.querySelector('.field-options-input').value || '',
+            required: row.querySelector('.field-required-input').checked
+        })).filter(f => f.label.trim() !== '');
+        fd.append('custom_fields', JSON.stringify(customFields));
+
+        if(document.getElementById('task-cover').files[0]) fd.append('cover_image', document.getElementById('task-cover').files[0]);
+        const attachFiles = document.getElementById('task-attachments').files;
+        for(let i=0; i<attachFiles.length; i++) fd.append('attachments[]', attachFiles[i]);
+
+        fetch(`/templates/manage/${templateId}/`, {
+            method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        }).then(r => {
+            if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Server error'); });
+            return r.json();
+        }).then(data => {
+            // Button is never disabled now
+            if(data.status === 'success') {
+                document.getElementById('cancel-edit-btn').click();
+                loadTasks();
+                showAutoSave('saved');
+            if (window.showToast) window.showToast('Workflow unit saved successfully!');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        }).catch(err => {
+            alert('Operation failed: ' + err.message);
+            console.error(err);
+        });
+    });
+
+    window.deleteTask = async function(id) {
+        if(!id) return;
+        if(!(await amazingConfirm('Delete this unit?', 'Are you sure you want to remove this workflow unit? This action cannot be undone.'))) return;
+        showAutoSave('saving');
+        fetch(`/templates/manage/${templateId}/`, {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ id })
+        }).then(r => {
+            if (!r.ok) return r.json().then(d => { throw new Error(d.message || 'Delete failed'); });
+            tasks = tasks.filter(t => t.id != id); 
+            render(); 
+            showAutoSave('saved'); 
+        }).catch(err => {
+            alert('Delete failed: ' + err.message);
+            showAutoSave('error');
+        });
+    };
+
+    function escapeHTML(s) { 
+        if(!s) return '';
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); 
+    }
+});
+</script>
+    <!-- Icon Picker Modal -->
+    <div class="modal fade" id="iconPickerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Select Unit Icon</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="input-group mb-4 shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search"></i></span>
+                        <input type="text" id="icon-search" class="form-control border-start-0" placeholder="Search icons (e.g. check, edit, paper)...">
+                    </div>
+                    <div class="icon-grid" id="icon-grid">
+                        <!-- Icons will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

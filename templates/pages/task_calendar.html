@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Task Calendar — Worktrack Pro{% endblock %}
+{% block extra_css %}
+<link href="{% static 'vendor/fullcalendar/index.global.min.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
+<style>
+    
+    /* page background comes from the theme */
+
+    /* ── ELEGANT MINIMAL GREEN HERO BANNER ── */
+    .hero-command-banner {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 20px;
+        padding: 2rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+        box-shadow: 0 10px 30px rgba(var(--wt-brand-rgb), 0.25) !important;
+        color: #ffffff !important;
+    }
+
+    .temporal-pulse-dot {
+        display: inline-block;
+        width: 10px; height: 10px;
+        background: var(--color-primary, #10b981);
+        border-radius: 50%;
+        box-shadow: 0 0 15px var(--color-primary, #10b981);
+        animation: pulseTactical 1.5s infinite alternate;
+        margin-right: 12px;
+    }
+    @keyframes pulseTactical { from { box-shadow: 0 0 5px var(--color-primary, #10b981); transform: scale(1); } to { box-shadow: 0 0 25px var(--color-accent, #34d399); transform: scale(1.3); background: var(--color-accent, #34d399);} }
+
+    .tactical-label {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: var(--color-primary, #10b981);
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .matrix-title {
+        font-size: clamp(2.5rem, 5vw, 3.5rem);
+        font-weight: 900;
+        margin: 0;
+        line-height: 1;
+        letter-spacing: -2px;
+        text-transform: uppercase;
+    }
+
+    /* ── LUMINA KINETIC TELEMETRY (WHITE STYLE) ── */
+    .telemetry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .telemetry-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    }
+
+    .telemetry-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent-color, var(--color-primary, #10b981));
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    .telemetry-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: var(--accent-color, var(--color-primary, #10b981));
+    }
+
+    .telemetry-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(var(--accent-rgb), 0.1);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.15rem;
+        margin-bottom: 1rem;
+        color: var(--accent-color, var(--color-primary, #10b981));
+    }
+
+    .telemetry-val {
+        font-size: 1.8rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+        color: #1f2937;
+    }
+
+    .telemetry-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+
+    /* ── LUMINA OPERATIONAL MATRIX ── */
+    #calendar-panel {
+        position: relative;
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 2.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.04);
+        margin-bottom: 3rem;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    /* FullCalendar Lumina Skinning */
+    .fc { font-family: 'Inter', sans-serif !important; color: #334155 !important; }
+    .fc .fc-toolbar-title { font-family: 'Space Mono', monospace !important; font-weight: 800 !important; color: #1e293b !important; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .fc .fc-button-primary { 
+        background-color: #f8fafc !important; 
+        border: 1px solid #e2e8f0 !important; 
+        color: #475569 !important; 
+        font-family: 'Space Mono', monospace !important;
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        padding: 0.6rem 1.2rem !important;
+        border-radius: 10px !important;
+        transition: all 0.2s !important;
+        box-shadow: none !important;
+    }
+    .fc .fc-button-primary:hover { background-color: #eff6ff !important; color: #1d4ed8 !important; border-color: #bfdbfe !important; }
+    .fc .fc-button-active { background-color: #1e293b !important; color: white !important; border-color: #1e293b !important; box-shadow: 0 4px 12px rgba(30,41,59,0.2) !important; }
+
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #f1f5f9 !important; }
+    .fc-col-header-cell { background: #f8fafc !important; border-bottom: 2px solid #e2e8f0 !important; }
+    .fc-col-header-cell-cushion { color: #1e293b !important; padding: 1rem !important; font-size: 0.75rem !important; letter-spacing: 2px; font-weight: 800 !important; }
+    
+    .fc-daygrid-day-number { font-family: 'Space Mono', monospace !important; color: #94a3b8 !important; font-weight: 700; padding: 0.75rem !important; }
+    .fc .fc-day-other .fc-daygrid-day-number { opacity: 0.3; }
+    .fc-day-today { background: rgba(var(--wt-brand-rgb), 0.04) !important; }
+    .fc-day-today .fc-daygrid-day-number { color: var(--color-primary, #10b981) !important; font-weight: 800; }
+
+    /* Floating Task Cards (Lumina Mode) */
+    .fc-event {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left-width: 5px !important;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
+        margin: 3px 6px !important;
+        transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02) !important;
+    }
+    .fc-event:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+        z-index: 100;
+    }
+    .fc-event-title { font-weight: 700 !important; color: #1e293b !important; font-size: 0.75rem !important; }
+
+    /* Legend Nodes (Lumina) */
+    .telemetry-pill {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    
+    .status-pip {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        position: relative;
+    }
+    .status-pip::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        border: 1px solid currentColor;
+        animation: telemetryPulse 2s infinite;
+        opacity: 0;
+    }
+    @keyframes telemetryPulse {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(2.5); opacity: 0; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid py-4 px-4">
+    <!-- ELEGANT MINIMAL GREEN HERO BANNER -->
+    <div class="hero-command-banner">
+        <div class="position-relative" style="z-index: 2;">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h1 class="matrix-title m-0 fw-bold text-white" style="font-size: clamp(1.6rem, 2.8vw, 2.3rem); letter-spacing: -0.02em; line-height: 1.2;">
+                        <span class="lang-en">Operational Calendar</span>
+                        <span class="lang-ar">تقويم المهام والعمليات</span>
+                    </h1>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <a href="{% url 'task-list' %}" class="btn px-3.5 py-2 rounded-pill fw-bold text-white" style="background: var(--color-primary, #10b981); border: none; font-size: 0.85rem; box-shadow: 0 4px 14px rgba(var(--wt-brand-rgb),0.35);">
+                        <i class="fas fa-list me-1.5"></i><span class="lang-en">List View</span><span class="lang-ar">عرض القائمة</span>
+                    </a>
+                    <a href="{% url 'task-kanban' %}" class="btn px-3.5 py-2 rounded-pill fw-bold text-white" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(8px); font-size: 0.85rem;">
+                        <i class="fas fa-columns me-1.5"></i><span class="lang-en">Kanban</span><span class="lang-ar">كانبان</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LUMINA TELEMETRY UNITS -->
+    <div class="telemetry-grid">
+        <div class="telemetry-card" style="--accent-color: #6366f1; --accent-rgb: 99, 102, 241;">
+            <div class="telemetry-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="telemetry-val">{{ stats.total }}</div>
+            <div class="telemetry-label">Total Missions</div>
+        </div>
+        <div class="telemetry-card" style="--accent-color: #f59e0b; --accent-rgb: 245, 158, 11;">
+            <div class="telemetry-icon"><i class="fas fa-clock"></i></div>
+            <div class="telemetry-val">{{ stats.pending }}</div>
+            <div class="telemetry-label">Pending Sync</div>
+        </div>
+        <div class="telemetry-card" style="--accent-color: #3b82f6; --accent-rgb: 59, 130, 246;">
+            <div class="telemetry-icon"><i class="fas fa-spinner fa-spin-slow"></i></div>
+            <div class="telemetry-val">{{ stats.in_progress }}</div>
+            <div class="telemetry-label">Active Deployment</div>
+        </div>
+        <div class="telemetry-card" style="--accent-color: var(--color-primary, #10b981); --accent-rgb: 16, 185, 129;">
+            <div class="telemetry-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="telemetry-val">{{ stats.approved }}</div>
+            <div class="telemetry-label">Validated</div>
+        </div>
+        <div class="telemetry-card" style="--accent-color: var(--wt-bad); --accent-rgb: 239, 68, 68;">
+            <div class="telemetry-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="telemetry-val">{{ stats.overdue }}</div>
+            <div class="telemetry-label">Critical Status</div>
+        </div>
+    </div>
+
+    <!-- LUMINA CALENDAR MATRIX -->
+    <div id="calendar-panel">
+        <div class="d-flex gap-3 flex-wrap mb-4 justify-content-center">
+            <div class="telemetry-pill">
+                <span class="status-pip" style="background: #f59e0b; color: #f59e0b;"></span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b;">Pending</span>
+            </div>
+            <div class="telemetry-pill">
+                <span class="status-pip" style="background: #3b82f6; color: #3b82f6;"></span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b;">Active</span>
+            </div>
+            <div class="telemetry-pill">
+                <span class="status-pip" style="background: var(--color-primary, #10b981); color: var(--color-primary, #10b981);"></span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b;">Completed</span>
+            </div>
+            <div class="telemetry-pill">
+                <span class="status-pip" style="background: var(--wt-bad); color: var(--wt-bad);"></span>
+                <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #64748b;">Critical</span>
+            </div>
+        </div>
+        <div id="calendar"></div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/fullcalendar/index.global.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Particle matrix for hero
+    const container = document.getElementById('temporalParticles');
+    if(container) {
+        for (let i = 0; i < 30; i++) {
+            const star = document.createElement('div');
+            star.style.position = 'absolute';
+            star.style.width = '2px';
+            star.style.height = '2px';
+            star.style.background = 'var(--color-primary, #10b981)';
+            star.style.borderRadius = '50%';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.boxShadow = '0 0 10px var(--color-primary, #10b981)';
+            star.style.opacity = Math.random() * 0.5;
+            star.animate([
+                { opacity: 0.1, transform: 'scale(1)' },
+                { opacity: 0.8, transform: 'scale(1.3)' },
+                { opacity: 0.1, transform: 'scale(1)' }
+            ], { duration: 3000 + Math.random() * 3000, iterations: Infinity });
+            container.appendChild(star);
+        }
+    }
+
+    const currentLang = localStorage.getItem('worktrack_lang') === 'ar' ? 'ar' : 'en';
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: currentLang,
+        headerToolbar: { 
+            left: currentLang === 'ar' ? 'today next,prev' : 'prev,next today', 
+            center: 'title', 
+            right: 'dayGridMonth,timeGridWeek,listMonth' 
+        },
+        height: 'auto',
+        events: '/tasks/calendar/?format=json',
+        eventClick: function(info) {
+            if (info.event.url) { 
+                info.jsEvent.preventDefault(); 
+                window.location.href = info.event.url; 
+            }
+        },
+        eventDidMount: function(info) {
+            const props = info.event.extendedProps;
+            const status = (props.status || '').toLowerCase();
+            
+            let accentColor = '#6366f1';
+            if (status.includes('overdue')) accentColor = '#ef4444';
+            else if (status.includes('pending')) accentColor = '#f59e0b';
+            else if (status.includes('progress')) accentColor = '#3b82f6';
+            else if (status.includes('approved') || status.includes('completed')) accentColor = 'var(--color-primary, #10b981)';
+            
+            info.el.style.borderLeftColor = accentColor;
+            info.el.style.borderLeftWidth = '5px';
+            
+            const transStatus = currentLang === 'ar' ? 'الحالة:' : 'Status:';
+            const transPriority = currentLang === 'ar' ? 'الأولوية:' : 'Priority:';
+            info.el.title = `${info.event.title}\n${transStatus} ${props.status}\n${transPriority} ${props.priority}`;
+        },
+    });
+    calendar.render();
+});
+</script>
+<style>
+    .fa-spin-slow { animation: fa-spin 4s infinite linear; }
+</style>
+{% endblock %}

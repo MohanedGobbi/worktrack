@@ -1,0 +1,719 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ wt_lang|default:'ar' }}" dir="{% if wt_lang == 'en' %}ltr{% else %}rtl{% endif %}" data-theme="{% block html_theme_mode %}light{% endblock %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="{{ wt_theme.brand|default:'#0033a0' }}">
+    <title>{% block title %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}</title>
+
+    {% if site_config.logo %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ site_config.logo.url }}">
+    <link rel="apple-touch-icon" href="{{ site_config.logo.url }}">
+    {% else %}
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+    {% endif %}
+
+    <script>
+        // Keep the tab title clean and always carrying the product name.
+        (function () {
+            const sysName = "{{ site_config.app_name|default:'WorkTrack Pro'|escapejs }}";
+            function cleanTitle() {
+                if (!document.title) { document.title = sysName; return; }
+                let t = document.title.replace(/<[^>]*>?/gm, '').replace(/\s{2,}/g, ' ').trim();
+                const lower = t.toLowerCase();
+                if (!lower.includes(sysName.toLowerCase()) && !lower.includes('worktrack') && !t.includes('وورك تراك')) {
+                    document.title = t ? `${t} · ${sysName}` : sysName;
+                } else {
+                    document.title = t;
+                }
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cleanTitle); else cleanTitle();
+        })();
+    </script>
+
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
+    <link href="{% static 'vendor/fonts/material_symbols.css' %}" rel="stylesheet">
+    <script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+    {% include 'includes/wt_theme.html' %}
+    <link href="{% static 'wt/app.css' %}?v=14" rel="stylesheet">
+
+    <script>
+        window.__forceLanguageReload = {{ site_settings.force_language_reload|yesno:"true,false" }};
+        window.__defaultSystemLanguage = "{{ site_settings.default_language|default:'ar' }}";
+    </script>
+    <script src="{% static 'js/i18n.js' %}?v=3.2"></script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="wt-app{% if wt_lang != 'en' %} rtl-mode{% endif %}" {% if user.is_authenticated %}data-user-authenticated="1"{% endif %} data-force-reload="{{ site_settings.force_language_reload|yesno:'true,false' }}">
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
+
+    <div id="amazingConfirmModal" class="amazing-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="amazingConfirmTitle">
+        <div class="amazing-modal-box">
+            <div class="amazing-modal-icon"><i class="fas fa-exclamation-triangle" id="amazingConfirmIcon"></i></div>
+            <h4 class="amazing-modal-title" id="amazingConfirmTitle">Confirm Action</h4>
+            <p class="amazing-modal-text" id="amazingConfirmText">Are you sure you want to proceed?</p>
+            <div class="amazing-modal-footer">
+                <button class="amazing-modal-btn amazing-btn-cancel" type="button" onclick="closeAmazingConfirm()"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                <button class="amazing-modal-btn amazing-btn-confirm" type="button" id="btnAmazingConfirm"><span class="lang-en">Confirm</span><span class="lang-ar">تأكيد</span></button>
+            </div>
+        </div>
+    </div>
+
+    {% block navbar %}{% endblock %}
+
+    {% with un=request.resolver_match.url_name %}
+    <!-- Mobile top bar (< 992px) -->
+    <header class="wt-mobilebar" role="banner">
+        <button type="button" class="wt-icon-btn" onclick="window.toggleNeuralSidebar()" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+        <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="wt-mobile-brand">
+            {% include 'includes/wt_logo_chip.html' %}
+            <span><span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></span>
+        </a>
+        {% if user.is_authenticated %}
+        <button type="button" class="wt-icon-btn" onclick="openSearch()" aria-label="Search"><i class="fas fa-search"></i></button>
+        <a href="{% url 'notifications-list' %}" class="wt-icon-btn" aria-label="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="wt-badge-dot" id="mobile-notif-dot" style="display:none;"></span>
+        </a>
+        {% else %}
+        <a href="{% url 'login' %}" class="wt-icon-btn" aria-label="Sign in"><i class="fas fa-arrow-right-to-bracket"></i></a>
+        {% endif %}
+    </header>
+
+    <div class="cndp-sidebar-backdrop" id="cndpSidebarBackdrop" onclick="window.toggleNeuralSidebar(false)"></div>
+
+    <div class="wt-shell">
+        <aside class="neural-sidebar" aria-label="Main navigation">
+            <a class="wt-side-brand" href="{% if user.is_authenticated %}{% if user.role == 'worker' %}{% url 'worker-portal' %}{% else %}{% url 'dashboard' %}{% endif %}{% else %}{% url 'home' %}{% endif %}">
+                {% include 'includes/wt_logo_chip.html' %}
+                <span class="wt-side-name">
+                    <strong><span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></strong>
+                    {% if user.is_authenticated %}<small>{{ user.get_role_display }}</small>{% endif %}
+                </span>
+            </a>
+
+            {% if user.is_authenticated %}
+            <nav class="wt-nav">
+                {% if sb_rules.dashboard != False %}
+                <a href="{% url 'dashboard' %}" class="{% if un == 'dashboard' or un == 'admin_dashboard' %}is-active{% endif %}"><i class="fas fa-house"></i><span><span class="lang-en">Dashboard</span><span class="lang-ar">الرئيسية</span></span></a>
+                {% endif %}
+                {% if sb_rules.search != False %}
+                <button type="button" class="wt-nav-link" onclick="openSearch()"><i class="fas fa-magnifying-glass"></i><span><span class="lang-en">Search</span><span class="lang-ar">بحث</span></span><kbd class="wt-kbd" translate="no">Ctrl K</kbd></button>
+                {% endif %}
+
+                <div class="wt-nav-group"><span class="lang-en">Work</span><span class="lang-ar">العمل</span></div>
+                {% if sb_rules.tasks != False %}
+                <a href="{% url 'task-list' %}" class="{% if un == 'task-list' or un == 'task-detail' or un == 'task-create' or un == 'task-edit' %}is-active{% endif %}"><i class="fas fa-list-check"></i><span><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></span></a>
+                {% endif %}
+                {% if sb_rules.kanban != False %}
+                <a href="{% url 'task-kanban' %}" class="{% if un == 'task-kanban' %}is-active{% endif %}"><i class="fas fa-table-columns"></i><span><span class="lang-en">Board</span><span class="lang-ar">لوحة المهام</span></span></a>
+                {% endif %}
+                {% if sb_rules.calendar != False %}
+                <a href="{% url 'task-calendar' %}" class="{% if un == 'task-calendar' %}is-active{% endif %}"><i class="fas fa-calendar-days"></i><span><span class="lang-en">Calendar</span><span class="lang-ar">التقويم</span></span></a>
+                {% endif %}
+                {% if sb_rules.global_map != False %}
+                <a href="{% url 'global-map' %}" class="{% if un == 'global-map' %}is-active{% endif %}"><i class="fas fa-map-location-dot"></i><span><span class="lang-en">Map</span><span class="lang-ar">الخريطة</span></span></a>
+                {% endif %}
+
+                {% if user.role in 'manager,super_admin' and sb_rules.modules != False %}
+                <div class="wt-nav-group"><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></div>
+                <a href="{% url 'available-modules' %}" class="{% if un == 'available-modules' %}is-active{% endif %}"><i class="fas fa-layer-group"></i><span><span class="lang-en">All modules</span><span class="lang-ar">كل الوحدات</span></span></a>
+                <a href="{% url 'module-create' %}" class="wt-nav-cta"><i class="fas fa-plus"></i><span><span class="lang-en">New module</span><span class="lang-ar">وحدة جديدة</span></span></a>
+                {% endif %}
+
+                <div class="wt-nav-group"><span class="lang-en">Team</span><span class="lang-ar">الفريق</span></div>
+                {% if sb_rules.messenger != False %}
+                <a href="{% url 'messaging:index' %}" class="{% if request.resolver_match.app_name == 'messaging' %}is-active{% endif %}"><i class="fas fa-comments"></i><span><span class="lang-en">Messenger</span><span class="lang-ar">المحادثات</span></span><span class="wt-count" id="banner-messenger-badge" style="display:none;"></span></a>
+                {% endif %}
+                {% if sb_rules.correspondence != False %}
+                <a href="{% url 'admin-correspondence' %}" class="{% if un == 'admin-correspondence' %}is-active{% endif %}"><i class="fas fa-envelope-open-text"></i><span><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></span></a>
+                {% endif %}
+                {% if sb_rules.attendance != False %}
+                <a href="{% url 'attendance-dashboard' %}" class="{% if un == 'attendance-dashboard' %}is-active{% endif %}"><i class="fas fa-clock"></i><span><span class="lang-en">Attendance</span><span class="lang-ar">الحضور</span></span></a>
+                {% endif %}
+                {% if sb_rules.org_intelligence != False %}
+                <a href="{% url 'organizational-intelligence' %}" class="{% if un == 'organizational-intelligence' %}is-active{% endif %}"><i class="fas fa-clipboard-check"></i><span><span class="lang-en">Notes</span><span class="lang-ar">الملاحظات</span></span></a>
+                {% endif %}
+
+                <div class="wt-nav-group"><span class="lang-en">Performance</span><span class="lang-ar">الأداء</span></div>
+                {% if sb_rules.metrics != False %}
+                <a href="{% url 'worker-performance' %}" class="{% if un == 'worker-performance' %}is-active{% endif %}"><i class="fas fa-chart-line"></i><span><span class="lang-en">My score</span><span class="lang-ar">مؤشري</span></span></a>
+                {% endif %}
+                {% if user.role in 'manager,super_admin' and sb_rules.team_analytics != False %}
+                <a href="{% url 'manager-analytics' %}" class="{% if un == 'manager-analytics' %}is-active{% endif %}"><i class="fas fa-chart-pie"></i><span><span class="lang-en">Team analytics</span><span class="lang-ar">تحليلات الفريق</span></span></a>
+                {% endif %}
+
+                {% if user.role == 'manager' and sb_rules.worker_portal != False %}
+                <a href="{% url 'worker-portal' %}" class="{% if un == 'worker-portal' %}is-active{% endif %}"><i class="fas fa-user-gear"></i><span><span class="lang-en">Worker view</span><span class="lang-ar">واجهة الموظف</span></span></a>
+                {% endif %}
+
+                {% if user.role == 'super_admin' %}
+                <div class="wt-nav-group"><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></div>
+                {% if sb_rules.super_admin != False %}
+                <a href="{% url 'admin_dashboard' %}" class="{% if un == 'admin_dashboard' %}is-active{% endif %}"><i class="fas fa-sliders"></i><span><span class="lang-en">Admin console</span><span class="lang-ar">لوحة الإدارة</span></span></a>
+                {% endif %}
+                {% if sb_rules.registry != False %}
+                <a href="{% url 'user-management' %}" class="{% if un == 'user-management' or un == 'user-create' or un == 'user-edit' %}is-active{% endif %}"><i class="fas fa-users"></i><span><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></span></a>
+                {% endif %}
+                {% if sb_rules.manager_portal != False %}
+                <a href="{% url 'manager-portal' %}" class="{% if un == 'manager-portal' %}is-active{% endif %}"><i class="fas fa-briefcase"></i><span><span class="lang-en">Manager view</span><span class="lang-ar">واجهة المدير</span></span></a>
+                {% endif %}
+                {% if sb_rules.worker_portal != False %}
+                <a href="{% url 'worker-portal' %}" class="{% if un == 'worker-portal' %}is-active{% endif %}"><i class="fas fa-user-gear"></i><span><span class="lang-en">Worker view</span><span class="lang-ar">واجهة الموظف</span></span></a>
+                {% endif %}
+                {% endif %}
+            </nav>
+            {% else %}
+            <nav class="wt-nav">
+                <a href="{% url 'login' %}" class="wt-nav-cta"><i class="fas fa-arrow-right-to-bracket"></i><span><span class="lang-en">Sign in</span><span class="lang-ar">تسجيل الدخول</span></span></a>
+            </nav>
+            {% endif %}
+
+            <div class="wt-side-foot">
+                {% if user.is_authenticated %}
+                <div class="wt-user">
+                    <a href="{% url 'profile' %}" class="wt-user-link">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="" class="wt-avatar">
+                        {% else %}
+                        <span class="wt-avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+                        {% endif %}
+                        <span class="wt-user-meta">
+                            <strong>{{ user.get_full_name|default:user.username }}</strong>
+                            <span>{{ user.email }}</span>
+                        </span>
+                    </a>
+                    <a href="{% url 'logout' %}" class="wt-icon-btn-on-brand" title="Sign out" aria-label="Sign out"><i class="fas fa-arrow-right-from-bracket rtl-flip"></i></a>
+                </div>
+                {% endif %}
+                <div id="lang-switcher"></div>
+                {% include 'includes/rowd_credit.html' with variant='side' %}
+            </div>
+        </aside>
+
+        <div class="wt-main main-content-wrapper dashboard-main-area">
+            <div class="wt-topbar global-path-tracker">
+                <button type="button" class="wt-back" onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href='/'; }" title="Back">
+                    <i class="fas fa-arrow-left rtl-flip"></i><span class="lang-en">Back</span><span class="lang-ar">رجوع</span>
+                </button>
+                <nav aria-label="breadcrumb" style="min-width:0;">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><span class="lang-en">Home</span><span class="lang-ar">الرئيسية</span></a></li>
+                        {% block breadcrumb_trail %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {% if un == 'admin_dashboard' or un == 'dashboard' %}<span class="lang-en">Overview</span><span class="lang-ar">نظرة عامة</span>
+                            {% elif un == 'worker-portal' %}<span class="lang-en">Worker view</span><span class="lang-ar">واجهة الموظف</span>
+                            {% elif un == 'manager-portal' %}<span class="lang-en">Manager view</span><span class="lang-ar">واجهة المدير</span>
+                            {% elif un == 'user-management' %}<span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span>
+                            {% elif un == 'user-create' %}<span class="lang-en">New user</span><span class="lang-ar">مستخدم جديد</span>
+                            {% elif un == 'user-edit' %}<span class="lang-en">Edit user</span><span class="lang-ar">تعديل المستخدم</span>
+                            {% elif un == 'task-list' %}<span class="lang-en">Tasks</span><span class="lang-ar">المهام</span>
+                            {% elif un == 'task-kanban' %}<span class="lang-en">Board</span><span class="lang-ar">لوحة المهام</span>
+                            {% elif un == 'task-calendar' %}<span class="lang-en">Calendar</span><span class="lang-ar">التقويم</span>
+                            {% elif un == 'manage-groups' %}<span class="lang-en">Work groups</span><span class="lang-ar">مجموعات العمل</span>
+                            {% elif un == 'translations' or un == 'translations_portal' %}<span class="lang-en">Translations</span><span class="lang-ar">الترجمات</span>
+                            {% elif un == 'profile' %}<span class="lang-en">Profile</span><span class="lang-ar">الملف الشخصي</span>
+                            {% else %}<span class="lang-en">{{ un|default:"Overview"|title }}</span><span class="lang-ar">{{ un|default:"نظرة عامة" }}</span>{% endif %}
+                        </li>
+                        {% endblock %}
+                    </ol>
+                </nav>
+                <div class="wt-topbar-actions">
+                    {% if user.is_authenticated %}
+                    <button type="button" class="wt-search-trigger" onclick="openSearch()">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <span><span class="lang-en">Search tasks, people, modules</span><span class="lang-ar">ابحث في المهام والأشخاص والوحدات</span></span>
+                        <kbd translate="no">Ctrl K</kbd>
+                    </button>
+                    <a href="{% url 'notifications-list' %}" class="wt-icon-btn" id="notif-bell-link" title="Notifications" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="wt-badge-dot" id="notif-badge" style="display:none;"></span>
+                    </a>
+                    {% endif %}
+                    <div class="lang-switcher-placeholder" id="path-lang-switcher"></div>
+                </div>
+            </div>
+
+            <main class="wt-content" id="main">
+                <div class="container-main">
+                    {% if request.session.impersonator_id %}
+                    <div class="wt-impersonation">
+                        <span><i class="fas fa-user-secret me-2"></i><strong><span class="lang-en">Acting as</span><span class="lang-ar">تعمل باسم</span></strong> {{ request.user.get_full_name|default:request.user.username }}</span>
+                        <a href="{% url 'revert-impersonation' %}" class="btn btn-sm btn-dark"><i class="fas fa-rotate-left"></i><span class="lang-en">Return to admin</span><span class="lang-ar">العودة للمشرف</span></a>
+                    </div>
+                    {% endif %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+
+            <footer id="main-footer" class="wt-footer">
+                <span>&copy; {% now "Y" %} <span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span> · <a href="{% url 'submit-contact' %}"><span class="lang-en">Contact the administrator</span><span class="lang-ar">تواصل مع المشرف</span></a></span>
+                {% include 'includes/rowd_credit.html' with variant='light' %}
+            </footer>
+        </div>
+    </div>
+    {% endwith %}
+
+    <!-- Module list (offcanvas) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="moduleSidebar" aria-labelledby="moduleSidebarLabel" data-bs-scroll="true" data-bs-backdrop="true">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="moduleSidebarLabel"><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% include 'includes/sidebar.html' %}
+        </div>
+    </div>
+
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <div id="search-overlay" onclick="closeSearchOnBg(event)">
+      <div id="search-box" role="dialog" aria-label="Search">
+        <input id="search-input" type="text" placeholder="Search tasks, people, modules… (Ctrl+K)" autocomplete="off" aria-label="Search">
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <!-- Django messages as JSON data island (no Django tags inside JS) -->
+    <script id="django-messages-data" type="application/json">
+        [{% if messages %}{% for message in messages %}{"tags":"{{ message.tags|escapejs }}","message":"{{ message|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
+    </script>
+
+    <script>
+        /**
+         * Premium Notification & Toast System (Bilingual & RTL-Ready)
+         */
+        window.amazingNotify = function(title, message, type = 'success', duration = 4500) {
+            // Handle flexible argument signatures: amazingNotify(msg, type) or amazingNotify(title, msg, type)
+            if (message === undefined || message === null) {
+                message = title;
+                title = '';
+            } else if (typeof message === 'string' && (message === 'success' || message === 'error' || message === 'danger' || message === 'warning' || message === 'info')) {
+                type = message;
+                message = title;
+                title = '';
+            }
+
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `premium-toast ${type === 'danger' ? 'error' : type}`;
+            
+            const icons = {
+                'success': 'fa-circle-check',
+                'error': 'fa-circle-xmark',
+                'danger': 'fa-circle-xmark',
+                'warning': 'fa-triangle-exclamation',
+                'info': 'fa-circle-info'
+            };
+            const icon = icons[type] || icons['info'];
+            
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="fas ${icon}"></i></div>
+                <div class="toast-content">
+                    ${title ? `<div class="toast-title">${title}</div>` : ''}
+                    <p class="toast-message">${message}</p>
+                </div>
+                <button class="toast-close" type="button" aria-label="Close"><i class="fas fa-times"></i></button>
+                <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+            `;
+            
+            container.appendChild(toast);
+            
+            const isRTL = document.documentElement.dir === 'rtl' || document.body.classList.contains('rtl-mode');
+            function removeToast(el) {
+                el.style.animation = isRTL ? 'slideOutLeft 0.35s forwards' : 'slideOutRight 0.35s forwards';
+                el.addEventListener('animationend', () => {
+                    if (el.parentNode) el.remove();
+                });
+            }
+
+            toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+            setTimeout(() => removeToast(toast), duration);
+        };
+
+        window.showToast = function(message, type = 'success', duration = 4500) {
+            window.amazingNotify('', message, type, duration);
+        };
+
+        /**
+         * Navigation Sidebar Controller: Permanently Fixed on Desktop
+         */
+        window.toggleMainSidebar = function(force) {
+            const sidebar = document.querySelector('.neural-sidebar');
+            if (!sidebar) return;
+            if (window.innerWidth <= 991) {
+                const shouldOpen = typeof force === 'boolean' ? force : !sidebar.classList.contains('open');
+                sidebar.classList.toggle('open', shouldOpen);
+            }
+        };
+
+        // Ensure sidebar is permanently open on desktop and clear any old collapse preferences
+        (function() {
+            function ensureFixedSidebar() {
+                try {
+                    localStorage.removeItem('sidebar_collapsed');
+                } catch(e) {}
+                document.body.classList.remove('sidebar-collapsed');
+                const sidebar = document.querySelector('.neural-sidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('collapsed');
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', ensureFixedSidebar);
+            } else {
+                ensureFixedSidebar();
+            }
+        })();
+
+        window.syncSidebarState = function() {};
+        window.updateSidebarArrowIcons = function() {};
+
+        /**
+         * Global Modal Stacking Fix: Ensure Bootstrap modals are NEVER trapped under backdrops ("fog")
+         */
+        document.addEventListener('show.bs.modal', function(e) {
+            if (e.target && e.target.parentElement !== document.body) {
+                document.body.appendChild(e.target);
+            }
+        });
+
+        // Process Django Messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const msgEl = document.getElementById('django-messages-data');
+            if (msgEl) {
+                const messages = JSON.parse(msgEl.textContent);
+                messages.forEach(function(msg) {
+                    let type = 'info';
+                    if (msg.tags.includes('success')) type = 'success';
+                    else if (msg.tags.includes('error')) type = 'error';
+                    else if (msg.tags.includes('warning')) type = 'warning';
+                    window.showToast(msg.message, type);
+                });
+            }
+
+            document.querySelectorAll('[data-sidebar-module-pager]').forEach(function(pager) {
+                const pages = Array.from(pager.querySelectorAll('.ns-module-page'));
+                if (pages.length <= 1) return;
+
+                const buttons = Array.from(pager.querySelectorAll('[data-sidebar-page-btn]'));
+                const label = pager.querySelector('[data-sidebar-page-label]');
+                let currentPage = 0;
+
+                function showPage(nextIndex) {
+                    currentPage = (nextIndex + pages.length) % pages.length;
+                    pages.forEach(function(page, index) {
+                        page.classList.toggle('active', index === currentPage);
+                    });
+                    buttons.forEach(function(button) {
+                        const target = button.getAttribute('data-sidebar-page-btn');
+                        const isActive = target === String(currentPage);
+                        button.classList.toggle('active', isActive);
+                        button.setAttribute('aria-current', isActive ? 'page' : 'false');
+                    });
+                    if (label) label.textContent = `Page ${currentPage + 1}`;
+                }
+
+                buttons.forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const target = this.getAttribute('data-sidebar-page-btn');
+                        if (target === 'prev') showPage(currentPage - 1);
+                        else if (target === 'next') showPage(currentPage + 1);
+                        else showPage(Number(target));
+                    });
+                });
+
+                showPage(0);
+            });
+        });
+
+
+
+        // ══ Notification Bell Live Poll (Improvement #4) ══════════════
+        (function pollNotifications() {
+            // Only poll when a user is logged in (auth state injected by Django)
+            if (!document.body.dataset.userAuthenticated) { return; }
+            function updateBell() {
+                fetch('/api/notifications/unread-count/', {credentials: 'same-origin'})
+                  .then(r => r.json())
+                  .then(data => {
+                      const badge = document.getElementById('notif-badge');
+                      if (!badge) return;
+                      if (data.unread > 0) {
+                          badge.textContent = data.unread > 99 ? '99+' : data.unread;
+                          badge.style.display = 'inline-block';
+                      } else {
+                          badge.style.display = 'none';
+                      }
+                  })
+                  .catch(() => {});
+            }
+            updateBell();
+            setInterval(updateBell, 30000); // every 30 seconds
+        })();
+
+        // ══ Messenger Unread Count Polling ══════════════
+        (function pollMessenger() {
+            if (!document.body.dataset.userAuthenticated) { return; }
+            function updateMessengerBadge() {
+                fetch('/messaging/api/unread-count/', {credentials: 'same-origin'})
+                  .then(r => r.json())
+                  .then(data => {
+                      const bannerBadge = document.getElementById('banner-messenger-badge');
+                      const floatingBadge = document.getElementById('unread-messenger-badge');
+                      const count = data.unread_count || 0;
+                      
+                      [bannerBadge, floatingBadge].forEach(badge => {
+                          if (!badge) return;
+                          if (count > 0) {
+                              badge.textContent = count > 99 ? '99+' : count;
+                              badge.style.display = 'inline-block';
+                          } else {
+                              badge.style.display = 'none';
+                          }
+                      });
+                  })
+                  .catch(() => {});
+            }
+            updateMessengerBadge();
+            setInterval(updateMessengerBadge, 15000); // every 15 seconds
+        })();
+
+        // ══ Global Search (Improvement #11) ══════════════════════════
+        let searchTimeout = null;
+        function openSearch() {
+            document.getElementById('search-overlay').classList.add('visible');
+            document.getElementById('search-input').focus();
+        }
+        function closeSearch() {
+            document.getElementById('search-overlay').classList.remove('visible');
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results').innerHTML = '';
+        }
+        function closeSearchOnBg(e) {
+            if (e.target === document.getElementById('search-overlay')) closeSearch();
+        }
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+            if (e.key === 'Escape') closeSearch();
+        });
+        document.getElementById('search-input').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const q = this.value.trim();
+            if (q.length < 2) { document.getElementById('search-results').innerHTML = ''; return; }
+            searchTimeout = setTimeout(() => {
+                fetch('/search/?q=' + encodeURIComponent(q), {credentials: 'same-origin'})
+                  .then(r => r.json())
+                  .then(data => renderSearchResults(data));
+            }, 250);
+        });
+        function renderSearchResults(data) {
+            const el = document.getElementById('search-results');
+            let html = '';
+            if (data.tasks && data.tasks.length) {
+                html += '<div class="sr-section"><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></div>';
+                data.tasks.forEach(t => {
+                    const statusColor = {pending:'var(--wt-warn)',in_progress:'var(--wt-signal)',approved:'var(--wt-ok)',overdue:'var(--wt-bad)'}[t.status] || 'var(--wt-muted)';
+                    html += `<a class="sr-item" href="${t.url}">
+                        <span class="sr-icon" style="background:color-mix(in oklab, ${statusColor} 14%, transparent);"><i class="fas fa-tasks" style="color:${statusColor};font-size:.8rem;"></i></span>
+                        <span>${t.title} <span style="font-size:.78rem;color:var(--wt-muted);">${t.status}</span></span>
+                    </a>`;
+                });
+            }
+            if (data.users && data.users.length) {
+                html += '<div class="sr-section"><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></div>';
+                data.users.forEach(u => {
+                    html += `<a class="sr-item" href="{% url 'admin_dashboard' %}">
+                        <span class="sr-icon" style="background:var(--wt-brand-soft);"><i class="fas fa-user" style="color:var(--wt-brand);font-size:.8rem;"></i></span>
+                        <span>${u.name} <span style="font-size:.78rem;color:var(--wt-muted);">${u.role}</span></span>
+                    </a>`;
+                });
+            }
+            if (data.modules && data.modules.length) {
+                html += '<div class="sr-section"><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></div>';
+                data.modules.forEach(m => {
+                    html += `<a class="sr-item" href="${m.url}">
+                        <span class="sr-icon" style="background:var(--wt-brand-soft);"><i class="fas fa-layer-group" style="color:var(--wt-brand);font-size:.8rem;"></i></span>
+                        <span>${m.name}</span>
+                    </a>`;
+                });
+            }
+            if (!html) html = '<div class="sr-section" style="padding:1rem;text-align:center;"><span class="lang-en">No results</span><span class="lang-ar">لا توجد نتائج</span></div>';
+            el.innerHTML = html;
+        }
+
+        /**
+         * amazingConfirm - A premium HTML confirmation dialog
+         * @param {Object|String} titleOrOptions - Options {title, text, icon, confirmButtonText, confirmButtonColor} or just string
+         */
+        window.closeAmazingConfirm = null;
+        window.amazingConfirm = function(titleOrOptions, textOpt, iconOpt = 'question', confirmButtonTextOpt = 'Confirm', confirmButtonColorOpt = 'var(--wt-brand)') {
+            return new Promise((resolve) => {
+                let title = titleOrOptions, text = textOpt, icon = iconOpt, confirmText = confirmButtonTextOpt, confirmColor = confirmButtonColorOpt;
+
+                // Handle Options object instead of individual arguments
+                if (typeof titleOrOptions === 'object' && titleOrOptions !== null) {
+                    title = titleOrOptions.title || 'Confirm Action';
+                    text = titleOrOptions.text || '';
+                    icon = titleOrOptions.icon || 'warning';
+                    confirmText = titleOrOptions.confirmButtonText || 'Confirm';
+                    confirmColor = titleOrOptions.confirmButtonColor || 'var(--wt-brand)';
+                }
+
+                document.getElementById('amazingConfirmTitle').innerHTML = title;
+                document.getElementById('amazingConfirmText').innerHTML = text;
+                
+                const iconElement = document.getElementById('amazingConfirmIcon');
+                if (icon === 'warning') iconElement.className = 'fas fa-exclamation-triangle';
+                else if (icon === 'error') iconElement.className = 'fas fa-times-circle';
+                else if (icon === 'info') iconElement.className = 'fas fa-info-circle';
+                else if (icon === 'success') iconElement.className = 'fas fa-check-circle';
+                else iconElement.className = 'fas fa-question-circle';
+                
+                // Color icon dynamically
+                iconElement.parentElement.style.color = confirmColor;
+                iconElement.parentElement.style.boxShadow = `0 0 20px ${confirmColor}20`;
+                iconElement.parentElement.style.background = 'color-mix(in oklab, ' + confirmColor + ' 12%, transparent)';
+
+                const confirmBtn = document.getElementById('btnAmazingConfirm');
+                confirmBtn.innerText = confirmText;
+                
+                if (confirmColor) {
+                    confirmBtn.style.background = confirmColor;
+                    confirmBtn.style.boxShadow = `0 4px 12px ${confirmColor}40`;
+                } else {
+                    confirmBtn.style.background = '';
+                    confirmBtn.style.boxShadow = '';
+                }
+
+                const newBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+                
+                const modalEl = document.getElementById('amazingConfirmModal');
+                
+                window.closeAmazingConfirm = function() {
+                    modalEl.classList.remove('active');
+                    resolve(false);
+                };
+
+                newBtn.addEventListener('click', () => {
+                    modalEl.classList.remove('active');
+                    resolve(true);
+                });
+
+                modalEl.classList.add('active');
+            });
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    <script>
+        // Global Dynamic Attribute System to avoid IDE syntax flags in style attributes
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply dynamic widths/positions
+            document.querySelectorAll('[data-width-pct]').forEach(el => { el.style.width = el.dataset.widthPct + '%'; });
+            document.querySelectorAll('[data-left-pct]').forEach(el => { el.style.left = el.dataset.leftPct + '%'; });
+            document.querySelectorAll('[data-top-pct]').forEach(el => { el.style.top = el.dataset.topPct + '%'; });
+            // Apply dynamic colors
+            document.querySelectorAll('[data-text-color]').forEach(el => {
+                el.style.color = el.dataset.textColor;
+            });
+            // Apply dynamic background colors / gradients
+            document.querySelectorAll('[data-bg-color]').forEach(el => {
+                const val = el.dataset.bgColor;
+                if (val.includes('gradient')) el.style.backgroundImage = val;
+                else el.style.backgroundColor = val;
+            });
+            // Apply dynamic border colors
+            document.querySelectorAll('[data-border-color]').forEach(el => {
+                const val = el.dataset.borderColor;
+                if (val.includes('solid') || val.includes('dashed')) el.style.border = val;
+                else el.style.borderColor = val;
+            });
+            // Apply dynamic CSS variables
+            document.querySelectorAll('[data-css-var]').forEach(el => {
+                const parts = el.dataset.cssVar.split(':');
+                if (parts.length === 2) {
+                    el.style.setProperty(parts[0], parts[1]);
+                }
+            });
+            // Generic dynamic style applier for edge cases
+            document.querySelectorAll('[data-dyn-style]').forEach(el => {
+                const styles = el.dataset.dynStyle.split(';');
+                styles.forEach(s => {
+                    const colonIndex = s.indexOf(':');
+                    if (colonIndex === -1) return;
+                    const prop = s.substring(0, colonIndex).trim();
+                    let val = s.substring(colonIndex + 1).trim();
+                    if (!prop || !val) return;
+                    
+                    let priority = '';
+                    if (val.toLowerCase().endsWith('!important')) {
+                        val = val.substring(0, val.length - 10).trim();
+                        priority = 'important';
+                    }
+                    el.style.setProperty(prop, val, priority);
+                });
+            });
+        });
+    </script>
+    {% if user.is_authenticated %}
+    {% with un=request.resolver_match.url_name %}
+    <nav class="wt-bottomnav" aria-label="Mobile navigation">
+        <a href="{% url 'dashboard' %}" class="{% if un == 'dashboard' %}active{% endif %}"><i class="fas fa-house"></i><span><span class="lang-en">Home</span><span class="lang-ar">الرئيسية</span></span></a>
+        <a href="{% url 'task-list' %}" class="{% if 'task' in un %}active{% endif %}"><i class="fas fa-list-check"></i><span><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></span></a>
+        <a href="{% url 'available-modules' %}" class="{% if 'module' in un %}active{% endif %}"><i class="fas fa-layer-group"></i><span><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></span></a>
+        <a href="{% url 'messaging:index' %}" class="{% if request.resolver_match.app_name == 'messaging' %}active{% endif %}"><i class="fas fa-comments"></i><span><span class="lang-en">Chat</span><span class="lang-ar">المحادثات</span></span></a>
+        <button type="button" onclick="window.toggleNeuralSidebar()"><i class="fas fa-bars"></i><span><span class="lang-en">Menu</span><span class="lang-ar">القائمة</span></span></button>
+    </nav>
+    {% endwith %}
+    {% endif %}
+
+    <script>
+        // Global Mobile Sidebar Controller
+        window.toggleNeuralSidebar = function(force) {
+            const sidebar = document.querySelector('.neural-sidebar');
+            const backdrop = document.getElementById('cndpSidebarBackdrop');
+            if (!sidebar) return;
+            const shouldOpen = typeof force === 'boolean' ? force : !sidebar.classList.contains('open');
+            sidebar.classList.toggle('open', shouldOpen);
+            if (backdrop) backdrop.classList.toggle('active', shouldOpen);
+            document.body.classList.toggle('cndp-sidebar-locked', shouldOpen);
+        };
+
+        // Auto close sidebar on nav link clicks on mobile screen
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.neural-sidebar a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 992) {
+                        window.toggleNeuralSidebar(false);
+                    }
+                });
+            });
+
+            // Sync notification dot
+            const notifBadge = document.getElementById('notif-badge');
+            const mobileDot = document.getElementById('mobile-notif-dot');
+            if (notifBadge && mobileDot) {
+                const observer = new MutationObserver(() => {
+                    const isVisible = notifBadge.style.display !== 'none' && notifBadge.innerText.trim() !== '0';
+                    mobileDot.style.display = isVisible ? 'block' : 'none';
+                });
+                observer.observe(notifBadge, { attributes: true, childList: true, characterData: true });
+            }
+        });
+    </script>
+
+    {% if user.is_authenticated %}{% include 'includes/global_notes_drawer.html' %}{% endif %}
+</body>
+</html>

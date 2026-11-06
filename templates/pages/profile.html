@@ -1,0 +1,703 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operational Identity - WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
+<style>
+
+    /* ── PROFILE WORKSPACE FRAMEWORK ── */
+    body {
+        background-color: #f8fafc;
+        background-image: radial-gradient(#cbd5e1 0.5px, transparent 0.5px);
+        background-size: 20px 20px;
+    }
+
+    .profile-hero-banner {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 20px;
+        padding: 4rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 3rem;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent);
+        box-shadow: none !important;
+        color: white;
+    }
+    
+    .profile-pulse-dot { 
+        display: inline-block; 
+        width: 10px; height: 10px; 
+        background: var(--color-primary, #10b981); 
+        border-radius: 50%; 
+        box-shadow: 0 0 15px var(--color-primary, #10b981); 
+        animation: pulseProfile 1.5s infinite alternate; 
+        margin-right: 12px; 
+    }
+    @keyframes pulseProfile { from { box-shadow: 0 0 5px var(--color-primary, #10b981); transform: scale(1); } to { box-shadow: 0 0 25px var(--color-accent, #34d399); transform: scale(1.3); background: var(--color-accent, #34d399);} }
+
+    .profile-hero-title {
+        font-family: 'Space Mono', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: #ffffff !important;
+        text-shadow: none !important;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-hero-name {
+        font-size: clamp(2rem, 4vw, 3.5rem);
+        font-weight: 800;
+        margin: 0;
+        line-height: 1.1;
+        letter-spacing: -2px;
+        text-transform: uppercase;
+        color: #ffffff !important;
+        text-shadow: none !important;
+    }
+
+    .profile-hero-role {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.6);
+        font-weight: 500;
+        margin-top: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .glass-profile-nav {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+        margin-top: 1.5rem;
+        padding: 0.5rem;
+        display: inline-flex;
+        gap: 0.5rem;
+    }
+
+    .nav-btn-premium {
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-btn-premium:hover {
+        background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent);
+        color: var(--color-primary, #10b981);
+    }
+
+    .nav-btn-premium.active {
+        background: var(--color-primary, #10b981);
+        color: white;
+        box-shadow: 0 0 20px rgba(var(--wt-brand-rgb),0.3);
+    }
+
+    .avatar-premium-large {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 140px;
+        height: 140px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, #450a0a 100%);
+        color: white;
+        font-weight: bold;
+        font-size: 48px;
+        margin: 0 auto;
+        box-shadow: 0 0 40px rgba(var(--wt-brand-rgb),0.3);
+        border: 4px solid var(--color-primary, #10b981);
+    }
+
+    .btn-light-emerald {
+        background: #f1fcf9;
+        color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        border: 1px solid #ffe4e6;
+        font-weight: 700;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+
+    .btn-light-emerald:hover {
+        background: var(--color-primary, #10b981);
+        color: white;
+        border-color: var(--color-primary, #10b981);
+        transform: translateX(5px);
+    }
+
+    /* ── SETTINGS PANELS ── */
+    .settings-card-premium {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.05);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    .settings-header-premium {
+        background: #f8fafc;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 0;
+    }
+
+    .nav-tabs-premium {
+        display: flex;
+        border: none;
+        padding: 0 1rem;
+    }
+
+    .nav-tabs-premium .nav-item { margin-bottom: -1px; }
+
+    .nav-link-premium {
+        color: #64748b;
+        border: none !important;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        padding: 1.25rem 2rem;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .nav-link-premium::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 50%; width: 0; height: 3px;
+        background: var(--color-primary, #10b981);
+        transition: all 0.3s;
+        transform: translateX(-50%);
+    }
+
+    .nav-link-premium.active {
+        color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        background: transparent !important;
+    }
+
+    .nav-link-premium.active::after { width: 100%; }
+    
+    .nav-link-premium:hover { color: var(--color-primary, #10b981); }
+
+    /* ── TACTICAL FORMS ── */
+    .form-group-premium { margin-bottom: 1.5rem; }
+    
+    .label-tactical {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .label-tactical i { color: var(--color-primary, #10b981); font-size: 0.8rem; }
+
+    .input-premium {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1e293b;
+        transition: all 0.3s;
+    }
+
+    .input-premium:focus {
+        background: #ffffff;
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent);
+        outline: none;
+    }
+
+    .input-premium:disabled { background: #f1f5f9; cursor: not-allowed; }
+
+    /* ── TELEMETRY TABLES ── */
+    .telemetry-table-premium {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+
+    .telemetry-table-premium thead th {
+        background: #f8fafc;
+        border: none;
+        font-family: 'Space Mono', monospace;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        padding: 1rem;
+    }
+
+    .telemetry-row {
+        background: #ffffff;
+        transition: transform 0.2s;
+    }
+
+    .telemetry-row:hover {
+        transform: scale(1.005);
+        background: #f1fcf9;
+    }
+
+    .telemetry-cell {
+        padding: 1rem;
+        border-top: 1px solid #f1f5f9;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .telemetry-cell:first-child { border-left: 1px solid #f1f5f9; border-radius: 12px 0 0 12px; }
+    .telemetry-cell:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 12px 12px 0; }
+
+    .monospace-telemetry {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.75rem;
+        color: var(--color-primary, #10b981);
+        background: rgba(var(--wt-brand-rgb), 0.05);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .stat-dot-live {
+        width: 8px; height: 8px;
+        background: var(--color-primary, #10b981);
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        box-shadow: 0 0 10px rgba(192, 40, 58, 0.5);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hidden file upload form -->
+<form id="avatar-form" method="post" action="{% url 'profile-avatar-upload' %}" enctype="multipart/form-data" style="display:none;">
+    {% csrf_token %}
+    <input id="avatar-upload" type="file" name="avatar" accept="image/*" onchange="document.getElementById('avatar-form').submit();">
+</form>
+
+<div class="container-fluid px-4 py-3">
+    <!-- Profile Command Banner -->
+    <div class="profile-hero-banner">
+        <!-- Biometric Particle System -->
+        <div id="profileParticles" style="position: absolute; inset: 0; pointer-events: none; opacity: 0.4; z-index: 1;"></div>
+        
+        <div class="position-relative" style="z-index: 2;">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="profile-pulse-dot"></span>
+                        <span class="profile-hero-title">Operational Identity Verified</span>
+                    </div>
+                    <h1 class="profile-hero-name">{{ user.first_name }} {{ user.last_name }}</h1>
+                    <p class="profile-hero-role">{{ user.role|upper }} • {{ user.department.name|default:"General Operations" }}</p>
+                    
+                    <div class="glass-profile-nav">
+                        <a href="{% url 'dashboard' %}" class="nav-btn-premium">
+                            <i class="fas fa-home"></i> Command Home
+                        </a>
+                        <a href="{% url 'worker-performance' %}" class="nav-btn-premium">
+                            <i class="fas fa-chart-line"></i> Efficiency
+                        </a>
+                        <a href="{% url 'task-list' %}" class="nav-btn-premium">
+                            <i class="fas fa-tasks"></i> Active Ops
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                    <div style="position:relative;display:inline-block;">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="avatar"
+                                 style="width:140px;height:140px;border-radius:24px;object-fit:cover;border:4px solid var(--color-primary, #10b981);box-shadow: 0 0 40px rgba(var(--wt-brand-rgb),0.3);">
+                        {% else %}
+                            <div class="avatar-premium-large">{{ user.first_name|first|upper }}</div>
+                        {% endif %}
+                        <label for="avatar-upload" title="Update Profile Image"
+                               style="position:absolute;bottom:-10px;right:-10px;width:36px;height:36px;border-radius:10px;background:var(--color-primary, #10b981);color:white;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.5);border:2px solid color-mix(in oklab, var(--wt-brand) 55%, #000);">
+                            <i class="fas fa-camera" style="font-size:.9rem;"></i>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Profile Card -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px; background: white;">
+                <div class="card-body p-4">
+                    <h5 class="mb-1 fw-bold" style="letter-spacing: -0.5px;">{{ user.first_name }} {{ user.last_name }}</h5>
+                    <p class="text-muted small mb-4">{{ user.email }}</p>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-building text-success" style="width: 20px;"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <small class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;"><span class="lang-en">Department</span><span class="lang-ar">القسم</span></small>
+                            <span class="fw-bold small">{{ user.department.name|default:"General Operations" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-shield-alt text-success" style="width: 20px;"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <small class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Operational Role</small>
+                            <span class="badge bg-success-soft text-success px-2 py-1" style="font-size: 0.65rem;">{{ user.role|upper }}</span>
+                        </div>
+                    </div>
+                    
+                    <hr class="opacity-10 my-4">
+                    
+                    <div class="d-grid gap-2 mb-2">
+                        <a href="{% url 'worker-performance' %}" class="btn btn-light-emerald btn-sm rounded-3 py-2 text-start px-3">
+                            <i class="fas fa-chart-line me-2"></i>My Performance
+                        </a>
+                        <a href="{% url 'export-tasks-csv' %}" class="btn btn-light-emerald btn-sm rounded-3 py-2 text-start px-3">
+                            <i class="fas fa-download me-2"></i>Export Ops Data
+                        </a>
+                        <button onclick="toggleDarkMode()" class="btn btn-light-emerald btn-sm rounded-3 py-2 text-start px-3">
+                            <i class="fas fa-moon me-2" id="dark-icon"></i>Toggle Dark Mode
+                        </button>
+                    </div>
+
+                    <hr>
+
+                    <div class="text-muted">
+                        <small style="font-size: 0.65rem; color: #94a3b8;"><i class="fas fa-calendar me-1"></i> OPERATIONAL ENLISTMENT: {{ user.date_joined|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tabs -->
+        <div class="col-lg-9">
+            <div class="settings-card-premium">
+                <div class="settings-header-premium">
+                    <ul class="nav nav-tabs-premium" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-premium active" id="account-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#account-panel" type="button" role="tab" aria-controls="account-panel" aria-selected="true">
+                                <i class="fas fa-user me-2"></i>Account
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-premium" id="security-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#security-panel" type="button" role="tab" aria-controls="security-panel" aria-selected="false">
+                                <i class="fas fa-lock me-2"></i>Security
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-premium" id="preferences-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#preferences-panel" type="button" role="tab" aria-controls="preferences-panel" aria-selected="false">
+                                <i class="fas fa-sliders-h me-2"></i>Preferences
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link-premium" id="activity-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#activity-panel" type="button" role="tab" aria-controls="activity-panel" aria-selected="false">
+                                <i class="fas fa-history me-2"></i>Activity
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+                    <!-- Account Tab -->
+                    <div class="tab-pane fade show active" id="account-panel" role="tabpanel" aria-labelledby="account-tab">
+                        <div class="card-body p-4 p-lg-5">
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger alert-dismissible fade show rounded-4" role="alert">
+                                    {{ form.non_field_errors.0 }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endif %}
+
+                            <form method="post" action="{% url 'profile-update' %}">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">
+                                                <i class="fas fa-id-badge"></i> First Name
+                                            </label>
+                                            <input type="text" class="form-control input-premium" name="first_name" 
+                                                   value="{{ user.first_name }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">
+                                                <i class="fas fa-id-badge"></i> Last Name
+                                            </label>
+                                            <input type="text" class="form-control input-premium" name="last_name" 
+                                                   value="{{ user.last_name }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-premium">
+                                    <label class="label-tactical">
+                                        <i class="fas fa-envelope"></i> Operational Email
+                                    </label>
+                                    <input type="email" class="form-control input-premium" name="email" 
+                                           value="{{ user.email }}" disabled>
+                                    <div class="mt-2" style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <i class="fas fa-info-circle me-1"></i> Core identity email locked by administration
+                                    </div>
+                                </div>
+
+                                <div class="form-group-premium">
+                                    <label class="label-tactical">
+                                        <i class="fas fa-phone"></i> Comm Frequency (Phone)
+                                    </label>
+                                    <input type="tel" class="form-control input-premium" name="phone" 
+                                           value="{{ user.phone|default:'' }}" placeholder="+1 (555) 000-0000">
+                                </div>
+
+                                <div class="form-group-premium mb-4">
+                                    <label class="label-tactical">
+                                        <i class="fas fa-align-left"></i> Operative Bio
+                                    </label>
+                                    <textarea class="form-control input-premium" name="bio" rows="4" 
+                                              placeholder="Define your operational focus...">{{ user.bio|default:'' }}</textarea>
+                                </div>
+
+                                <div class="d-flex gap-3">
+                                    <button type="submit" class="btn btn-emerald text-white rounded-pill px-4" style="background: var(--color-primary, #10b981);">
+                                        <i class="fas fa-save me-2"></i>SYNC CHANGES
+                                    </button>
+                                    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 text-muted small fw-bold"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" id="security-panel" role="tabpanel" aria-labelledby="security-tab">
+                        <div class="card-body p-4 p-lg-5">
+                            <h6 class="mb-4 d-flex align-items-center" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b;">
+                                <i class="fas fa-key me-2 text-success"></i>AUTHENTICATION PROTOCOLS
+                            </h6>
+                            <form method="post" action="{% url 'profile-change-password' %}">
+                                {% csrf_token %}
+                                
+                                <div class="form-group-premium">
+                                    <label class="label-tactical">Current Encryption Key (Password)</label>
+                                    <input type="password" class="form-control input-premium" name="current_password" required>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">New Encryption Key</label>
+                                            <input type="password" class="form-control input-premium" name="new_password1" 
+                                                   placeholder="Minimum 8 characters" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">Confirm New Key</label>
+                                            <input type="password" class="form-control input-premium" name="new_password2" 
+                                                   placeholder="Re-enter to verify" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-emerald text-white rounded-pill px-4 mt-2" style="background: var(--color-primary, #10b981);">
+                                    <i class="fas fa-sync me-2"></i>UPDATE SECURITY CLEARANCE
+                                </button>
+                            </form>
+
+                            <hr class="my-5 opacity-10">
+
+                            <h6 class="mb-3 d-flex align-items-center" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b;">
+                                <i class="fas fa-sign-out-alt me-2 text-danger"></i>SESSION MANAGEMENT
+                            </h6>
+                            <p class="text-muted small mb-4">Terminate all active sessions on other devices to secure your identity.</p>
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" style="font-size: 0.7rem;">
+                                SIGN OUT ALL OTHER SESSIONS
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preferences Tab -->
+                    <div class="tab-pane fade" id="preferences-panel" role="tabpanel" aria-labelledby="preferences-tab">
+                        <div class="card-body p-4 p-lg-5">
+                            <form method="post" action="{% url 'profile-preferences' %}">
+                                {% csrf_token %}
+                                
+                                <h6 class="mb-4 d-flex align-items-center" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fas fa-bell me-2 text-success"></i>COMMUNICATION UPLINK
+                                </h6>
+                                
+                                <div class="form-group-premium">
+                                    <div class="form-check form-switch custom-switch-premium">
+                                        <input class="form-check-input" type="checkbox" name="email_notifications" 
+                                               id="emailNotif" {% if user.email_notifications %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold small ms-2" for="emailNotif">
+                                            Global Email Intelligence Notifications
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-premium">
+                                    <div class="form-check form-switch custom-switch-premium">
+                                        <input class="form-check-input" type="checkbox" name="task_notifications" 
+                                               id="taskNotif" {% if user.task_notifications %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold small ms-2" for="taskNotif">
+                                            Operational Task Update Alerts
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-premium">
+                                    <div class="form-check form-switch custom-switch-premium">
+                                        <input class="form-check-input" type="checkbox" name="submission_notifications" 
+                                               id="submissionNotif" {% if user.submission_notifications %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold small ms-2" for="submissionNotif">
+                                            Transmission & Submission Confirmations
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <hr class="my-5 opacity-10">
+
+                                <h6 class="mb-4 d-flex align-items-center" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b;">
+                                    <i class="fas fa-palette me-2 text-success"></i>INTERFACE OPTIMIZATION
+                                </h6>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">Environment Theme</label>
+                                            <select class="form-select input-premium" name="theme">
+                                                <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Standard (Light)</option>
+                                                <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Operational (Dark)</option>
+                                                <option value="auto" {% if user.theme == 'auto' %}selected{% endif %}>Auto-Detect</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group-premium">
+                                            <label class="label-tactical">Linguistic Matrix</label>
+                                            <select class="form-select input-premium" name="language">
+                                                <option value="en" {% if user.language == 'en' %}selected{% endif %}>English (US)</option>
+                                                <option value="es" {% if user.language == 'es' %}selected{% endif %}>Español</option>
+                                                <option value="fr" {% if user.language == 'fr' %}selected{% endif %}>Français</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-emerald text-white rounded-pill px-4 mt-2" style="background: var(--color-primary, #10b981);">
+                                    <i class="fas fa-save me-2"></i>SAVE CONFIGURATIONS
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Activity Tab -->
+                    <div class="tab-pane fade" id="activity-panel" role="tabpanel" aria-labelledby="activity-tab">
+                        <div class="card-body p-4 p-lg-5">
+                            <h6 class="mb-4 d-flex align-items-center" style="font-family: 'Space Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b;">
+                                <i class="fas fa-history me-2 text-success"></i>OPERATIONAL LOGS (LOGIN HISTORY)
+                            </h6>
+                            {% if login_history %}
+                                <div class="table-responsive">
+                                    <table class="telemetry-table-premium">
+                                        <thead>
+                                            <tr>
+                                                <th>TIMESTAMP</th>
+                                                <th>ACCESS POINT (IP)</th>
+                                                <th>TERMINAL (DEVICE)</th>
+                                                <th>SIGNAL STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for login in login_history %}
+                                                <tr class="telemetry-row">
+                                                    <td class="telemetry-cell fw-bold">
+                                                        <span class="text-dark">{{ login.created_at|date:"M d, Y" }}</span><br>
+                                                        <small class="text-muted">{{ login.created_at|time:"H:i:s" }}</small>
+                                                    </td>
+                                                    <td class="telemetry-cell">
+                                                        <code class="monospace-telemetry">{{ login.ip_address }}</code>
+                                                    </td>
+                                                    <td class="telemetry-cell">
+                                                        <span class="small fw-500">{{ login.description|truncatewords:6 }}</span>
+                                                    </td>
+                                                    <td class="telemetry-cell">
+                                                        <span class="stat-dot-live"></span>
+                                                        <span class="small fw-bold text-success">DECRYPTED / SECURE</span>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-radar text-muted mb-3" style="font-size: 2rem; opacity: 0.2;"></i>
+                                    <p class="text-muted small fw-bold" style="letter-spacing: 1px;">NO SIGNAL DETECTED IN LOGS</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('profileParticles');
+    if(!container) return;
+    
+    for (let i = 0; i < 20; i++) {
+        const star = document.createElement('div');
+        star.style.position = 'absolute';
+        star.style.width = '2px';
+        star.style.height = '2px';
+        star.style.background = 'var(--color-primary, #10b981)';
+        star.style.borderRadius = '50%';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.boxShadow = '0 0 8px var(--color-primary, #10b981)';
+        star.style.opacity = '0.4';
+        container.appendChild(star);
+    }
+});
+</script>
+{% endblock %}

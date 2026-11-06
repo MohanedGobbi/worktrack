@@ -1,0 +1,2172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Worker Portal - Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/fonts/inter/inter.css' %}">
+<style>
+    body { background: #f8fafc; color: #334155; font-family: 'Inter', sans-serif; }
+
+    /* ── SYSTEM STRATEGIC NOTES PANEL ── */
+    .wp-notes-panel { position: fixed; top: 0; right: -420px; width: 420px; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); z-index: 1050; transition: right 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), left 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); display: flex; flex-direction: column; border-left: 1px solid #e2e8f0; color: #0f172a; overflow: visible !important; --panel-accent: var(--wt-brand); --panel-accent-hover: linear-gradient(135deg, var(--wt-brand) 0%, var(--wt-brand) 100%); }
+    .wp-notes-panel.open { right: 0; }
+    html[dir="rtl"] .wp-notes-panel,
+    body.rtl-mode .wp-notes-panel {
+        right: auto !important;
+        left: -440px !important;
+        border-left: none !important;
+        border-right: 1px solid #e2e8f0 !important;
+        box-shadow: 10px 0 40px rgba(0,0,0,0.1) !important;
+    }
+    html[dir="rtl"] .wp-notes-panel.open,
+    body.rtl-mode .wp-notes-panel.open {
+        right: auto !important;
+        left: 0 !important;
+    }
+    html[dir="rtl"] .wp-floating-notes-btn,
+    body.rtl-mode .wp-floating-notes-btn {
+        right: auto !important;
+        left: 2rem !important;
+    }
+    @media (max-width: 991px) {
+        .wp-notes-panel { width: 100% !important; }
+    }
+    .wp-notes-backdrop { display: none; }
+    .wp-notes-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; }
+    .wp-notes-title { font-weight: 800; font-size: 1.25rem; color: #0f172a; display:flex; align-items:center; gap:0.6rem; margin:0; }
+    .wp-notes-close { background: transparent; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer; transition: all 0.2s; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border-radius: 8px; }
+    .wp-notes-close:hover { color: var(--wt-bad); background: rgba(192, 40, 58,0.1); }
+    .wp-notes-body { padding: 1.5rem; flex: 1; overflow-y: auto; background: #ffffff; }
+
+    .wp-note-card { background: #ffffff; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #e2e8f0; position:relative; box-shadow: 0 4px 15px rgba(0,0,0,0.02); transition: all 0.3s ease; }
+    .wp-note-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+    .wp-note-card.completed { opacity: 0.6; background: #f8fafc; border-color: #e2e8f0; }
+    .wp-note-card.completed::before { background: #94a3b8; }
+    .wp-note-card.completed .wp-note-text { text-decoration: line-through; color: #64748b; }
+
+    .wp-note-card::before { content: ''; position:absolute; left:0; top:0; bottom:0; width:4px; background: var(--color-primary, #10b981); border-top-left-radius: 12px; border-bottom-left-radius: 12px; transition: background 0.3s; }
+    .wp-note-header-info { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+    .wp-note-time { font-size: 0.75rem; color: #64748b; font-weight:700;}
+    .wp-note-actions { display: flex; gap: 0.25rem; }
+    .wp-note-btn { background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 0.85rem; padding: 0.35rem 0.5rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .wp-note-btn-check { color: var(--color-primary, #10b981); }
+    .wp-note-btn-check:hover { background: var(--color-primary, #10b981); color: white; border-color: var(--color-primary, #10b981); }
+    .wp-note-btn-edit { color: #3b82f6; }
+    .wp-note-btn-edit:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+    .wp-note-btn-del { color: var(--wt-bad); }
+    .wp-note-btn-del:hover { background: var(--wt-bad); color: white; border-color: var(--wt-bad); }
+
+    .wp-note-text { font-size: 0.9rem; color: #334155; margin:0; line-height:1.6; white-space: pre-wrap; word-break: break-word; }
+
+    .wp-note-edit-input { width: 100%; background: #ffffff; border: 2px solid #3b82f6; border-radius: 8px; color: #0f172a; padding: 0.75rem; font-size: 0.9rem; resize: vertical; outline: none; margin-top: 0.5rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .wp-note-save-btn { background: #3b82f6; color: #fff; border: none; font-size: 0.8rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; margin-top: 0.5rem; transition: background 0.2s; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
+    .wp-note-save-btn:hover { background: #2563eb; }
+
+    .wp-notes-footer { padding: 1.5rem; border-top: 1px solid #e2e8f0; background: #f8fafc; }
+    .wp-notes-input { width: 100%; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0.85rem 1rem; color: #0f172a; font-size: 0.9rem; resize: none; outline: none; transition: all 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .wp-notes-input:focus { border-color: var(--color-primary, #10b981); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #10b981) 0.15); }
+    .wp-notes-submit { width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000))); color: #fff; border: none; border-radius: 10px; padding: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary, #10b981) 0.3); }
+    .wp-notes-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary, #10b981) 0.5); }
+    
+    /* ── STRATEGIC NOTES FLOATING BUTTON ── */
+    .wp-floating-notes-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 10px 25px color-mix(in srgb, var(--color-primary, #10b981) 0.4);
+        z-index: 1040;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .wp-floating-notes-btn:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 35px color-mix(in srgb, var(--color-primary, #10b981) 0.6);
+    }
+    .wp-floating-notes-btn i {
+        animation: pulseNote 2s infinite;
+    }
+    @keyframes pulseNote { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    /* ── COMMANDER HERO BANNER (COMPACT SLEEK HOMEPAGE STYLE) ── */
+    .wp-hero {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 16px;
+        padding: 1.25rem 2rem;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);
+        box-shadow: none !important;
+    }
+    
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; background: var(--color-primary, #10b981); border-radius: 50%; box-shadow: 0 0 8px var(--color-primary, #10b981); animation: pulseGlow 1.5s infinite alternate; margin-right: 8px; }
+    @keyframes pulseGlow { from { box-shadow: 0 0 4px var(--color-primary, #10b981); transform: scale(1); } to { box-shadow: 0 0 16px var(--color-accent, #34d399); transform: scale(1.2); background: var(--color-accent, #34d399);} }
+    
+    .wp-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+    .wp-star { position: absolute; width: 3px; height: 3px; background: var(--color-primary, #10b981); border-radius: 50%; animation: floatUp linear infinite; opacity: 0; box-shadow: 0 0 12px var(--color-primary, #10b981); }
+    @keyframes floatUp { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 20% { opacity: 0.8; } 50% { transform: translateY(50vh) scale(1.5); } 80% { opacity: 0.8; } 100% { transform: translateY(-20vh) scale(0.5); opacity: 0; } }
+    
+    .wp-hero::before {
+        display: none !important;
+    }
+    
+    .wp-hero-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        position: relative;
+        z-index: 2;
+        flex-wrap: nowrap;
+        gap: 1.5rem;
+    }
+    
+    .wp-hero-left {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-width: 60%;
+        flex: 1 1 auto;
+    }
+    
+    .wp-hero-top-status {
+        color: var(--color-accent, #34d399);
+        font-family: 'Space Mono', monospace;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .wp-hero-top-status::before {
+        content: '';
+        display: block;
+        width: 1px;
+        height: 12px;
+        background: color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent);
+    }
+    
+    .wp-hero-page-title {
+        font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+        font-weight: 800;
+        margin: 0 0 0.35rem 0;
+        line-height: 1.15;
+        letter-spacing: -0.5px;
+        color: #ffffff !important;
+        text-shadow: none !important;
+    }
+    .hero-page-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--color-accent, #34d399);
+        letter-spacing: 0.5px;
+        margin-bottom: 0.45rem;
+    }
+    
+    .wp-hero-desc {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.88rem;
+        line-height: 1.45;
+        margin-bottom: 0.85rem;
+        max-width: 95%;
+    }
+    
+    .wp-hero-action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .wp-btn {
+        text-decoration: none;
+        padding: 0.55rem 1.35rem;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 0.82rem;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .wp-btn-solid {
+        background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)));
+        color: #ffffff !important;
+        box-shadow: none !important;
+        border: none;
+    }
+    .wp-btn-solid:hover {
+        background: linear-gradient(135deg, var(--color-accent, #34d399), var(--color-primary, #10b981));
+        transform: translateY(-2px);
+    }
+    .wp-btn-ghost {
+        background: rgba(var(--wt-brand-rgb), 0.12);
+        color: var(--wt-accent) !important;
+        border: 1px solid rgba(25, 190, 220, 0.35);
+    }
+    .wp-btn-ghost:hover {
+        background: rgba(var(--wt-brand-rgb), 0.25);
+        border-color: var(--wt-accent);
+        color: #ffffff !important;
+        transform: translateY(-2px);
+    }
+    
+    /* RIGHT PANEL WIDGET (COMPACT HORIZONTAL SLIM DESIGN) */
+    .wp-hero-right {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    }
+    
+    .wp-hero-widget {
+        background: rgba(4, 18, 14, 0.82) !important;
+        border-radius: 12px;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);
+        padding: 0.75rem 1.15rem;
+        width: auto;
+        max-width: 420px;
+        box-shadow: none !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1.25rem;
+        flex-shrink: 0;
+    }
+    
+    /* Sleek Compact Ring Chart */
+    .wp-ring-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        transition: transform 0.3s ease;
+    }
+    .wp-ring-wrapper:hover {
+        transform: scale(1.05);
+    }
+    .wp-ring-bg {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 3px dashed color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent);
+        animation: spinDash 20s linear infinite;
+    }
+    @keyframes spinDash { 100% { transform: rotate(360deg); } }
+    
+    .wp-ring-progress {
+        position: absolute;
+        inset: 5px;
+        border-radius: 50%;
+        background: conic-gradient(var(--color-accent, #34d399) var(--wp-completion), transparent 0deg);
+        -webkit-mask: radial-gradient(transparent 64%, white 65%);
+        mask: radial-gradient(transparent 64%, white 65%);
+    }
+    
+    .wp-ring-content {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+    }
+    .wp-ring-val {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        margin-bottom: 2px;
+        text-shadow: none !important;
+    }
+    .wp-ring-lbl {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.55rem;
+        color: #94a3b8;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    
+    /* Compact Terminal List */
+    .wp-terminal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        min-width: 170px;
+        flex: 1;
+    }
+    .wp-terminal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-family: 'Space Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        border-bottom: 1px dashed rgba(255,255,255,0.12);
+        padding-bottom: 0.2rem;
+    }
+    .wp-terminal-lbl {
+        color: rgba(255, 255, 255, 0.75);
+        text-transform: uppercase;
+        font-weight: 600;
+        font-size: 0.68rem;
+    }
+    .wp-terminal-val {
+        color: var(--color-accent, #34d399);
+        font-weight: 800;
+        font-size: 0.9rem;
+        text-shadow: none !important;
+    }
+    .wp-terminal-val.white {
+        color: #f8fafc;
+        text-shadow: none !important;
+    }
+
+    /* ── STAT CARDS & TABS WRAPPER ── */
+    .wp-stats { 
+        display: grid; 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 0.85rem; 
+        margin-bottom: 2rem; 
+    }
+    .wp-stat { 
+        background: linear-gradient(145deg, #ffffff, #f8fafc); 
+        border-radius: 14px; 
+        padding: 0.95rem 1.15rem; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03); 
+        border: 1px solid #e2e8f0; 
+        display: flex; 
+        align-items: center; 
+        gap: 0.85rem; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        position: relative; 
+        overflow: hidden; 
+    }
+    .wp-stat:hover { 
+        transform: translateY(-3px); 
+        box-shadow: 0 10px 25px color-mix(in srgb, var(--color-primary, #10b981) 0.08); 
+        border-color: color-mix(in srgb, var(--color-primary, #10b981) 0.3); 
+    }
+    .wp-stat::before { 
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; 
+        background: linear-gradient(to bottom, var(--color-primary, #10b981), var(--color-accent, #34d399)); 
+        border-top-left-radius: 14px; border-bottom-left-radius: 14px; transition: width 0.3s; 
+    }
+    .wp-stat:hover::before { width: 5px; }
+    .wp-stat-icon { 
+        width: 44px; height: 44px; border-radius: 10px; 
+        background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary, #10b981) 0.1), color-mix(in srgb, var(--color-primary, #10b981) 0.2)); 
+        color: var(--color-primary, #10b981); display: flex; align-items: center; justify-content: center; 
+        font-size: 1.25rem; flex-shrink: 0; 
+    }
+    .wp-stat-hdr { display: none; }
+    .wp-stat-c { display: flex; align-items: center; width: 100%; gap: 0.75rem; }
+    .wp-stat-nums { flex: 1; min-width: 0; }
+    .wp-stat-num { font-size: 1.45rem; font-weight: 800; color: #0f172a; line-height: 1.1; margin-bottom: 0.15rem; }
+    .wp-stat-sub { font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    @media (max-width: 1200px) {
+        .wp-stats { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+        .wp-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 540px) {
+        .wp-stats { grid-template-columns: 1fr; }
+    }
+
+    /* ── TAB NAVIGATION ── */
+    .wp-tabs-wrapper { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); overflow: hidden; margin-bottom: 2rem; }
+    .wp-tab-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; align-items: center; }
+    
+    .wp-tab-btn { padding: 0.6rem 1.15rem; border: 1px solid #e2e8f0; border-radius: 50px; background: #ffffff; font-size: 0.85rem; font-weight: 700; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 0.55rem; transition: all 0.2s ease; flex: 1 1 auto; min-width: fit-content; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .wp-tab-btn:hover { color: var(--color-primary, #10b981); background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent); border-color: color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent); }
+    .wp-tab-btn.active { color: #ffffff; background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); border-color: var(--color-primary, #10b981); box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent); }
+    .wp-badge { background: #e2e8f0; color: #475569; padding: 0.2rem 0.55rem; border-radius: 20px; font-size: 0.72rem; font-weight: 800; transition: all 0.2s; min-width: 1.4rem; text-align: center; }
+    .wp-tab-btn.active .wp-badge { background: rgba(255, 255, 255, 0.28); color: #ffffff; }
+
+    .wp-tab-pane { padding: 2rem; display: none; }
+    .wp-tab-pane.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── DISCOVERY HUB (AMAZING BANNER & PIPELINE) ── */
+    .wp-discovery-hub {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 20px;
+        padding: 2.25rem 2.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent);
+        display: flex;
+        align-items: center;
+        gap: 2.5rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    }
+    .wp-discovery-hub::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(circle at 10% 90%, rgba(var(--wt-brand-rgb), 0.12) 0%, transparent 60%);
+    }
+    .wp-dh-left { flex: 1; position: relative; z-index: 10; }
+    .wp-dh-tag { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(var(--wt-brand-rgb), 0.15); color: var(--color-accent, #34d399); padding: 0.45rem 1rem; border-radius: 99px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.25rem; border: 1px solid rgba(var(--wt-brand-rgb), 0.3); }
+    .wp-dh-title { font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1.15; margin-bottom: 1rem; letter-spacing: -0.5px; }
+    .wp-dh-desc { font-size: 1.05rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 2rem; max-width: 90%; }
+    
+    .wp-dh-stats { display: flex; gap: 3rem; margin-top: auto; }
+    .wp-dh-stat-item { display: flex; flex-direction: column; }
+    .wp-dh-stat-val { font-size: 1.75rem; font-weight: 800; color: var(--color-accent, #34d399); }
+    .wp-dh-stat-lbl { font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+    .wp-dh-right { width: 260px; flex-shrink: 0; position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; }
+    .wp-dh-orb {
+        width: 140px; height: 140px; background: rgba(var(--wt-brand-rgb), 0.12); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; position: relative;
+        box-shadow: 0 0 50px rgba(var(--wt-brand-rgb), 0.2); border: 1px solid rgba(var(--wt-brand-rgb), 0.35);
+        animation: dhPulse 4s infinite alternate ease-in-out;
+    }
+    .wp-dh-orb i { font-size: 3.2rem; color: var(--color-accent, #34d399); text-shadow: 0 0 20px rgba(25, 190, 220, 0.5); }
+    
+    @keyframes dhPulse { from { transform: scale(1) rotate(0deg); box-shadow: 0 0 35px rgba(var(--wt-brand-rgb), 0.15); } to { transform: scale(1.08) rotate(10deg); box-shadow: 0 0 70px rgba(var(--wt-brand-rgb), 0.3); } }
+
+    /* ── DISCOVERY PIPELINE CONTAINER ── */
+    .wp-discovery-section {
+        background: var(--wt-hero-bg) !important;
+        border: 1px solid rgba(var(--wt-brand-rgb), 0.2);
+        border-radius: 24px;
+        padding: 1.75rem;
+        box-shadow: 0 10px 35px rgba(var(--wt-brand-rgb), 0.04);
+        position: relative;
+    }
+    .wp-explore-items-container {
+        padding-top: 1.5rem;
+        border-top: 1px dashed #e2e8f0;
+        margin-top: 0.5rem;
+    }
+
+    /* ── TABLES & CONTENT ── */
+    .wp-table-card { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+    .wp-table-head { background: #f8fafc; padding: 1rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
+    .wp-table-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.75rem; }
+    .wp-table-title-icon { color: var(--color-primary, #10b981); }
+    .wp-tbl { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .wp-tbl th { padding: 1rem 1.5rem; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    .wp-tbl td { padding: 1rem 1.5rem; font-size: 0.95rem; color: #334155; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    .wp-tbl tr:last-child td { border-bottom: none; }
+    .wp-tbl tr:hover td { background: #f8fafc; }
+
+    /* ── UI ELEMENTS ── */
+    .wp-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .wp-pill-working { background: rgba(245,158,11,0.1); color: #d97706; }
+    .wp-pill-done { background: color-mix(in srgb, var(--color-primary, #10b981) 0.1); color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); }
+    .wp-pill-danger { background: rgba(192, 40, 58,0.1); color: var(--color-primary, #10b981); }
+    .wp-action-btn { padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; cursor: pointer; }
+    .wp-action-primary { background: var(--color-primary, #10b981); color: #fff !important; box-shadow: 0 4px 10px color-mix(in srgb, var(--color-primary, #10b981) 0.2); }
+    .wp-action-primary:hover { background: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); transform: translateY(-2px); box-shadow: 0 6px 15px color-mix(in srgb, var(--color-primary, #10b981) 0.3); }
+    .wp-action-outline { border: 1px solid #e2e8f0; color: #64748b !important; }
+    .wp-action-outline:hover { border-color: #cbd5e1; color: #0f172a !important; background: #f8fafc; }
+
+    /* ── EMPTY STATES ── */
+    .wp-empty { padding: 4rem 2rem; text-align: center; color: #64748b; }
+    .wp-empty i { margin-bottom: 1rem; font-size: 3rem; opacity: 0.5; color: #94a3b8; }
+    .wp-empty h6 { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+    .wp-empty p { font-size: 0.95rem; margin: 0; }
+
+    /* ── DASHBOARD PREMIUM STYLE PORT ── */
+    /* ===== PREMIUM MODULE CARDS ===== */
+    .mod-card {
+        background: white; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; text-decoration: none; display: block; color: inherit;
+    }
+    .mod-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); border-color: rgba(99, 102, 241, 0.3); }
+    
+    .mod-icon-wrap { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; color: white; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+    .mod-banner-img { height: 140px; position: relative; overflow: hidden; }
+    .mod-banner-img img { transition: transform 0.6s ease; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .mod-card:hover .mod-banner-img img { transform: scale(1.05); }
+    
+    .mod-name-overlay { color: white; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); font-weight: 800; font-size: 1rem; margin-bottom: 0; }
+    .mod-top { padding: 1.25rem 1.5rem 1rem; position: relative; }
+    .mod-name-title { font-weight: 800; font-size: 1rem; color: #1e293b; margin-bottom: 0.25rem; }
+    .mod-description-text { font-size: 0.78rem; color: #94a3b8; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1rem; }
+    
+    .mod-stats-row { display: flex; border-top: 1px solid #f8fafc; }
+    .mod-stat { flex: 1; text-align: center; padding: 0.75rem 0.5rem; border-right: 1px solid #f8fafc; }
+    .mod-stat:last-child { border-right: none; }
+    .mod-stat-val { font-size: 1.1rem; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 0.2rem; }
+    .mod-stat-lbl { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; }
+    .mod-footer { padding: 0.9rem 1.25rem; background: #fafbff; border-top: 1px solid #f1f5f9; display: flex; gap: 0.5rem; }
+    
+    /* ======= MODULES LIST VIEW ======= */
+    .modules-list { display: flex; flex-direction: column; gap: 1rem; transition: all 0.5s ease; }
+    .modules-list .mod-card {
+        display: flex !important; flex-direction: row !important; align-items: center !important;
+        border-radius: 20px; padding: 0.65rem 1.5rem 0.65rem 1rem !important; height: auto; min-height: 90px;
+        gap: 1.5rem !important; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03); border: 1px solid #e2e8f0;
+    }
+    .modules-list .mod-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08); }
+    .modules-list .mod-card:nth-child(even) { background-color: #f8fafc !important; }
+    
+    .modules-list .mod-banner-img {
+        width: 100px; height: 70px !important; border-radius: 12px; overflow: hidden; flex-shrink: 0;
+        margin-right: 0; position: relative; order: -1; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+    }
+    .modules-list .mod-banner-img .mod-icon-wrap {
+        width: 28px !important; height: 28px !important; font-size: 0.75rem; bottom: 0.35rem; left: 0.35rem; position: absolute; margin-bottom: 0;
+        background: rgba(255, 255, 255, 0.2) !important; backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .modules-list .mod-top { flex: 1.2; padding: 0 !important; }
+    .modules-list .mod-description-text { display: none; }
+    .modules-list .mod-stats-row { flex: 2; border: none !important; align-items: center; justify-content: center; background: transparent !important; }
+    .modules-list .mod-stat { padding: 0 1rem !important; border-right: 1px solid #e2e8f0; text-align: left; }
+    .modules-list .mod-footer { display: none !important; }
+    .modules-list .mod-name-overlay { display: none !important; }
+
+    /* ===== MODERN TABLE (TASK DIRECTORY) ===== */
+    .wp-modern-table { width: 100%; border-collapse: separate; border-spacing: 0 0.75rem; }
+    .wp-modern-table thead th { padding: 1.25rem; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; border: none; }
+    .wp-modern-table tbody tr { background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.3s ease; border-radius: 12px; border: 1px solid var(--row-color, #e2e8f0); }
+    .wp-modern-table tbody tr:hover { transform: scale(1.008) translateX(8px); box-shadow: 0 15px 40px rgba(0,0,0,0.08); border-width: 2px; }
+    .wp-modern-table td { padding: 1.25rem; vertical-align: middle; border: none; }
+    .wp-modern-table td:first-child { border-top-left-radius: 16px; border-bottom-left-radius: 16px; border-left: 6px solid var(--row-color, #e2e8f0); }
+    .wp-modern-table td:last-child { border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+    
+    .wp-mini-pie { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; position: relative; background: conic-gradient(var(--row-color, #64748b) 0% var(--p-val, 0%), #f1f5f9 var(--p-val, 0%) 100%); border-radius: 50%; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .wp-mini-pie::after { content: ''; position: absolute; inset: 4px; background: #fff; border-radius: 50%; }
+    .wp-mini-pie span { position: relative; z-index: 10; font-size: 10px; font-weight: 800; color: #1e293b; }
+
+    .wp-pagination-controls { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 2rem; padding: 1rem; }
+    .wp-page-link { width: 40px; height: 40px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #64748b; transition: all 0.2s; cursor: pointer; text-decoration: none !important; }
+    .wp-page-link:hover { border-color: var(--color-primary, #10b981); color: var(--color-primary, #10b981); background: color-mix(in srgb, var(--color-primary, #10b981) 10%, transparent); }
+    .wp-page-link.active { background: var(--color-primary, #10b981); color: #fff; border-color: var(--color-primary, #10b981); box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #10b981) 0.2); }
+    .wp-page-prevnext { padding: 0 1.25rem; width: auto; }
+    
+    .wp-row-sw-1 { background: #ffffff !important; }
+    .wp-row-sw-2 { background: #f8fafc !important; }
+    
+    .wp-dir-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .wp-dir-title { font-weight: 800; font-size: 1rem; color: #1e293b; margin: 0; }
+    .wp-dir-sub { font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin: 0; }
+    
+    .wp-dir-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; border-radius: 10px; font-size: 0.75rem; font-weight: 700; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+    /* ===== NEW TASK WIDGET ===== */
+    .tw-task-widget { position: relative; background-color: #ffffff; border-radius: 1.5rem; overflow: hidden; display: flex; flex-direction: column; height: 100%; border: 2px solid var(--tw-m-color); box-shadow: 0 10px 30px rgba(0,0,0,0.04); transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+    .tw-task-widget:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-width: 3px; }
+    .tw-task-img-container { height: 140px; overflow: hidden; margin: 0.75rem; border-radius: 18px; background: #f8fafc; position: relative; }
+    .tw-task-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; display: block; }
+    .tw-task-body { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+    .tw-task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .tw-task-title { font-weight: 700; font-size: 1.125rem; line-height: 1.25; margin: 0; color: #171c1f; }
+    .tw-task-priority { font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 700; padding: 0.125rem 0.5rem; border-radius: 9999px; text-transform: uppercase; background-color: #ffdad6; color: #93000a; }  
+    .tw-priority-high { background-color: #ffdad6; color: #93000a; } 
+    .tw-priority-med { background-color: #eaeef2; color: #424754; } 
+    .tw-priority-low { background-color: #6cf8bb; color: #00714d; }
+    .tw-task-meta { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+    .tw-task-dates { display: flex; justify-content: space-between; font-family: 'Manrope', sans-serif; font-size: 0.75rem; }
+    .tw-task-created { color: #727785; }
+    .tw-task-due { color: #0058be; font-weight: 700; }
+    .tw-task-progress-labels { display: flex; justify-content: space-between; font-family: 'Manrope', sans-serif; font-size: 11px; margin-bottom: 0.25rem; }
+    .tw-progress-lbl { color: #424754; font-weight: 500; }
+    .tw-progress-val { color: #0058be; font-weight: 700; }
+    .tw-progress-bg { height: 0.5rem; width: 100%; background-color: #dfe3e7; border-radius: 9999px; }
+    .tw-progress-fill { height: 100%; border-radius: 9999px; background-color: var(--tw-m-color, #0058be); }
+    .tw-task-pie-block { display: flex; align-items: center; gap: 1rem; }
+    .tw-pie-chart { width: 3rem; height: 3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; background: conic-gradient(var(--tw-m-color, #006c49) 0% var(--pie-percent, 0%), #dfe3e7 var(--pie-percent, 0%) 100%); border-radius: 50%; }
+    .tw-pie-inner { position: absolute; inset: 0.25rem; background-color: #ffffff; border-radius: 50%; }
+    .tw-pie-val { font-size: 10px; font-weight: 900; z-index: 10; color: #171c1f; }
+    .tw-pie-labels { font-family: 'Manrope', sans-serif; line-height: 1.25; }
+    .tw-pie-lbl-top { font-size: 10px; text-transform: uppercase; color: #727785; letter-spacing: 0.05em; margin: 0; }
+    .tw-pie-lbl-bot { font-size: 0.75rem; font-weight: 700; color: #171c1f; margin: 0; }
+    .tw-task-btn { margin-top: auto; width: 100%; padding: 0.75rem 0; border-radius: 0.75rem; background-color: #e4e9ed; color: #0058be; font-weight: 700; font-size: 0.875rem; text-align: center; transition: all 0.3s; border: none; text-decoration: none; display: block; }
+    .tw-task-btn:hover { background-color: #0058be; color: #ffffff; }
+
+    /* ===== NEW LIST WIDGET ===== */
+    .tw-list-item { position: relative; background-color: #ffffff; border-radius: 1.25rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: all 0.3s ease; overflow: hidden; display: flex; align-items: center; padding: 1rem 1.5rem; min-height: 100px; margin-bottom: 1rem; text-decoration: none; color: inherit; border: 2px solid var(--tw-m-color); }
+    .tw-list-item:hover { transform: translateX(8px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    .tw-list-accent-line { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background-color: var(--tw-m-color); }
+    .tw-list-img-wrap { width: 80px; height: 80px; border-radius: 14px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
+    .tw-list-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s; display: block; }
+    .tw-list-item:hover .tw-list-img { transform: scale(1.1); }
+    .tw-list-body { flex: 1; padding: 0 2rem; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 1.5rem; align-items: center; }
+    .tw-list-col-info { grid-column: span 3 / span 3; }
+    .tw-list-col-progress { grid-column: span 3 / span 3; }
+    .tw-list-col-priority { grid-column: span 2 / span 2; display: flex; flex-direction: column; align-items: flex-start; }
+    .tw-list-col-pie { grid-column: span 4 / span 4; display: flex; align-items: center; gap: 1rem; border-left: 1px solid #f1f5f9; padding-left: 1.5rem; }
+    .tw-list-eyebrow { font-family: 'Manrope', sans-serif; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+    .tw-list-title { font-weight: 700; font-size: 1.25rem; color: #171c1f; line-height: 1.25; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .tw-list-status-text { font-size: 11px; font-weight: 700; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: -0.025em; display: flex; align-items: center; gap: 0.25rem; color: var(--tw-m-color); }
+    .tw-list-dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background-color: var(--tw-m-color); }
+    .tw-list-progress-lbl { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem; }
+    .tw-list-progress-dates { font-size: 11px; font-weight: 700; color: #171c1f; }
+    .tw-list-progress-bg { width: 100%; background-color: #f1f5f9; height: 0.625rem; border-radius: 9999px; overflow: hidden; }
+    .tw-list-progress-fill { background-color: var(--tw-m-color); height: 100%; border-radius: 9999px; box-shadow: 0 0 8px var(--tw-m-color); }
+    .tw-list-priority-badge { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 1rem; border-radius: 9999px; font-size: 10px; font-weight: 900; text-transform: uppercase; align-self: flex-start; }
+    .tw-list-pie { width: 3.5rem; height: 3.5rem; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--tw-m-color, #006c49) 0% var(--pie-percent, 0%), #dfe3e7 var(--pie-percent, 0%) 100%); border-radius: 50%; }
+    .tw-list-pie-inner { position: absolute; inset: 0.375rem; background-color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); }
+    .tw-list-pie-val { font-size: 10px; font-weight: 900; color: var(--tw-m-color); }
+    .tw-list-pie-txt p.lbl { font-family: 'Manrope', sans-serif; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+    .tw-list-pie-txt p.val { font-weight: 700; font-size: 0.875rem; color: #171c1f; margin: 0; }
+    .tw-list-action { flex-shrink: 0; padding-left: 1rem; border-left: 1px solid #f8fafc; height: 6rem; display: flex; align-items: center; }
+    .tw-list-btn { background-color: var(--tw-m-color); color: #ffffff; height: 3rem; width: 8rem; border-radius: 9999px; font-weight: 700; font-size: 0.875rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: transform 0.3s, background-color 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; cursor: pointer; text-decoration: none; }
+    .tw-list-btn:hover { transform: scale(1.05); color: #ffffff; text-decoration: none; background-color: var(--tw-m-color); filter: brightness(1.1); }
+    @media (max-width: 991px) {
+        .tw-list-item { flex-direction: column; height: auto; align-items: stretch; padding: 1rem; }
+        .tw-list-img-wrap { width: 100%; height: 12rem; margin-left: 0; margin-bottom: 1rem; }
+        .tw-list-body { flex: 1; padding: 0; grid-template-columns: 1fr; gap: 1rem; }
+        .tw-list-col-info, .tw-list-col-progress, .tw-list-col-priority, .tw-list-col-pie { grid-column: span 1 / span 1; border-left: none; padding-left: 0; align-items: flex-start; }
+        .tw-list-action { border-left: none; border-top: 1px solid #f8fafc; padding-left: 0; padding-top: 1rem; height: auto; justify-content: flex-end; }
+    }
+
+    /* ====== TASKS LIST (MODERN ACTIVITY) ====== */
+    .modern-activity-card {
+        background: #ffffff; border-radius: 20px; padding: 1.5rem; height: 100%; border: 1px solid #e2e8f0; display: flex; flex-direction: column;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .modern-list-header {
+        display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 0 1rem 1rem 1rem;
+        border-bottom: 2px solid #e2e8f0; margin-bottom: 0.5rem; font-weight: 800; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .modern-list-item {
+        display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; padding: 1rem; border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 4px; border-radius: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none !important; cursor: pointer; color: inherit;
+    }
+    .modern-list-item:last-child { border-bottom: none; }
+    .modern-list-item:hover { background: #f8fafc; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); transform: translateY(-2px); border-color: transparent; }
+    .item-title { font-weight: 800; color: #1e293b; font-size: 0.95rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .item-sub { font-weight: 600; color: #94a3b8; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    .item-date { font-weight: 800; color: #1e293b; font-size: 0.9rem; }
+
+    .badge-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-in_progress { background: #dbeafe; color: #0c4a6e; }
+    .badge-submitted { background: #e0e7ff; color: #3730a3; }
+    .badge-approved { background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent); color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); }
+    .badge-rejected { background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent); color: var(--color-primary, #10b981); }
+    .badge-completed { background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent); color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); }
+
+    /* ── LUMINA KINETIC MODULE REDESIGN (WHITE STYLE) ── */
+    :root {
+        --l-surface: #ffffff;
+        --l-border: #e2e8f0;
+        --l-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+        --l-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.04);
+        --l-text-main: #1e293b;
+        --l-text-muted: #64748b;
+    }
+
+    .mod-card-lumina {
+        background: var(--l-surface);
+        border: 2px solid var(--mod-color, #e2e8f0);
+        border-radius: 24px;
+        overflow: hidden;
+        position: relative;
+        transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        display: flex;
+        flex-direction: column;
+        color: var(--l-text-main);
+        box-shadow: var(--l-shadow-sm);
+        height: 100%;
+    }
+    .mod-card-lumina:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(var(--mod-rgb), 0.1);
+        border-color: var(--mod-color, var(--color-primary, #10b981));
+        border-width: 3px;
+    }
+
+    .l-accent-bar {
+        height: 6px;
+        width: 100%;
+        background: var(--mod-color);
+        box-shadow: 0 2px 10px rgba(var(--mod-rgb), 0.3);
+        z-index: 10;
+    }
+
+    .l-card-header { position: relative; height: 160px; overflow: hidden; margin: 0.75rem; border-radius: 18px; background: #f8fafc; }
+    .l-header-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+    .mod-card-lumina:hover .l-header-img { transform: scale(1.05); }
+
+    .l-card-body { padding: 0.5rem 1.5rem 1.5rem 1.5rem; flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; }
+    
+    .l-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .l-card-title { font-size: 1.25rem; font-weight: 800; margin: 0; color: var(--l-text-main); letter-spacing: -0.5px; line-height: 1.2; }
+    
+    .l-ring-wrap {
+        position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .svg-ring-light { width: 56px; height: 56px; transform: rotate(-90deg); }
+    .svg-ring-bg-light { fill: none; stroke: #f1f5f9; stroke-width: 5; }
+    .svg-ring-progress-light {
+        fill: none; stroke: var(--mod-color, var(--color-primary, #10b981)); stroke-width: 5; stroke-linecap: round;
+        stroke-dasharray: 157.08; stroke-dashoffset: calc(157.08 - (157.08 * var(--p-val)) / 100);
+        transition: stroke-dashoffset 1s ease-out;
+    }
+    .l-ring-text { position: absolute; font-size: 0.7rem; font-weight: 800; color: var(--l-text-main); }
+
+    .mod-description-text { font-size: 0.85rem; color: var(--l-text-muted); line-height: 1.5; margin-bottom: 0; }
+
+    .l-telemetry { display: flex; gap: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; margin-top: auto; }
+    .l-stat-item { display: flex; flex-direction: column; }
+    .l-stat-val { font-weight: 800; color: var(--l-text-main); font-size: 1rem; }
+    .l-stat-lbl { font-size: 0.65rem; color: var(--l-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .l-btn {
+        width: 100%; padding: 0.9rem; border: none; border-radius: 16px;
+        background: var(--mod-color, var(--color-primary, #10b981));
+        color: #ffffff; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        box-shadow: 0 4px 12px rgba(var(--mod-rgb), 0.2);
+        margin-top: 1rem; text-decoration: none !important;
+    }
+    .l-btn:hover { filter: brightness(1.1); box-shadow: 0 6px 16px rgba(var(--mod-rgb), 0.3); transform: translateY(-1px); color: #fff; }
+
+    /* LIST VIEW LUMINA */
+    .l-list-row {
+        background: #ffffff; border: 2px solid var(--mod-color, #e2e8f0); border-radius: 20px; padding: 1.25rem;
+        display: grid; grid-template-columns: 64px 2fr 1.5fr 140px; align-items: center; gap: 2rem;
+        margin-bottom: 1rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--l-shadow-sm);
+        position: relative;
+        overflow: hidden;
+    }
+    .l-list-row:hover { border-color: var(--mod-color); transform: translateX(8px); box-shadow: var(--l-shadow-md); }
+    .l-list-row::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--mod-color);
+    }
+    
+    .l-list-thumb { width: 64px; height: 64px; border-radius: 14px; overflow: hidden; background: #f8fafc; border: 1px solid #f1f5f9; position: relative; flex-shrink: 0; }
+    .l-list-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .l-list-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .l-list-title { font-size: 1.1rem; font-weight: 800; color: var(--l-text-main); margin: 0; }
+    .l-list-meta { font-size: 0.7rem; color: var(--l-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .l-list-progress-col { display: flex; flex-direction: column; gap: 0.5rem; }
+    .l-bar-bg { width: 100%; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+    .l-bar-fill { height: 100%; background: var(--mod-color); border-radius: 10px; width: var(--p-val); transition: width 1s; }
+    
+    .l-mini-btn {
+        padding: 0.75rem 1.25rem; border-radius: 14px;
+        background: #f8fafc; border: 1px solid #e2e8f0; color: var(--l-text-main);
+        font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+        transition: all 0.2s; text-decoration: none !important; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .l-mini-btn:hover { background: var(--mod-color); border-color: var(--mod-color); color: #fff; box-shadow: 0 4px 12px rgba(var(--mod-rgb), 0.2); }
+
+    .status-pip-light { width: 6px; height: 6px; border-radius: 50%; background: var(--mod-color, var(--color-primary, #10b981)); display: inline-block; margin-right: 6px; }
+
+    @media (max-width: 991px) {
+        .l-list-row { grid-template-columns: 64px 1fr; gap: 1rem; }
+        .l-list-progress-col, .l-mini-btn-col { grid-column: span 2; }
+    }
+
+    @media (max-width: 991px) {
+        .k-list-row { grid-template-columns: 80px 1fr; gap: 1rem; padding: 1rem; }
+        .k-telemetry-strip, .k-mini-btn-col { grid-column: span 2; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+    
+    <!-- HERO BANNER -->
+    <div class="wp-hero">
+        <div class="wp-hero-inner">
+            <div class="wp-hero-left">
+                <div class="wp-hero-top-status">
+                    <span class="pulse-dot"></span> 
+                    <span class="lang-en">STATUS: ONLINE</span>
+                    <span class="lang-ar">الحالة: متصل</span>
+                </div>
+                <!-- Page Title (Worker Portal) -->
+                <h1 class="wp-hero-page-title">
+                    <span class="lang-en">Worker Portal</span>
+                    <span class="lang-ar">بوابة الموظف</span>
+                </h1>
+                <div class="hero-page-badge">
+                    <i class="fas fa-user-shield"></i>
+                    <span class="lang-en">Personal Task & Execution Center</span>
+                    <span class="lang-ar">مركز متابعة المهام والتسليمات الميدانية</span>
+                </div>
+                
+                <p class="wp-hero-desc">
+                    <span class="lang-en">Your personal tracking center is synced. Focus your effort on the active objectives below. Complete pending tasks carefully to maintain your execution telemetry.</span>
+                    <span class="lang-ar">مركز المتابعة الشخصي متزامن. ركز جهودك على الأهداف النشطة أدناه. أكمل المهام المعلقة بدقة للحفاظ على قياسات الأداء الميداني.</span>
+                </p>
+                
+                <div class="wp-hero-action-buttons">
+                    <a href="#action-tasks" class="wp-btn wp-btn-solid">
+                        <i class="fas fa-bolt"></i>
+                        <span class="lang-en">JUMP TO TASKS</span>
+                        <span class="lang-ar">الانتقال للمهام</span>
+                    </a>
+                    <a href="{% url 'worker-performance' %}" class="wp-btn wp-btn-ghost">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="lang-en">Analytics</span>
+                        <span class="lang-ar">التحليلات</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="wp-hero-right">
+                <div class="wp-hero-widget">
+                    
+                    {% with completion=overall_completion|default_if_none:0 %}
+                    <div class="wp-ring-wrapper">
+                        <div class="wp-ring-bg"></div>
+                        <div class="wp-ring-progress" style="--wp-completion: {{ completion }}%;"></div>
+                        <div class="wp-ring-content">
+                            <div class="wp-ring-val">{{ completion }}<span style="font-size:1.2rem;">%</span></div>
+                            <div class="wp-ring-lbl">
+                                <span class="lang-en">COMPLETION RATE</span>
+                                <span class="lang-ar">معدل الإنجاز</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    
+                    <div class="wp-terminal-list">
+                        <div class="wp-terminal-row">
+                            <span class="wp-terminal-lbl">
+                                <span class="lang-en">PENDING TASKS</span>
+                                <span class="lang-ar">مهام معلقة</span>
+                            </span>
+                            <span class="wp-terminal-val">{{ pending_tasks|length|default:"0" }}</span>
+                        </div>
+                        <div class="wp-terminal-row">
+                            <span class="wp-terminal-lbl">
+                                <span class="lang-en">UNREAD MSGS</span>
+                                <span class="lang-ar">رسائل غير مقروءة</span>
+                            </span>
+                            <span class="wp-terminal-val">{{ pending_correspondence_count|default:"0" }}</span>
+                        </div>
+                        <div class="wp-terminal-row">
+                            <span class="wp-terminal-lbl">
+                                <span class="lang-en">COMPLETION RATE</span>
+                                <span class="lang-ar">معدل الإنجاز</span>
+                            </span>
+                            <span class="wp-terminal-val white">{{ overall_completion|default_if_none:0 }}%</span>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- STAT CARDS -->
+    <div class="wp-stats">
+        <div class="wp-stat">
+            <div class="wp-stat-c">
+                <div class="wp-stat-icon" style="background:rgba(59, 130, 246, 0.12);color:#3b82f6;"><i class="fas fa-tasks"></i></div>
+                <div class="wp-stat-hdr"><span class="lang-en">Active Tasks</span><span class="lang-ar">المهام النشطة</span></div>
+                <div class="wp-stat-nums">
+                    <div>
+                        <div class="wp-stat-num" style="color:#2563eb;">{{ pending_tasks|length }}</div>
+                        <div class="wp-stat-sub"><span class="lang-en">Requiring Action</span><span class="lang-ar">تتطلب إجراء</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wp-stat">
+            <div class="wp-stat-c">
+                <div class="wp-stat-icon" style="background:rgba(245, 158, 11, 0.12);color:#f59e0b;"><i class="fas fa-envelope-open-text"></i></div>
+                <div class="wp-stat-hdr"><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></div>
+                <div class="wp-stat-nums">
+                    <div>
+                        <div class="wp-stat-num" style="color:#d97706;">{{ pending_correspondence_count|default:0 }}</div>
+                        <div class="wp-stat-sub"><span class="lang-en">Unread</span><span class="lang-ar">غير مقروء</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wp-stat">
+            <div class="wp-stat-c">
+                <div class="wp-stat-icon" style="background:rgba(99, 102, 241, 0.12);color:#6366f1;"><i class="fas fa-spinner"></i></div>
+                <div class="wp-stat-hdr"><span class="lang-en">In Progress</span><span class="lang-ar">قيد التنفيذ</span></div>
+                <div class="wp-stat-nums">
+                    <div>
+                        <div class="wp-stat-num" style="color:#4f46e5;">{{ recent_tasks|length }}</div>
+                        <div class="wp-stat-sub"><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wp-stat">
+            <div class="wp-stat-c">
+                <div class="wp-stat-icon" style="background:rgba(168, 85, 247, 0.12);color:#a855f7;"><i class="fas fa-file-upload"></i></div>
+                <div class="wp-stat-hdr"><span class="lang-en">Submissions</span><span class="lang-ar">التسليمات</span></div>
+                <div class="wp-stat-nums">
+                    <div>
+                        <div class="wp-stat-num" style="color:#7c3aed;">{{ my_submissions|length }}</div>
+                        <div class="wp-stat-sub"><span class="lang-en">Submitted</span><span class="lang-ar">المسجلة</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="wp-stat">
+            <div class="wp-stat-c">
+                <div class="wp-stat-icon" style="background:rgba(var(--wt-brand-rgb), 0.12);color:var(--color-primary, #10b981);"><i class="fas fa-chart-line"></i></div>
+                <div class="wp-stat-hdr"><span class="lang-en">Completion Rate</span><span class="lang-ar">معدل الإنجاز</span></div>
+                <div class="wp-stat-nums">
+                    <div>
+                        <div class="wp-stat-num" style="color:var(--color-primary, #10b981);">{{ overall_completion|default_if_none:0 }}%</div>
+                        <div class="wp-stat-sub"><span class="lang-en">Done: {{ tasks_stats.completed|default:0 }} / {{ tasks_stats.total|default:0 }}</span><span class="lang-ar">منجز: {{ tasks_stats.completed|default:0 }} من {{ tasks_stats.total|default:0 }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TABBED INTERFACE -->
+    <div class="wp-tabs-wrapper">
+        <div class="wp-tab-nav">
+            <button class="wp-tab-btn active" onclick="wpSwitchTab('action-tasks')">
+                <i class="fas fa-bolt text-danger"></i> 
+                <span class="lang-en">Action Required</span>
+                <span class="lang-ar">مطلوب اتخاذ إجراء</span>
+                <span class="wp-badge">{{ pending_tasks|length }}</span>
+            </button>
+            <button class="wp-tab-btn" onclick="wpSwitchTab('my-modules')">
+                <i class="fas fa-cubes text-danger"></i> 
+                <span class="lang-en">My Modules</span>
+                <span class="lang-ar">وحداتي</span>
+                <span class="wp-badge">{{ worker_modules|length }}</span>
+            </button>
+            <button class="wp-tab-btn" onclick="wpSwitchTab('task-directory')">
+                <i class="fas fa-list text-danger"></i> 
+                <span class="lang-en">Task Directory</span>
+                <span class="lang-ar">دليل المهام</span>
+                <span class="wp-badge">{{ my_tasks|length }}</span>
+            </button>
+            <button class="wp-tab-btn" onclick="wpSwitchTab('submission-history')">
+                <i class="fas fa-history text-danger"></i> 
+                <span class="lang-en">Submission History</span>
+                <span class="lang-ar">سجل التسليمات</span>
+                <span class="wp-badge">{{ my_submissions|length }}</span>
+            </button>
+            <button class="wp-tab-btn" onclick="wpSwitchTab('resubmission-required')">
+                <i class="fas fa-exclamation-circle text-danger"></i> 
+                <span class="lang-en">Resubmission Required</span>
+                <span class="lang-ar">مطلوب إعادة تسليم</span>
+                <span class="wp-badge bg-danger text-white">{{ rejected_submissions|length }}</span>
+            </button>
+            <button class="wp-tab-btn" onclick="wpSwitchTab('circulars')">
+                <i class="fas fa-bullhorn text-danger"></i> 
+                <span class="lang-en">Circulars</span>
+                <span class="lang-ar">التعميمات</span>
+                <span class="wp-badge">{{ my_correspondence|length }}</span>
+            </button>
+        </div>
+
+        <!-- Action Items (Tasks) -->
+        <div class="wp-tab-pane active" id="action-tasks">
+            <!-- NAV Toolbar (Grid/List Toggle) -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="wp-table-title m-0"><div class="wp-table-title-icon"><i class="fas fa-bolt"></i></div> Tasks Requiring Action</h4>
+                <div class="btn-group shadow-sm">
+                    <button type="button" class="btn btn-light active wp-grid-btn" onclick="setTaskView('grid', this)"><i class="fas fa-th-large"></i></button>
+                    <button type="button" class="btn btn-light wp-list-btn" onclick="setTaskView('list', this)"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+
+            <!-- GRID VIEW -->
+            <div class="row g-4 wp-tasks-grid" id="action-tasks-grid">
+                {% for task in pending_tasks %}
+                {% with m_color=task.work_module.color|default:'#3b82f6' m_icon=task.work_module.icon_class|default:'fa-tasks' %}
+                <div class="col-12 col-md-4 wp-task-col">
+                    {% with progress=task.progress|default:"0" %}
+                    <article class="tw-task-widget" style="--tw-m-color: {{ m_color }};">
+                        <div class="l-accent-bar"></div>
+                        <div class="tw-task-img-container">
+                            {% if task.cover_image %}
+                                <img src="{{ task.cover_image.url }}" class="tw-task-img" alt="Task Image">
+                            {% elif task.work_module and task.work_module.banner_image %}
+                                <img src="{{ task.work_module.banner_image.url }}" class="tw-task-img" alt="Module Image">
+                            {% elif task.work_module and task.work_module.template and task.work_module.template.banner_image %}
+                                <img src="{{ task.work_module.template.banner_image.url }}" class="tw-task-img" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" class="tw-task-img" alt="Default Module Image">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.2;">
+                                    <i class="fas {{ m_icon }} text-white fs-1"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="tw-task-body">
+                            <div class="tw-task-header">
+                                <h3 class="tw-task-title" title="{{ task.title }}">{{ task.title|truncatechars:35 }}</h3>
+                                {% if task.priority == 'High' or task.priority == 'urgent' or task.priority == 'high' %}
+                                    <span class="tw-task-priority tw-priority-high">High</span>
+                                {% elif task.priority == 'Low' or task.priority == 'low' %}
+                                    <span class="tw-task-priority tw-priority-low">Low</span>
+                                {% else %}
+                                    <span class="tw-task-priority tw-priority-med">{{ task.priority|default:"Med"|title }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="tw-task-meta">
+                                <div class="tw-task-dates">
+                                    <span class="tw-task-created">Created: {{ task.created_at|date:"M d" }}</span>
+                                    <span class="tw-task-due">Due: {{ task.deadline|date:"M d" }}</span>
+                                </div>
+                                <div class="tw-task-progress-block">
+                                    <div class="tw-task-progress-labels">
+                                        <span class="tw-progress-lbl">Time Elapsed</span>
+                                        <span class="tw-progress-val">{{ task.timeline_progress }}%</span>
+                                    </div>
+                                    <div class="tw-progress-bg">
+                                        <div class="tw-progress-fill" style="width: {{ task.timeline_progress }}%;"></div>
+                                    </div>
+                                </div>
+                                <div class="tw-task-pie-block">
+                                    <div class="tw-pie-chart" style="--pie-percent: {{ progress }}%;">
+                                        <div class="tw-pie-inner"></div>
+                                        <span class="tw-pie-val">{{ progress }}%</span>
+                                    </div>
+                                    <div class="tw-pie-labels">
+                                        <p class="tw-pie-lbl-top">Overall</p>
+                                        <p class="tw-pie-lbl-bot">Progress</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'task-detail' task.id %}" class="tw-task-btn">View Task</a>
+                        </div>
+                    </article>
+                    {% endwith %}
+                </div>
+                {% endwith %}
+                {% empty %}
+                <div class="col-12">
+                    <div class="wp-empty py-5">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                        <h6>All Caught Up!</h6>
+                        <p>No pending tasks right now.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- LIST VIEW -->
+            <div class="d-none" id="action-tasks-list">
+                <div class="d-flex flex-column">
+                    {% for task in pending_tasks %}
+                    {% with m_color=task.work_module.color|default:'#3b82f6' m_icon=task.work_module.icon_class|default:'fa-tasks' progress=task.progress|default:"0" %}
+                    <div class="tw-list-item" style="--tw-m-color: {{ m_color }};">
+                        <div class="tw-list-accent-line"></div>
+                        <div class="tw-list-img-wrap">
+                            {% if task.cover_image %}
+                                <img src="{{ task.cover_image.url }}" class="tw-list-img" alt="Task Image">
+                            {% elif task.work_module and task.work_module.banner_image %}
+                                <img src="{{ task.work_module.banner_image.url }}" class="tw-list-img" alt="Module Image">
+                            {% elif task.work_module and task.work_module.template and task.work_module.template.banner_image %}
+                                <img src="{{ task.work_module.template.banner_image.url }}" class="tw-list-img" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" class="tw-list-img" alt="Default Module Image">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.3;">
+                                    <i class="fas {{ m_icon }} text-white fs-4" style="position: relative; z-index: 1;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="tw-list-body">
+                            <div class="tw-list-col-info">
+                                <p class="tw-list-eyebrow">{{ task.work_module.name|default:"General Module"|truncatechars:20 }}</p>
+                                <h3 class="tw-list-title" title="{{ task.title }}">{{ task.title|truncatechars:35 }}</h3>
+                                <p class="tw-list-status-text"><span class="tw-list-dot"></span> {{ task.status|title }}</p>
+                            </div>
+                            <div class="tw-list-col-progress">
+                                <div class="tw-list-progress-lbl">
+                                    <p class="tw-list-eyebrow" style="margin:0;">Time Elapsed</p>
+                                    <span class="tw-list-progress-dates">{{ task.start_date|default:task.created_at|date:"M d" }} - {{ task.deadline|date:"M d" }}</span>
+                                </div>
+                                <div class="tw-list-progress-bg">
+                                    <div class="tw-list-progress-fill" style="width: {{ task.timeline_progress }}%;"></div>
+                                </div>
+                            </div>
+                            <div class="tw-list-col-priority">
+                                <p class="tw-list-eyebrow" style="margin-bottom:0.5rem; align-self:flex-start;"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></p>
+                                {% if task.priority == 'High' or task.priority == 'urgent' or task.priority == 'high' %}
+                                    <span class="tw-list-priority-badge tw-priority-high"><span class="tw-list-dot" style="background-color: var(--bs-danger);"></span> High</span>
+                                {% elif task.priority == 'Low' or task.priority == 'low' %}
+                                    <span class="tw-list-priority-badge tw-priority-low"><span class="tw-list-dot" style="background-color: var(--bs-secondary);"></span> Low</span>
+                                {% else %}
+                                    <span class="tw-list-priority-badge tw-priority-med"><span class="tw-list-dot" style="background-color: var(--bs-warning);"></span> {{ task.priority|default:"Med"|title }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="tw-list-col-pie">
+                                <div class="tw-list-pie" style="--pie-percent: {{ progress }}%;">
+                                    <div class="tw-list-pie-inner">
+                                        <span class="tw-list-pie-val">{{ progress }}%</span>
+                                    </div>
+                                </div>
+                                <div class="tw-list-pie-txt">
+                                    <p class="lbl">Overall</p>
+                                    <p class="val">Progress</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tw-list-action">
+                            <a href="{% url 'task-detail' task.id %}" class="tw-list-btn">
+                                Open
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% empty %}
+                    <div class="text-muted text-center py-5 fw-bold bg-white rounded shadow-sm">
+                        <i class="fas fa-clipboard-check fs-1 text-success mb-3 opacity-75"></i><br>All Caught Up. No recent tasks.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Modules -->
+        <div class="wp-tab-pane" id="my-modules">
+            <!-- NAV Toolbar (Grid/List Toggle) -->
+            <div class="d-flex justify-content-end mb-3 mt-n2">
+                <div class="btn-group shadow-sm">
+                    <button type="button" class="btn btn-light active wp-grid-btn" onclick="setModuleView('grid', this)"><i class="fas fa-th-large"></i></button>
+                    <button type="button" class="btn btn-light wp-list-btn" onclick="setModuleView('list', this)"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+
+            <!-- GRID VIEW -->
+            <div class="row g-4 modules-grid" id="my-modules-grid">
+                {% for wm in worker_modules %}
+                {% with m=wm.obj m_color=wm.obj.color|default:'var(--color-primary, #10b981)' m_icon=wm.obj.icon_class|default:'fa-folder' %}
+                <div class="col-12 col-md-4">
+                    <div class="mod-card-lumina" style="--mod-color: {{ m_color }}; --p-val: {{ wm.rate|default:0 }};">
+                        <div class="l-accent-bar"></div>
+                        <div class="l-card-header">
+                            {% if m.banner_image %}
+                                <img src="{{ m.banner_image.url }}" class="l-header-img" alt="Module Image">
+                            {% elif m.template and m.template.banner_image %}
+                                <img src="{{ m.template.banner_image.url }}" class="l-header-img" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" class="l-header-img" alt="Default Module Image">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.2;">
+                                     <i class="fas {{ m_icon }} fs-1 text-white" style="position: relative; z-index: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.3);"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="l-card-body">
+                            <div class="l-title-row">
+                                <div class="flex-grow-1">
+                                    <div class="l-stat-lbl" style="margin-bottom: 4px;">MOD-{{ m.id|stringformat:"04d" }}</div>
+                                    <h3 class="l-card-title">{{ m.name }}</h3>
+                                </div>
+                                <div class="l-ring-wrap">
+                                    <svg class="svg-ring-light">
+                                        <circle class="svg-ring-bg-light" cx="28" cy="28" r="25"></circle>
+                                        <circle class="svg-ring-progress-light" cx="28" cy="28" r="25" style="--p-val: {{ wm.rate|default:0 }};"></circle>
+                                    </svg>
+                                    <div class="l-ring-text">{{ wm.rate|default:0 }}%</div>
+                                </div>
+                            </div>
+                            
+                            <p class="mod-description-text">{{ m.description|default:"No description provided." }}</p>
+                            
+                            <div class="l-telemetry">
+                                <div class="l-stat-item">
+                                    <span class="l-stat-val">{{ wm.total }}</span>
+                                    <span class="l-stat-lbl"><span class="lang-en">Total Tasks</span><span class="lang-ar">إجمالي المهام</span></span>
+                                </div>
+                                <div class="l-stat-item">
+                                    <span class="l-stat-val">{{ wm.completed }}</span>
+                                    <span class="l-stat-lbl">Done</span>
+                                </div>
+                                <div class="ms-auto" style="align-self: center;">
+                                    <span class="l-stat-lbl" style="color: var(--color-primary, #10b981);"><span class="status-pip-light"></span> ACTIVE</span>
+                                </div>
+                            </div>
+                            
+                            <a href="{% url 'module-dashboard' m.slug %}" class="l-btn">
+                                Enter Dashboard 
+                                <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% empty %}
+                <div class="col-12">
+                    <div class="wp-empty py-5">
+                        <i class="fas fa-cubes text-muted" style="font-size: 3rem;"></i>
+                        <h6>No enrolled modules</h6>
+                        <p>You haven't been assigned to any modules yet.</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- LIST VIEW -->
+            <div class="d-none modules-list" id="my-modules-list">
+                <div class="d-flex flex-column">
+                    {% for wm in worker_modules %}
+                    {% with m=wm.obj m_color=wm.obj.color|default:'var(--color-primary, #10b981)' m_icon=wm.obj.icon_class|default:'fa-folder' %}
+                    <div class="l-list-row" style="--mod-color: {{ m_color }}; --p-val: {{ wm.rate|default:0 }}%;">
+                        <div class="l-list-thumb">
+                            {% if m.banner_image %}
+                                <img src="{{ m.banner_image.url }}" alt="Module Image">
+                            {% elif m.template and m.template.banner_image %}
+                                <img src="{{ m.template.banner_image.url }}" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" alt="Default Module Image" class="w-100 h-100 object-fit-cover">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.3;">
+                                     <i class="fas {{ m_icon }} text-white" style="position: relative; z-index: 1;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="l-list-info">
+                            <div class="l-list-meta">ID: MOD-{{ m.id }}</div>
+                            <h4 class="l-list-title">{{ m.name }}</h4>
+                        </div>
+                        
+                        <div class="l-list-progress-col">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="l-list-meta">COMPLETION</span>
+                                <span class="fw-bold" style="font-size: 0.8rem; color: var(--l-text-main);">{{ wm.rate|default:0 }}%</span>
+                            </div>
+                            <div class="l-bar-bg">
+                                <div class="l-bar-fill"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="l-mini-btn-col">
+                            <a href="{% url 'module-dashboard' m.slug %}" class="l-mini-btn"><span class="lang-en">Dashboard</span><span class="lang-ar">لوحة التحكم</span><i class="fas fa-sign-in-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% empty %}
+                    <div class="text-center py-5 bg-white rounded shadow-sm text-muted fw-bold">
+                        <i class="fas fa-cubes fs-1 text-primary opacity-50 mb-3"></i><br>No enrolled modules.<br>You haven't been assigned to any modules yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+
+        
+        <script>
+            function setModuleView(mode, btn) {
+                if (mode === 'list') {
+                    document.getElementById('my-modules-grid').classList.add('d-none');
+                    document.getElementById('my-modules-list').classList.remove('d-none');
+                } else {
+                    document.getElementById('my-modules-grid').classList.remove('d-none');
+                    document.getElementById('my-modules-list').classList.add('d-none');
+                }
+                const pane = document.getElementById('my-modules');
+                pane.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            function setTaskView(mode, btn) {
+                if (mode === 'list') {
+                    document.getElementById('action-tasks-grid').classList.add('d-none');
+                    document.getElementById('action-tasks-list').classList.remove('d-none');
+                } else {
+                    document.getElementById('action-tasks-grid').classList.remove('d-none');
+                    document.getElementById('action-tasks-list').classList.add('d-none');
+                }
+                const pane = document.getElementById('action-tasks');
+                pane.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+
+            function setExploreModuleView(mode, btn) {
+                if (mode === 'list') {
+                    document.getElementById('explore-modules-grid').classList.add('d-none');
+                    document.getElementById('explore-modules-list').classList.remove('d-none');
+                } else {
+                    document.getElementById('explore-modules-grid').classList.remove('d-none');
+                    document.getElementById('explore-modules-list').classList.add('d-none');
+                }
+                const section = document.getElementById('explore-standalone-section');
+                section.querySelectorAll('.btn-group button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+        </script>
+
+
+        <!-- Task Directory -->
+        <div class="wp-tab-pane" id="task-directory">
+            <div class="table-responsive" style="overflow: visible;">
+                <table class="wp-modern-table" id="task-dir-table">
+                    <thead>
+                        <tr>
+                            <th>Objective / Task</th>
+                            <th class="text-center">Execution Progress</th>
+                            <th>Origin Module</th>
+                            <th>Time Horizon</th>
+                            <th>Operational Status</th>
+                            <th class="text-end">Command</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in my_tasks %}
+                        {% with m_color=task.work_module.color|default:'#64748b' m_icon=task.work_module.icon_class|default:'fa-cube' progress=task.progress|default:0 %}
+                        <tr class="wp-dir-row {% cycle 'wp-row-sw-1' 'wp-row-sw-2' %}" style="--row-color: {{ m_color }}; --p-val: {{ progress }}%;">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="wp-dir-icon" style="background: {{ m_color }};">
+                                        <i class="fas {{ m_icon }}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="wp-dir-title">{{ task.title }}</p>
+                                        <p class="wp-dir-sub">ID: #{{ task.id|stringformat:"05d" }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="wp-mini-pie">
+                                        <span>{{ progress }}%</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="wp-dir-badge">
+                                    <span style="width:8px; height:8px; border-radius:50%; background:{{ m_color }};"></span>
+                                    {{ task.work_module.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ task.deadline|date:"M d, Y" }}</span>
+                                    <span class="text-muted small">Due at: {{ task.deadline|date:"H:i" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="wp-pill 
+                                    {% if task.status == 'approved' %}wp-pill-approved
+                                    {% elif task.status == 'rejected' %}wp-pill-rejected
+                                    {% elif task.status == 'submitted' %}wp-pill-review
+                                    {% else %}wp-pill-working{% endif %}">
+                                    <i class="fas fa-circle" style="font-size:0.5rem; margin-right:6px;"></i> {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'task-detail' task.id %}" class="wp-action-btn wp-action-primary px-4 py-2">
+                                    OPEN <i class="fas fa-external-link-alt ms-2" style="font-size: 0.8rem;"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="wp-empty py-5">
+                                    <i class="fas fa-folder-open mb-3" style="font-size: 3.5rem;"></i>
+                                    <h6>Zero Objectives Found</h6>
+                                    <p>Your task directory is currently empty.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="task-dir-pagination" class="wp-pagination-controls"></div>
+        </div>
+
+        <!-- Submission History -->
+        <div class="wp-tab-pane" id="submission-history">
+            <div class="table-responsive" style="overflow: visible;">
+                <table class="wp-modern-table" id="sub-history-table">
+                    <thead>
+                        <tr>
+                            <th>Module / Task</th>
+                            <th class="text-center">Submission Status</th>
+                            <th>Submitted At</th>
+                            <th>Quality Score</th>
+                            <th class="text-end">Command</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in my_submissions %}
+                        {% with m_color=sub.task.work_module.color|default:'#64748b' m_icon=sub.task.work_module.icon_class|default:'fa-cube' %}
+                        <tr class="wp-sub-row {% cycle 'wp-row-sw-1' 'wp-row-sw-2' %}" style="--row-color: {{ m_color }};">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="wp-dir-icon" style="background: {{ m_color }};">
+                                        <i class="fas {{ m_icon }}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="wp-dir-title">{{ sub.task.title }}</p>
+                                        <p class="wp-dir-sub">{{ sub.task.work_module.name }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="wp-pill 
+                                    {% if sub.status == 'approved' %}wp-pill-approved
+                                    {% elif sub.status == 'rejected' %}wp-pill-rejected
+                                    {% else %}wp-pill-review{% endif %}">
+                                    <i class="fas fa-circle" style="font-size:0.5rem; margin-right:6px;"></i> {{ sub.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ sub.submitted_at|date:"M d, Y" }}</span>
+                                    <span class="text-muted small">{{ sub.submitted_at|date:"H:i" }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if sub.score %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="wp-score-dot" style="width:10px; height:10px; border-radius:50%; background:var(--color-primary, #10b981);"></div>
+                                    <span class="fw-bold text-dark">{{ sub.score }}% Efficiency</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">Pending Audit</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'submission-detail' sub.id %}" class="wp-action-btn wp-action-secondary px-4 py-2"><span class="lang-en">Details</span><span class="lang-ar">التفاصيل</span><i class="fas fa-search ms-2" style="font-size: 0.8rem;"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="wp-empty py-5">
+                                    <i class="fas fa-inbox mb-3" style="font-size: 3.5rem;"></i>
+                                    <h6>Zero Records Found</h6>
+                                    <p>You haven't submitted any modules for auditing yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="sub-history-pagination" class="wp-pagination-controls"></div>
+        </div>
+
+        <!-- Resubmission Required -->
+        <div class="wp-tab-pane" id="resubmission-required">
+            <div class="wp-table-card border-danger border-opacity-50" style="box-shadow: 0 4px 20px rgba(192, 40, 58,0.05); border-width: 2px;">
+                <div class="wp-table-head bg-danger bg-opacity-10 border-danger border-opacity-25">
+                    <h4 class="wp-table-title text-danger"><div class="wp-table-title-icon bg-danger text-white border-danger"><i class="fas fa-exclamation-triangle"></i></div> Attention: Resubmission Required</h4>
+                </div>
+                <div class="table-responsive">
+                    <table class="wp-tbl">
+                        <thead>
+                            <tr>
+                                <th>Task Title</th>
+                                <th>Rejection Reason</th>
+                                <th>Rejected On</th>
+                                <th class="text-end"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in rejected_submissions %}
+                            <tr>
+                                <td class="fw-bold">{{ sub.task.title }}</td>
+                                <td class="text-muted">{{ sub.rejection_reason|truncatewords:8|default:"No reason provided" }}</td>
+                                <td>{{ sub.qa_reviewed_at|date:"M d, Y"|default:sub.updated_at|date:"M d, Y" }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'task-detail' sub.task.id %}" class="wp-resubmit-amazing"><i class="fas fa-redo"></i> Resubmit</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="wp-empty"><i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i><h6>All Clear!</h6><p>No rejected tasks requiring your attention.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Circulars -->
+        <div class="wp-tab-pane" id="circulars">
+            <div class="wp-table-card" style="border: 1px solid #94a3b8; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+                <div class="wp-table-head" style="border-bottom: 1px solid #94a3b8;">
+                    <h4 class="wp-table-title"><div class="wp-table-title-icon bg-light text-dark border-dark"><i class="fas fa-bullhorn"></i></div> Official Circulars</h4>
+                </div>
+                <div class="table-responsive">
+                    <table class="wp-tbl">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th><span class="lang-en">Title</span><span class="lang-ar">العنوان</span></th>
+                                <th>Date Published</th>
+                                <th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
+                                <th class="text-end"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rec in my_correspondence %}
+                            <tr>
+                                <td class="fw-bold text-muted">{{ rec.correspondence.reference_number|default:rec.obj.reference_number|default:rec.reference_number }}</td>
+                                <td class="fw-bold">{{ rec.correspondence.title|default:rec.obj.title|default:rec.title }}</td>
+                                <td>{{ rec.correspondence.created_at|default:rec.obj.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="wp-pill {% if rec.acknowledged or rec.status == 'read' %}wp-pill-approved{% else %}wp-pill-pending{% endif %}">
+                                        {% if rec.acknowledged or rec.status == 'read' %}
+                                            <span class="lang-en">Read</span><span class="lang-ar">تم الاطلاع</span>
+                                        {% else %}
+                                            <span class="lang-en">Unread</span><span class="lang-ar">غير مقروء</span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% if rec.correspondence.id %}{% url 'correspondence-detail' rec.correspondence.id %}{% elif rec.obj.id %}{% url 'correspondence-detail' rec.obj.id %}{% else %}{{ rec.detail_url|default:'#' }}{% endif %}" class="wp-action-btn wp-action-light border border-secondary text-dark fw-bold px-3">
+                                        <span class="lang-en">Read</span><span class="lang-ar">اطلاع</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5"><div class="wp-empty"><i class="fas fa-envelope-open text-muted"></i><h6>No Circulars</h6><p>You have no official correspondence.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    {% if available_modules %}
+    <!-- STANDALONE DISCOVERY PIPELINE -->
+    <div class="wp-discovery-section mt-5" id="explore-standalone-section">
+        <div class="wp-discovery-hub">
+            <div class="wp-dh-left">
+                <div class="wp-dh-tag">
+                    <i class="fas fa-compass"></i>
+                    <span class="lang-en">Discovery Pipeline</span>
+                    <span class="lang-ar">مسار الاكتشاف</span>
+                </div>
+                <h2 class="wp-dh-title">
+                    <span class="lang-en">Discover New Operational Horizons</span>
+                    <span class="lang-ar">استكشف آفاق تشغيلية جديدة</span>
+                </h2>
+                <p class="wp-dh-desc">
+                    <span class="lang-en">Explore available modules and expand your tracking capabilities. New assignments are ready for deployment.</span>
+                    <span class="lang-ar">استكشف الوحدات التشغيلية المتاحة ووسّع قدراتك الميدانية. مهام جديدة جاهزة للالتحاق الفوري.</span>
+                </p>
+                
+                <div class="wp-dh-stats">
+                    <div class="wp-dh-stat-item">
+                        <span class="wp-dh-stat-val">{{ available_modules|length }}</span>
+                        <span class="wp-dh-stat-lbl">
+                            <span class="lang-en">Open Modules</span>
+                            <span class="lang-ar">الوحدات المتاحة</span>
+                        </span>
+                    </div>
+                    <div class="wp-dh-stat-item">
+                        <span class="wp-dh-stat-val">5 / ص</span>
+                        <span class="wp-dh-stat-lbl">
+                            <span class="lang-en">Items Per Page</span>
+                            <span class="lang-ar">عرض كل صفحة</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="wp-dh-right">
+                <div class="wp-dh-orb">
+                    <i class="fas fa-compass"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPLORE ITEMS LIST -->
+        <div class="wp-explore-items-container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <h4 class="m-0 fw-bold text-dark"><i class="fas fa-cubes text-success me-2"></i> 
+                        <span class="lang-en">Available Assignments</span>
+                        <span class="lang-ar">الوحدات والمهام المتاحة للاكتشاف</span>
+                    </h4>
+                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-1" id="explore-count-badge">{{ available_modules|length }}</span>
+                </div>
+                
+                <!-- Smart Search Bar & View Toggles -->
+                <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end" style="max-width: 520px;">
+                    <div class="position-relative w-100">
+                        <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted" style="left: 14px; z-index: 2;"></i>
+                        <input type="text" id="exploreSearchInput" class="form-control ps-5 pe-4 rounded-pill border-1" placeholder="بحث في الوحدات المتاحة... / Search available modules..." style="background: #f8fafc; border-color: rgba(var(--wt-brand-rgb), 0.35); font-size: 0.88rem; height: 42px;" oninput="filterExploreModules()">
+                        <button type="button" id="clearExploreSearch" class="btn btn-sm text-muted position-absolute top-50 translate-middle-y d-none" style="right: 8px; z-index: 3;" onclick="clearExploreSearchInput()"><i class="fas fa-times-circle"></i></button>
+                    </div>
+                    
+                    <div class="btn-group shadow-sm flex-shrink-0">
+                        <button type="button" class="btn btn-light active wp-list-btn" onclick="setExploreModuleView('list', this)" title="List View"><i class="fas fa-list"></i></button>
+                        <button type="button" class="btn btn-light wp-grid-btn" onclick="setExploreModuleView('grid', this)" title="Grid View"><i class="fas fa-th-large"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIST VIEW (DEFAULT: ACTIVE & VISIBLE) -->
+            <div class="modules-list" id="explore-modules-list">
+                <div class="d-flex flex-column" id="explore-list-container">
+                    {% for m in available_modules %}
+                    {% with m_color=m.color|default:'var(--color-primary, #10b981)' m_icon=m.icon_class|default:'fa-compass' %}
+                    <div class="l-list-row explore-item-row" data-search-text="{{ m.name|lower }} {{ m.description|lower }}" style="--mod-color: {{ m_color }}; --p-val: 0%;">
+                        <div class="l-list-thumb">
+                            {% if m.banner_image %}
+                                <img src="{{ m.banner_image.url }}" alt="Module Image">
+                            {% elif m.template and m.template.banner_image %}
+                                <img src="{{ m.template.banner_image.url }}" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" alt="Default Module Image" class="w-100 h-100 object-fit-cover">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.3;">
+                                     <i class="fas {{ m_icon }} text-white" style="position: relative; z-index: 1;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="l-list-info">
+                            <div class="l-list-meta">MOD-{{ m.id|stringformat:"04d" }} • <span class="lang-en">AVAILABLE</span><span class="lang-ar">متاح</span></div>
+                            <h4 class="l-list-title">{{ m.name }}</h4>
+                            <div class="text-muted small text-truncate" style="max-width: 450px;">{{ m.description|default:"No description provided." }}</div>
+                        </div>
+                        
+                        <div class="l-list-progress-col">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="l-list-meta"><span class="lang-en">TASKS</span><span class="lang-ar">المهام</span></span>
+                                <span class="fw-bold" style="font-size: 0.8rem; color: var(--color-primary, #10b981);">{{ m.tasks.count }} <span class="lang-en">Tasks</span><span class="lang-ar">مهمة</span></span>
+                            </div>
+                            <div class="l-bar-bg">
+                                <div class="l-bar-fill" style="width: 100%; background: linear-gradient(90deg, var(--wt-brand), var(--wt-accent));"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="l-mini-btn-col">
+                            <form method="POST" action="{% url 'enroll-module' m.slug %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="l-mini-btn" style="background: linear-gradient(135deg, color-mix(in oklab, var(--wt-brand) 62%, #000) 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 100%); color: #ffffff; border: 1px solid rgba(var(--wt-brand-rgb), 0.4);">
+                                    <span class="lang-en">Join</span><span class="lang-ar">انضمام</span>
+                                    <i class="fas fa-plus ms-1"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- GRID VIEW (HIDDEN BY DEFAULT) -->
+            <div class="row g-4 modules-grid d-none" id="explore-modules-grid">
+                {% for m in available_modules %}
+                {% with m_color=m.color|default:'var(--color-primary, #10b981)' m_icon=m.icon_class|default:'fa-compass' %}
+                <div class="col-12 col-md-4 explore-item-card" data-search-text="{{ m.name|lower }} {{ m.description|lower }}">
+                    <div class="mod-card-lumina" style="--mod-color: {{ m_color }}; --p-val: 0;">
+                        <div class="l-accent-bar"></div>
+                        <div class="l-card-header">
+                            {% if m.banner_image %}
+                                <img src="{{ m.banner_image.url }}" class="l-header-img" alt="Module Image">
+                            {% elif m.template and m.template.banner_image %}
+                                <img src="{{ m.template.banner_image.url }}" class="l-header-img" alt="Module Template Image">
+                            {% else %}
+                                <img data-wt-cover src="{% static 'wt/img/module-cover.svg' %}" class="l-header-img" alt="Default Module Image">
+                                <div class="w-100 h-100 d-flex align-items-center justify-content-center position-absolute top-0 start-0" style="background: {{ m_color }}; opacity: 0.2;">
+                                     <i class="fas {{ m_icon }} fs-1 text-white" style="position: relative; z-index: 1;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="l-card-body">
+                            <div class="l-title-row">
+                                <div class="flex-grow-1">
+                                    <div class="l-stat-lbl" style="margin-bottom: 4px;">MOD-{{ m.id|stringformat:"04d" }}</div>
+                                    <h3 class="l-card-title">{{ m.name }}</h3>
+                                </div>
+                                <div style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: rgba(var(--wt-brand-rgb), 0.1); border-radius: 50%; color: var(--color-primary, #10b981);">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                            
+                            <p class="mod-description-text">{{ m.description|default:"No description provided." }}</p>
+                            
+                            <div class="l-telemetry">
+                                <div class="l-stat-item">
+                                    <span class="l-stat-val">{{ m.tasks.count }}</span>
+                                    <span class="l-stat-lbl"><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></span>
+                                </div>
+                                <div class="ms-auto" style="align-self: center;">
+                                    <span class="l-stat-lbl" style="color: var(--wt-brand);"><i class="fas fa-check-circle me-1"></i> <span class="lang-en">AVAILABLE</span><span class="lang-ar">متاح</span></span>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{% url 'enroll-module' m.slug %}" class="m-0 w-100">
+                                {% csrf_token %}
+                                <button type="submit" class="l-btn" style="background: linear-gradient(135deg, color-mix(in oklab, var(--wt-brand) 62%, #000) 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 100%); color: #ffffff; border: 1px solid rgba(var(--wt-brand-rgb), 0.4);">
+                                    <span class="lang-en">Join Module</span><span class="lang-ar">الانضمام للوحدة</span>
+                                    <i class="fas fa-plus ms-1"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+
+            <!-- PAGINATION BAR (5 ITEMS PER PAGE) -->
+            <div id="explore-pagination-bar" class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top gap-3">
+                <div class="text-muted small" id="explore-pagination-info">
+                    <span class="lang-en">Showing</span><span class="lang-ar">عرض</span>
+                    <span id="exp-start-num" class="fw-bold text-dark">1</span> - <span id="exp-end-num" class="fw-bold text-dark">5</span>
+                    <span class="lang-en">of</span><span class="lang-ar">من إجمالي</span>
+                    <span id="exp-total-num" class="fw-bold text-dark">{{ available_modules|length }}</span>
+                </div>
+                <div class="btn-group btn-group-sm" id="explore-page-buttons">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Strategic Note Button -->
+<div class="wp-note-trigger d-print-none" onclick="toggleNotesPanel()" title="Worker Strategic Notes">
+    <i class="fas fa-clipboard-list fa-bounce" style="--fa-animation-duration: 3s;"></i>
+    <div class="wp-note-trigger-badge" id="noteBadge">0</div>
+</div>
+
+<!-- Amazing Notes Panel (Left) -->
+<div class="wp-notes-backdrop" id="notesBackdrop" onclick="toggleNotesPanel()"></div>
+    <!-- STRATEGIC NOTES FLOATING BUTTON -->
+    <div class="wp-floating-notes-btn d-print-none" onclick="toggleNotesPanel()" title="Strategic Notes">
+        <i class="fas fa-clipboard-list"></i>
+    </div>
+
+<div class="wp-notes-panel d-print-none" id="notesPanel">
+    <!-- Well-styled close/open edge arrow on panel border -->
+    <button type="button" class="drawer-border-arrow-btn" onclick="toggleNotesPanel()" title="Strategic Notes" aria-label="Toggle Intelligence Panel">
+        <i class="fas fa-chevron-right icon-close-arrow"></i>
+        <i class="fas fa-chevron-left icon-open-arrow"></i>
+    </button>
+    <div class="wp-notes-header">
+        <h5 class="wp-notes-title"><i class="fas fa-clipboard-check"></i> My Strategic Notes</h5>
+        <button class="wp-notes-close" onclick="toggleNotesPanel(true)"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="wp-notes-body" id="notesBody">
+        <!-- Rendered by JS -->
+    </div>
+    <div class="wp-notes-footer">
+        <textarea class="wp-notes-input" id="newNoteInput" rows="3" placeholder="Draft a new strategic action or note..."></textarea>
+        <button class="wp-notes-submit" onclick="workerNoteApp.addNote()"><i class="fas fa-plus"></i> Save Action</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function wpSwitchTab(tabId) {
+    document.querySelectorAll('.wp-tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.wp-tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function toggleNotesPanel(forceClose) {
+    const panel = document.getElementById('notesPanel');
+    const backdrop = document.getElementById('notesBackdrop');
+    if (!panel) return;
+    let isOpen;
+    if (forceClose === true) {
+        panel.classList.remove('open');
+        isOpen = false;
+    } else if (forceClose === false) {
+        panel.classList.add('open');
+        isOpen = true;
+    } else {
+        isOpen = panel.classList.toggle('open');
+    }
+    document.body.classList.toggle('wp-notes-open', isOpen);
+    if (backdrop) backdrop.classList.toggle('active', isOpen);
+    
+    // Adapt the page container so we don't hide the main dashboard view in both LTR and RTL
+    const mainArea = document.querySelector('.dashboard-main-area');
+    if (mainArea) {
+        const isRTL = document.documentElement.dir === 'rtl' || document.body.classList.contains('rtl-mode');
+        mainArea.style.transition = 'margin-left 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), margin-right 0.4s cubic-bezier(0.165, 0.84, 0.44, 1)';
+        if (isOpen && window.innerWidth > 991) {
+            if (isRTL) {
+                mainArea.style.marginLeft = '420px';
+                mainArea.style.marginRight = '0';
+            } else {
+                mainArea.style.marginRight = '420px';
+                mainArea.style.marginLeft = '0';
+            }
+        } else {
+            mainArea.style.marginRight = '0';
+            mainArea.style.marginLeft = '0';
+        }
+    }
+}
+window.toggleStrategicDrawer = window.toggleNotesPanel;
+
+// Escape key closes drawer
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('notesPanel');
+        if (panel && panel.classList.contains('open')) {
+            toggleNotesPanel(true);
+        }
+    }
+});
+
+// Amazing LocalStorage-based Worker Notes App
+const workerNoteApp = {
+    notes: [],
+    
+    init() {
+        const stored = localStorage.getItem('workerStrategicNotes');
+        if(stored) {
+            this.notes = JSON.parse(stored);
+        }
+        this.render();
+    },
+    
+    save() {
+        localStorage.setItem('workerStrategicNotes', JSON.stringify(this.notes));
+        this.render();
+    },
+    
+    addNote() {
+        const input = document.getElementById('newNoteInput');
+        const text = input.value.trim();
+        if(!text) return;
+        
+        const newNote = {
+            id: Date.now().toString(),
+            text: text,
+            completed: false,
+            timestamp: new Date().toISOString()
+        };
+        
+        this.notes.unshift(newNote); // Add to top
+        input.value = '';
+        this.save();
+    },
+    
+    deleteNote(id) {
+        amazingConfirm('Are you sure you want to delete this action item?').then(confirmed => {
+            if (confirmed) {
+                this.notes = this.notes.filter(n => n.id !== id);
+                this.save();
+            }
+        });
+    },
+    
+    toggleNote(id) {
+        const note = this.notes.find(n => n.id === id);
+        if(note) {
+            note.completed = !note.completed;
+            this.save();
+        }
+    },
+    
+    startEdit(id) {
+        const note = this.notes.find(n => n.id === id);
+        if(!note) return;
+        
+        const card = document.getElementById('note-card-' + id);
+        card.innerHTML = `
+            <div class="wp-note-header-info">
+                <span class="wp-note-time"><i class="fas fa-pen"></i> Editing Mode</span>
+                <button class="wp-note-btn wp-note-btn-del" onclick="workerNoteApp.render()"><i class="fas fa-times"></i><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+            </div>
+            <textarea class="wp-note-edit-input" id="edit-input-${id}" rows="3">${note.text}</textarea>
+            <button class="wp-note-save-btn" onclick="workerNoteApp.saveEdit('${id}')">Update Action</button>
+        `;
+    },
+    
+    saveEdit(id) {
+        const input = document.getElementById('edit-input-' + id);
+        if(!input) return;
+        const note = this.notes.find(n => n.id === id);
+        if(note) {
+            note.text = input.value.trim() || note.text;
+            this.save();
+        }
+    },
+    
+    formatDate(isoString) {
+        const d = new Date(isoString);
+        return d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    },
+    
+    render() {
+        const body = document.getElementById('notesBody');
+        const badge = document.getElementById('noteBadge');
+        
+        const activeCount = this.notes.filter(n => !n.completed).length;
+        if(activeCount > 0) {
+            badge.style.display = 'flex';
+            badge.innerText = activeCount;
+        } else {
+            badge.style.display = 'none';
+        }
+        
+        if(this.notes.length === 0) {
+            body.innerHTML = `
+                <div class="wp-empty py-4 text-center">
+                    <i class="fas fa-clipboard-list mb-3" style="font-size:3rem; color: #334155;"></i>
+                    <h5 style="color:#f8fafc; font-weight:800;">No Strategic Actions</h5>
+                    <p style="color:#64748b; font-size: 0.9rem;">Start drafting notes below to track your efficiency.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        this.notes.forEach(note => {
+            const escapeHtml = (unsafe) => unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            
+            html += `
+                <div class="wp-note-card ${note.completed ? 'completed' : ''}" id="note-card-${note.id}">
+                    <div class="wp-note-header-info">
+                        <span class="wp-note-time"><i class="far fa-clock"></i> ${this.formatDate(note.timestamp)}</span>
+                        <div class="wp-note-actions">
+                            <button class="wp-note-btn wp-note-btn-check" onclick="workerNoteApp.toggleNote('${note.id}')" title="${note.completed ? 'Mark pending' : 'Mark complete'}">
+                                <i class="fas ${note.completed ? 'fa-undo' : 'fa-check'}"></i>
+                            </button>
+                            ${!note.completed ? `<button class="wp-note-btn wp-note-btn-edit" onclick="workerNoteApp.startEdit('${note.id}')" title="Edit"><i class="fas fa-pen"></i></button>` : ''}
+                            <button class="wp-note-btn wp-note-btn-del" onclick="workerNoteApp.deleteNote('${note.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="wp-note-text">${escapeHtml(note.text)}</div>
+                </div>
+            `;
+        });
+        
+        body.innerHTML = html;
+    }
+};
+
+// Initialize App
+
+
+// Star Particles
+const wpBanner = document.querySelector('.wp-hero');
+if(wpBanner) {
+    const particleContainer = document.createElement('div');
+    particleContainer.className = 'wp-particles';
+    for(let i=0; i<40; i++) {
+        let star = document.createElement('div');
+        star.className = 'wp-star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.animationDuration = (Math.random() * 4 + 2) + 's';
+        star.style.animationDelay = (Math.random() * 5) + 's';
+        particleContainer.appendChild(star);
+    }
+    wpBanner.appendChild(particleContainer);
+}
+
+// Table Pager Class
+class WPTablePager {
+    constructor(rowClass, containerId, itemsPerPage = 10) {
+        this.currentPage = 1;
+        this.itemsPerPage = itemsPerPage;
+        this.rowClass = rowClass;
+        this.containerId = containerId;
+        this.rows = [];
+        this.container = null;
+        this.instanceName = `wpPager_${containerId.replace(/-/g, '_')}`;
+        window[this.instanceName] = this; // Export to window for onclick handlers
+    }
+
+    init() {
+        this.rows = Array.from(document.querySelectorAll('.' + this.rowClass));
+        this.container = document.getElementById(this.containerId);
+        if(!this.rows.length || !this.container) return;
+        
+        this.showPage(1);
+    }
+
+    showPage(n) {
+        this.currentPage = n;
+        const start = (n - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+
+        this.rows.forEach((row, idx) => {
+            row.style.display = (idx >= start && idx < end) ? '' : 'none';
+        });
+
+        this.renderControls();
+    }
+
+    renderControls() {
+        const pageCount = Math.ceil(this.rows.length / this.itemsPerPage);
+        if(pageCount <= 1) {
+            this.container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        
+        // Prev
+        if(this.currentPage > 1) {
+            html += `<a class="wp-page-link wp-page-prevnext" onclick="${this.instanceName}.showPage(${this.currentPage - 1})"><i class="fas fa-chevron-left me-2"></i><span class="lang-en">Previous</span><span class="lang-ar">السابق</span></a>`;
+        }
+
+        // Pages
+        for(let i = 1; i <= pageCount; i++) {
+            if(i === 1 || i === pageCount || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
+                html += `<a class="wp-page-link ${i === this.currentPage ? 'active' : ''}" onclick="${this.instanceName}.showPage(${i})">${i}</a>`;
+            } else if(i === this.currentPage - 2 || i === this.currentPage + 2) {
+                html += `<span class="px-2 text-muted">...</span>`;
+            }
+        }
+
+        // Next
+        if(this.currentPage < pageCount) {
+            html += `<a class="wp-page-link wp-page-prevnext" onclick="${this.instanceName}.showPage(${this.currentPage + 1})"><span class="lang-en">Next</span><span class="lang-ar">التالي</span><i class="fas fa-chevron-right ms-2"></i></a>`;
+        }
+
+        this.container.innerHTML = html;
+    }
+}
+
+// Discovery Pipeline Controller (5 items per page & live search)
+let exploreCurrentPage = 1;
+const explorePageSize = 5;
+let currentExploreViewMode = 'list';
+
+function filterExploreModules() {
+    const input = document.getElementById('exploreSearchInput');
+    const clearBtn = document.getElementById('clearExploreSearch');
+    const term = (input ? input.value : '').trim().toLowerCase();
+    
+    if (clearBtn) {
+        clearBtn.classList.toggle('d-none', term.length === 0);
+    }
+    
+    exploreCurrentPage = 1;
+    renderExplorePagination();
+}
+
+function clearExploreSearchInput() {
+    const input = document.getElementById('exploreSearchInput');
+    if (input) {
+        input.value = '';
+    }
+    filterExploreModules();
+}
+
+function renderExplorePagination() {
+    const input = document.getElementById('exploreSearchInput');
+    const term = (input ? input.value : '').trim().toLowerCase();
+    
+    ['explore-item-row', 'explore-item-card'].forEach(cls => {
+        const items = Array.from(document.querySelectorAll('.' + cls));
+        const matched = items.filter(el => {
+            const text = (el.getAttribute('data-search-text') || el.textContent || '').toLowerCase();
+            return !term || text.includes(term);
+        });
+        
+        items.forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        const total = matched.length;
+        const totalPages = Math.max(1, Math.ceil(total / explorePageSize));
+        if (exploreCurrentPage > totalPages) exploreCurrentPage = totalPages;
+        
+        const startIdx = (exploreCurrentPage - 1) * explorePageSize;
+        const endIdx = startIdx + explorePageSize;
+        
+        matched.forEach((el, idx) => {
+            if (idx >= startIdx && idx < endIdx) {
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+        
+        if (cls === (currentExploreViewMode === 'list' ? 'explore-item-row' : 'explore-item-card')) {
+            const startNumEl = document.getElementById('exp-start-num');
+            const endNumEl = document.getElementById('exp-end-num');
+            const totalNumEl = document.getElementById('exp-total-num');
+            const badgeEl = document.getElementById('explore-count-badge');
+            
+            if (totalNumEl) totalNumEl.textContent = total;
+            if (badgeEl) badgeEl.textContent = total;
+            if (startNumEl) startNumEl.textContent = total > 0 ? (startIdx + 1) : 0;
+            if (endNumEl) endNumEl.textContent = Math.min(total, endIdx);
+            
+            const btnsContainer = document.getElementById('explore-page-buttons');
+            if (btnsContainer) {
+                if (totalPages <= 1) {
+                    btnsContainer.innerHTML = '';
+                } else {
+                    let html = '';
+                    if (exploreCurrentPage > 1) {
+                        html += `<button type="button" class="btn btn-outline-secondary" onclick="gotoExplorePage(${exploreCurrentPage - 1})"><i class="fas fa-chevron-right"></i></button>`;
+                    }
+                    for (let p = 1; p <= totalPages; p++) {
+                        if (p === 1 || p === totalPages || (p >= exploreCurrentPage - 1 && p <= exploreCurrentPage + 1)) {
+                            html += `<button type="button" class="btn ${p === exploreCurrentPage ? 'btn-success text-white' : 'btn-outline-secondary'}" onclick="gotoExplorePage(${p})">${p}</button>`;
+                        } else if (p === exploreCurrentPage - 2 || p === exploreCurrentPage + 2) {
+                            html += `<button type="button" class="btn btn-outline-secondary disabled" disabled>...</button>`;
+                        }
+                    }
+                    if (exploreCurrentPage < totalPages) {
+                        html += `<button type="button" class="btn btn-outline-secondary" onclick="gotoExplorePage(${exploreCurrentPage + 1})"><i class="fas fa-chevron-left"></i></button>`;
+                    }
+                    btnsContainer.innerHTML = html;
+                }
+            }
+        }
+    });
+}
+
+function gotoExplorePage(p) {
+    exploreCurrentPage = p;
+    renderExplorePagination();
+    const target = document.getElementById('explore-standalone-section');
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    workerNoteApp.init();
+    
+    // Initialize Pagers
+    new WPTablePager('wp-dir-row', 'task-dir-pagination').init();
+    new WPTablePager('wp-sub-row', 'sub-history-pagination').init();
+    
+    // Initialize Discovery Pager
+    renderExplorePagination();
+});
+</script>
+{% endblock %}

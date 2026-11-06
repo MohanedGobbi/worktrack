@@ -1,0 +1,548 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Privileges & Profiles | {{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}
+
+{% block breadcrumb_trail %}
+<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted"><span class="lang-en">Admin Dashboard</span><span class="lang-ar">لوحة الإدارة</span></a></li>
+<li class="breadcrumb-item active text-dark fw-bold" aria-current="page"><span class="lang-en">System Privileges & Profiles</span><span class="lang-ar">ملفات الصلاحيات والامتيازات</span></li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <!-- Page Header Hero Banner -->
+    <div class="glass-card mb-4 p-4 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0a0f1d 0%, #1e1b4b 60%, var(--color-primary, #10b981) 100%); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.25);">
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-lg-8">
+                <div class="badge rounded-pill bg-danger bg-opacity-50 px-3 py-1.5 mb-2.5 text-xs fw-bold border border-danger border-opacity-50 d-inline-flex align-items-center gap-1.5">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="lang-en">Access Control Architecture</span><span class="lang-ar">هندسة الصلاحيات والامتيازات</span>
+                </div>
+                <h2 class="fw-bold mb-2 text-white fs-3">
+                    <span class="lang-en">System Privileges & Profiles</span>
+                    <span class="lang-ar">ملفات الصلاحيات والامتيازات المخصصة</span>
+                </h2>
+                <p class="text-white-50 mb-0" style="font-size: 0.92rem; max-width: 650px;">
+                    <span class="lang-en">Configure custom authority profiles, define granular feature privileges, and map specific operational powers across teams and users.</span>
+                    <span class="lang-ar">تحديد ملفات الصلاحيات المخصصة، وتوزيع الامتيازات الوظيفية والتشغيلية بدقة على مستخدمي النظام.</span>
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <div class="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-light border-0 rounded-pill px-3 py-2 fw-bold text-dark d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 0.8rem;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="lang-en">Admin Dashboard</span><span class="lang-ar">لوحة الإدارة</span>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3.5 py-2 fw-bold d-inline-flex align-items-center gap-1.5 shadow" onclick="switchProfilesTab('tab-create-edit'); resetProfileForm();" style="font-size: 0.8rem; background: var(--color-primary, #10b981); border: none;">
+                        <i class="fas fa-plus"></i>
+                        <span class="lang-en">New Privilege Profile</span><span class="lang-ar">إنشاء ملف جديد</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ambient Glow -->
+        <div style="position: absolute; right: -80px; bottom: -80px; width: 280px; height: 280px; background: radial-gradient(circle, rgba(var(--wt-brand-rgb),0.3) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+    </div>
+
+    <!-- Quick Telemetry Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3.5 rounded-4 bg-white d-flex flex-row align-items-center gap-3">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(var(--wt-brand-rgb),0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-id-card-alt text-danger fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase letter-spacing-1"><span class="lang-en">Defined Profiles</span><span class="lang-ar">الملفات المعرفة</span></div>
+                    <div class="fs-4 fw-bold text-dark" id="statTotalProfiles">{{ total_profiles }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3.5 rounded-4 bg-white d-flex flex-row align-items-center gap-3">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(59,130,246,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-key text-primary fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase letter-spacing-1"><span class="lang-en">Security Privileges</span><span class="lang-ar">الامتيازات المتاحة</span></div>
+                    <div class="fs-4 fw-bold text-dark">{{ total_privileges }} <small class="text-muted fs-6 fw-normal">/ 4 Categories</small></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-3.5 rounded-4 bg-white d-flex flex-row align-items-center gap-3">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(var(--wt-brand-rgb),0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-user-check text-success fs-5"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase letter-spacing-1"><span class="lang-en">Assigned Users</span><span class="lang-ar">مستخدمون معنيون</span></div>
+                    <div class="fs-4 fw-bold text-dark">{{ total_assigned_users }} <small class="text-muted fs-6 fw-normal">/ {{ users|length }} active</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3 flex-wrap gap-2">
+        <ul class="nav nav-pills gap-2" id="systemProfileNavTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-none" id="tab-btn-profiles" onclick="switchProfilesTab('tab-profiles')">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="lang-en">Defined Profiles</span><span class="lang-ar">الملفات المعرفة</span>
+                    <span class="badge rounded-pill bg-danger text-white ms-1" style="font-size: 0.7rem;">{{ total_profiles }}</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-none" id="tab-btn-create-edit" onclick="switchProfilesTab('tab-create-edit')">
+                    <i class="fas fa-plus-circle"></i>
+                    <span id="createTabTitle"><span class="lang-en">Create Profile</span><span class="lang-ar">إنشاء ملف جديد</span></span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-none" id="tab-btn-assign" onclick="switchProfilesTab('tab-assign')">
+                    <i class="fas fa-user-tag"></i>
+                    <span class="lang-en">Assign to Users</span><span class="lang-ar">تعيين للمستخدمين</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- TAB PANES -->
+
+    <!-- TAB 1: DEFINED PROFILES LIST -->
+    <div id="tab-profiles" class="profile-section-pane">
+        <div class="row g-4" id="profilesListGrid">
+            {% for prof in profiles %}
+            <div class="col-md-6 col-xl-4" id="profile-card-{{ prof.id }}">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative" style="border-top: 4px solid {{ prof.color|default:'var(--color-primary, #10b981)' }} !important; background: #ffffff; transition: transform 0.2s, box-shadow 0.2s;">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex align-items-start justify-content-between mb-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0.5">{{ prof.name }}</h5>
+                                {% if prof.name_ar %}
+                                <div class="text-muted small fw-semibold" dir="rtl">{{ prof.name_ar }}</div>
+                                {% endif %}
+                            </div>
+                            <span class="badge rounded-pill" style="background: {{ prof.color|default:'var(--color-primary, #10b981)' }}18; color: {{ prof.color|default:'var(--color-primary, #10b981)' }}; border: 1px solid {{ prof.color|default:'var(--color-primary, #10b981)' }}35; font-size: 0.72rem; font-weight: 700;">
+                                <i class="fas fa-user-shield me-1"></i> {{ prof.assigned_users.count }} <span class="lang-en">Users</span><span class="lang-ar">مستخدم</span>
+                            </span>
+                        </div>
+
+                        <p class="text-muted small mb-3" style="min-height: 38px;">
+                            {{ prof.description|default:"No description provided for this profile." }}
+                        </p>
+
+                        <div class="mb-3 flex-grow-1">
+                            <div class="smallest fw-bold text-uppercase text-muted letter-spacing-1 mb-2">
+                                <span class="lang-en">Granted Privileges</span><span class="lang-ar">الامتيازات الممنوحة</span> ({{ prof.privileges|length }})
+                            </div>
+                            <div class="d-flex flex-wrap gap-1.5" style="max-height: 120px; overflow-y: auto;">
+                                {% for priv_key in prof.privileges %}
+                                <span class="badge bg-light text-dark border px-2 py-1 rounded-pill" style="font-size: 0.68rem; font-weight: 500;">
+                                    <i class="fas fa-check text-success me-1"></i> {{ priv_key|title }}
+                                </span>
+                                {% empty %}
+                                <span class="text-muted small fst-italic"><span class="lang-en">No specific privileges assigned.</span><span class="lang-ar">لا توجد امتيازات محددة.</span></span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                            <button type="button" class="btn btn-xs btn-outline-danger rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1" onclick="deleteSystemProfile({{ prof.id }}, '{{ prof.name|escapejs }}')" style="font-size: 0.75rem;">
+                                <i class="fas fa-trash-alt"></i> <span class="lang-en">Delete</span><span class="lang-ar">حذف</span>
+                            </button>
+                            <div class="d-flex gap-1.5">
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1" onclick="openAssignForProfile({{ prof.id }})" style="font-size: 0.75rem;">
+                                    <i class="fas fa-user-plus"></i> <span class="lang-en">Assign</span><span class="lang-ar">تعيين</span>
+                                </button>
+                                <button type="button" class="btn btn-xs btn-primary rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1" onclick="editSystemProfile({{ prof.id }}, '{{ prof.name|escapejs }}', '{{ prof.name_ar|escapejs }}', '{{ prof.description|escapejs }}', '{{ prof.color|default:'var(--color-primary, #10b981)'|escapejs }}', {{ prof.privileges|default:'[]' }})" style="font-size: 0.75rem;">
+                                    <i class="fas fa-pen"></i> <span class="lang-en">Edit</span><span class="lang-ar">تعديل</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="glass-card p-5 mx-auto" style="max-width: 500px; border-radius: 20px;">
+                    <i class="fas fa-id-card-alt text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <h5 class="fw-bold text-dark"><span class="lang-en">No Defined Profiles Found</span><span class="lang-ar">لم يتم إنشاء أي ملف صلاحيات بعد</span></h5>
+                    <p class="text-muted small mb-4"><span class="lang-en">Create custom security and privilege profiles to grant specific operational powers to users.</span><span class="lang-ar">أنشئ ملفات الصلاحيات لتنظيم الامتيازات والصلاحيات بين مستخدمي النظام.</span></p>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 py-2 fw-bold" onclick="switchProfilesTab('tab-create-edit'); resetProfileForm();">
+                        <i class="fas fa-plus me-1.5"></i> <span class="lang-en">Create First Profile</span><span class="lang-ar">إنشاء أول ملف صلاحيات</span>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- TAB 2: CREATE / EDIT PROFILE FORM -->
+    <div id="tab-create-edit" class="profile-section-pane d-none">
+        <form id="systemProfileForm" onsubmit="handleSaveSystemProfile(event)">
+            <input type="hidden" id="profileFormId" value="">
+
+            <div class="row g-4">
+                <!-- Left: Profile Details -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 80px;">
+                        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                            <i class="fas fa-sliders-h text-danger"></i>
+                            <span id="formCardHeader"><span class="lang-en">Profile Specifications</span><span class="lang-ar">مواصفات الملف</span></span>
+                        </h5>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark"><span class="lang-en">Profile Name (EN)</span><span class="lang-ar">اسم الملف (بالإنجليزية)</span> *</label>
+                            <input type="text" id="profInputName" class="form-control rounded-pill" placeholder="e.g. Senior Auditor, Field Inspector" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark"><span class="lang-en">Profile Name (AR)</span><span class="lang-ar">اسم الملف (بالعربية)</span></label>
+                            <input type="text" id="profInputNameAr" class="form-control rounded-pill" placeholder="مثال: مدقق أول، مفتش ميداني" dir="rtl">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-dark"><span class="lang-en">Accent Color</span><span class="lang-ar">لون التمييز</span></label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="color" id="profInputColor" class="form-control form-control-color rounded-circle border-0" value="var(--color-primary, #10b981)" style="width: 42px; height: 42px; cursor: pointer;">
+                                <span class="small text-muted" id="profColorCode">var(--color-primary, #10b981)</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-dark"><span class="lang-en">Description & Scope</span><span class="lang-ar">الوصف ونطاق المسؤولية</span></label>
+                            <textarea id="profInputDesc" class="form-control rounded-3" rows="3" placeholder="Outline the responsibilities and authority bounds of this profile..."></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light rounded-pill px-3 py-2 fw-bold flex-grow-1" onclick="switchProfilesTab('tab-profiles'); resetProfileForm();">
+                                <span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span>
+                            </button>
+                            <button type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-bold flex-grow-1" id="saveProfileSubmitBtn" style="background: var(--color-primary, #10b981);">
+                                <i class="fas fa-save me-1"></i> <span class="lang-en">Save Profile</span><span class="lang-ar">حفظ الملف</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Categorized Privileges Matrix -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">
+                                    <i class="fas fa-key text-danger me-2"></i>
+                                    <span class="lang-en">System Privileges & Permissions</span>
+                                    <span class="lang-ar">امتيازات وصلاحيات النظام</span>
+                                </h5>
+                                <div class="text-muted small">
+                                    <span class="lang-en">Check all features and operations permitted for users holding this profile.</span>
+                                    <span class="lang-ar">حدد كافة العمليات والخصائص المسموح بها للمستخدمين الذين يحملون هذا الملف.</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1.5 fw-bold" onclick="toggleAllPrivileges(true)">
+                                    <i class="fas fa-check-double me-1"></i> <span class="lang-en">Select All</span><span class="lang-ar">تحديد الكل</span>
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-3 py-1.5 fw-bold" onclick="toggleAllPrivileges(false)">
+                                    <i class="fas fa-times me-1"></i> <span class="lang-en">Clear All</span><span class="lang-ar">مسح الكل</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Categorized Privileges -->
+                        {% for category, privs in categorized_privs.items %}
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-dark text-uppercase letter-spacing-1 small mb-3 pb-2 border-bottom d-flex align-items-center gap-2">
+                                <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-2.5 py-1">{{ category }}</span>
+                            </h6>
+                            <div class="row g-2.5">
+                                {% for priv_key, priv_label, priv_icon in privs %}
+                                <div class="col-md-6">
+                                    <label class="d-flex align-items-center p-3 rounded-3 border bg-light bg-opacity-50 h-100 cursor-pointer priv-check-card" style="cursor: pointer; transition: all 0.2s;" for="chk_priv_{{ priv_key }}">
+                                        <input class="form-check-input mt-0 me-3 flex-shrink-0 priv-checkbox" type="checkbox" value="{{ priv_key }}" id="chk_priv_{{ priv_key }}" style="cursor: pointer; transform: scale(1.15);">
+                                        <div>
+                                            <div class="fw-bold text-dark small mb-0.5 d-flex align-items-center gap-1.5">
+                                                <i class="{{ priv_icon }} text-secondary" style="font-size: 0.8rem; width: 16px;"></i>
+                                                <code>{{ priv_key }}</code>
+                                            </div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">{{ priv_label }}</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 3: ASSIGN PROFILES TO USERS -->
+    <div id="tab-assign" class="profile-section-pane d-none">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mx-auto" style="max-width: 850px;">
+            <h5 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <i class="fas fa-user-tag text-danger"></i>
+                <span class="lang-en">Assign System Profiles to User</span>
+                <span class="lang-ar">تعيين ملفات الصلاحيات للمستخدمين</span>
+            </h5>
+            <p class="text-muted small mb-4">
+                <span class="lang-en">Select an active user from the directory and check the system profiles you wish to assign.</span>
+                <span class="lang-ar">اختر مستخدمًا من الدليل وحدد ملفات الصلاحيات التي ترغب في منحها له.</span>
+            </p>
+
+            <form id="assignUserProfileForm" onsubmit="handleSaveUserProfiles(event)">
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark"><span class="lang-en">Select Target User</span><span class="lang-ar">اختر المستخدم المستهدف</span> *</label>
+                    <select class="form-select rounded-pill py-2.5 px-3" id="userAssignSelect" onchange="loadUserAssignedProfiles(this.value)" required>
+                        <option value="" disabled selected>-- <span class="lang-en">Choose a user</span><span class="lang-ar">اختر مستخدمًا</span> --</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}">
+                            {{ u.get_full_name|default:u.username }} ({{ u.email }}) — [{{ u.get_role_display }}]
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-dark"><span class="lang-en">Select Profiles to Grant</span><span class="lang-ar">الملفات المراد منحها</span></label>
+                    <div class="row g-3" id="userAssignProfilesList">
+                        {% for prof in profiles %}
+                        <div class="col-md-6">
+                            <label class="d-flex align-items-center p-3 rounded-3 border bg-light h-100 cursor-pointer user-prof-checkbox-card" for="assign_prof_{{ prof.id }}" style="cursor: pointer;">
+                                <input class="form-check-input mt-0 me-3 flex-shrink-0 user-profile-checkbox" type="checkbox" value="{{ prof.id }}" id="assign_prof_{{ prof.id }}" style="cursor: pointer; transform: scale(1.15);">
+                                <div>
+                                    <div class="fw-bold text-dark small" style="color: {{ prof.color|default:'var(--color-primary, #10b981)' }} !important;">
+                                        <i class="fas fa-id-badge me-1"></i> {{ prof.name }}
+                                        {% if prof.name_ar %}<span class="text-muted fw-normal">({{ prof.name_ar }})</span>{% endif %}
+                                    </div>
+                                    <div class="text-muted smallest">{{ prof.description|default:"No description"|truncatechars:45 }}</div>
+                                </div>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-muted small fst-italic"><span class="lang-en">No profiles created yet. Please create a profile first.</span><span class="lang-ar">لم يتم إنشاء أي ملف صلاحيات بعد.</span></div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="text-end pt-3 border-top">
+                    <button type="submit" class="btn btn-danger rounded-pill px-5 py-2 fw-bold" id="btnSaveUserProfiles" style="background: var(--color-primary, #10b981);">
+                        <i class="fas fa-check-circle me-1.5"></i> <span class="lang-en">Save User Assignments</span><span class="lang-ar">حفظ تعيينات المستخدم</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Data Islands for User Profile Mapping -->
+<script id="users-profile-map-data" type="application/json">
+{
+    {% for u in users %}
+    "{{ u.id }}": [{% for p in u.system_profiles.all %}{{ p.id }}{% if not forloop.last %},{% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const CSRF_TOKEN = "{{ csrf_token }}";
+        const userProfilesMap = JSON.parse(document.getElementById('users-profile-map-data').textContent || '{}');
+
+        // Color input sync
+        const colorInput = document.getElementById('profInputColor');
+        if (colorInput) {
+            colorInput.addEventListener('input', function() {
+                document.getElementById('profColorCode').innerText = this.value;
+            });
+        }
+
+        // Tab Switching
+        window.switchProfilesTab = function(tabId) {
+            document.querySelectorAll('.profile-section-pane').forEach(el => el.classList.add('d-none'));
+            const targetPane = document.getElementById(tabId);
+            if (targetPane) targetPane.classList.remove('d-none');
+
+            document.querySelectorAll('#systemProfileNavTabs .nav-link').forEach(btn => btn.classList.remove('active'));
+            if (tabId === 'tab-profiles') document.getElementById('tab-btn-profiles').classList.add('active');
+            if (tabId === 'tab-create-edit') document.getElementById('tab-btn-create-edit').classList.add('active');
+            if (tabId === 'tab-assign') document.getElementById('tab-btn-assign').classList.add('active');
+        };
+
+        window.resetProfileForm = function() {
+            document.getElementById('profileFormId').value = '';
+            document.getElementById('profInputName').value = '';
+            document.getElementById('profInputNameAr').value = '';
+            document.getElementById('profInputDesc').value = '';
+            document.getElementById('profInputColor').value = 'var(--color-primary, #10b981)';
+            document.getElementById('profColorCode').innerText = 'var(--color-primary, #10b981)';
+            document.querySelectorAll('.priv-checkbox').forEach(chk => chk.checked = false);
+
+            document.getElementById('formCardHeader').innerHTML = `<span class="lang-en">New Profile Specifications</span><span class="lang-ar">مواصفات الملف الجديد</span>`;
+            document.getElementById('createTabTitle').innerHTML = `<span class="lang-en">Create Profile</span><span class="lang-ar">إنشاء ملف جديد</span>`;
+        };
+
+        window.toggleAllPrivileges = function(checked) {
+            document.querySelectorAll('.priv-checkbox').forEach(chk => chk.checked = checked);
+        };
+
+        window.editSystemProfile = function(id, name, nameAr, desc, color, privileges) {
+            resetProfileForm();
+            document.getElementById('profileFormId').value = id;
+            document.getElementById('profInputName').value = name;
+            document.getElementById('profInputNameAr').value = nameAr;
+            document.getElementById('profInputDesc').value = desc;
+            document.getElementById('profInputColor').value = color || 'var(--color-primary, #10b981)';
+            document.getElementById('profColorCode').innerText = color || 'var(--color-primary, #10b981)';
+
+            if (Array.isArray(privileges)) {
+                privileges.forEach(p => {
+                    const el = document.getElementById(`chk_priv_${p}`);
+                    if (el) el.checked = true;
+                });
+            }
+
+            document.getElementById('formCardHeader').innerHTML = `<span class="lang-en">Edit Profile: ${name}</span><span class="lang-ar">تعديل الملف: ${nameAr || name}</span>`;
+            document.getElementById('createTabTitle').innerHTML = `<span class="lang-en">Edit Profile</span><span class="lang-ar">تعديل الملف</span>`;
+            switchProfilesTab('tab-create-edit');
+        };
+
+        window.handleSaveSystemProfile = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveProfileSubmitBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+            const profileId = document.getElementById('profileFormId').value;
+            const name = document.getElementById('profInputName').value.trim();
+            const nameAr = document.getElementById('profInputNameAr').value.trim();
+            const desc = document.getElementById('profInputDesc').value.trim();
+            const color = document.getElementById('profInputColor').value.trim();
+            const selectedPrivs = Array.from(document.querySelectorAll('.priv-checkbox:checked')).map(c => c.value);
+
+            try {
+                const res = await fetch('/api/system-profiles/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                    body: JSON.stringify({
+                        id: profileId || null,
+                        name: name,
+                        name_ar: nameAr,
+                        description: desc,
+                        color: color,
+                        privileges: selectedPrivs
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (window.showToast) window.showToast('Profile saved successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 700);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    if (typeof Swal !== 'undefined') Swal.fire('Error', data.message || 'Could not save profile', 'error');
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (typeof Swal !== 'undefined') Swal.fire('Error', 'Network error saving profile', 'error');
+            }
+        };
+
+        window.deleteSystemProfile = async function(profileId, name) {
+            if (typeof Swal !== 'undefined') {
+                const res = await Swal.fire({
+                    title: 'Delete Profile?',
+                    text: `Are you sure you want to permanently delete profile "${name}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: 'var(--color-primary, #10b981)',
+                    confirmButtonText: 'Yes, Delete'
+                });
+                if (!res.isConfirmed) return;
+            } else if (!confirm(`Delete profile "${name}"?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/system-profiles/?id=${profileId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRFToken': CSRF_TOKEN }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (window.showToast) window.showToast('Profile deleted successfully', 'success');
+                    const card = document.getElementById(`profile-card-${profileId}`);
+                    if (card) card.remove();
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    if (typeof Swal !== 'undefined') Swal.fire('Error', data.message || 'Could not delete', 'error');
+                }
+            } catch (err) {
+                if (window.showToast) window.showToast('Network error deleting profile', 'error');
+            }
+        };
+
+        window.openAssignForProfile = function(profileId) {
+            switchProfilesTab('tab-assign');
+            document.querySelectorAll('.user-profile-checkbox').forEach(chk => {
+                chk.checked = (String(chk.value) === String(profileId));
+            });
+        };
+
+        window.loadUserAssignedProfiles = function(userId) {
+            const assignedIds = userProfilesMap[userId] || [];
+            document.querySelectorAll('.user-profile-checkbox').forEach(chk => {
+                chk.checked = assignedIds.includes(parseInt(chk.value));
+            });
+        };
+
+        window.handleSaveUserProfiles = async function(e) {
+            e.preventDefault();
+            const selectEl = document.getElementById('userAssignSelect');
+            const userId = selectEl.value;
+            if (!userId) {
+                if (window.showToast) window.showToast('Please select a user', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveUserProfiles');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+            const selectedProfileIds = Array.from(document.querySelectorAll('.user-profile-checkbox:checked')).map(c => parseInt(c.value));
+
+            try {
+                const res = await fetch(`/api/users/${userId}/assign-profiles/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                    body: JSON.stringify({ profile_ids: selectedProfileIds })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    userProfilesMap[userId] = selectedProfileIds;
+                    if (window.showToast) window.showToast('User profile assignments updated!', 'success');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    if (typeof Swal !== 'undefined') Swal.fire('Error', data.message || 'Could not update user assignments', 'error');
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (window.showToast) window.showToast('Network error updating user', 'error');
+            }
+        };
+    });
+</script>
+{% endblock %}

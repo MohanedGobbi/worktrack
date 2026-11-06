@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ module.name }} Todo Management — Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Modern Premium Redesign */
+.todo-hero {
+    background: radial-gradient(60% 70% at 78% 42%, rgba(var(--wt-brand-rgb),.45), transparent 70%), radial-gradient(50% 60% at 15% 100%, rgba(var(--wt-brand-rgb),.35), transparent 70%), linear-gradient(160deg, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 55%, #0c0306 100%);
+    border-radius: 30px;
+    padding: 3.5rem;
+    color: white;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(var(--wt-brand-rgb),0.15);
+}
+.todo-hero .hero-accent {
+    position: absolute;
+    top: -100px; right: -100px; width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+}
+
+.stat-pill-card {
+    background: white; border-radius: 24px; padding: 1.5rem 2rem;
+    border: 1px solid #f1f5f9; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; gap: 1.5rem;
+}
+.stat-pill-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.04); }
+.stat-pill-icon {
+    width: 56px; height: 56px; border-radius: 16px; 
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+
+.todo-card-v2 {
+    background: white; border-radius: 16px; padding: 0;
+    border: 1px solid #eef2f6; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 1.25rem; position: relative; overflow: hidden;
+    display: flex; align-items: stretch;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.02);
+}
+.todo-card-v2:hover { border-color: #cbd5e1; box-shadow: 0 12px 25px rgba(15, 23, 42, 0.06); transform: translateY(-3px); }
+.todo-card-v2.completed { background: #f8fafc; opacity: 0.8; border-color: #e2e8f0; }
+.todo-card-v2.completed .todo-title { text-decoration: line-through; color: #94a3b8; }
+.todo-status-bar { width: 8px; flex-shrink: 0; transition: background 0.3s; }
+
+.priority-tag {
+    font-size: 0.7rem; font-weight: 800; padding: 0.25rem 0.75rem; border-radius: 99px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.priority-low { background: #f1f5f9; color: #64748b; }
+.priority-medium { background: #fef9c3; color: #a16207; }
+.priority-high { background: #fee2e2; color: var(--wt-bad); }
+
+.file-tag {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600;
+    color: #475569; display: inline-flex; align-items: center; gap: 0.5rem;
+    transition: all 0.2s; text-decoration: none;
+}
+.file-tag:hover { background: #f1f5f9; color: #6366f1; border-color: #6366f1; }
+
+.action-orb {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: #f1f5f9; color: #64748b; transition: all 0.2s;
+}
+.action-orb:hover { background: #6366f1; color: white; transform: rotate(8deg); }
+.action-orb.delete:hover { background: var(--wt-bad); }
+
+/* Custom Checkbox */
+.todo-check-wrap {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+    background: #f1f5f9; color: #94a3b8;
+}
+.todo-check-wrap.checked { background: var(--color-primary, #10b981); color: white; box-shadow: 0 4px 12px rgba(var(--wt-brand-rgb),0.3); }
+
+.modal-content-premium {
+    border-radius: 28px; border: none; overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="todo-hero mb-4 d-flex flex-column flex-lg-row align-items-center justify-content-between gap-4" style="padding: 3.5rem; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+        <div class="hero-accent"></div>
+        <div class="d-flex flex-column" style="z-index: 2; max-width: 600px;">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{% url 'module-dashboard' module.slug %}" class="btn btn-sm btn-light text-dark rounded-pill px-3 fw-bold shadow-sm">
+                    <i class="fas fa-arrow-left me-1"></i><span class="lang-en">Dashboard</span><span class="lang-ar">لوحة التحكم</span></a>
+                <span class="badge bg-indigo rounded-pill px-3 py-2 fw-800 tracking-wide">STRATEGIC ACTIONS</span>
+            </div>
+            <h1 class="display-4 fw-900 mb-3 text-white" style="letter-spacing: -1px;">{{ module.name }} Todo</h1>
+            <p class="lead opacity-75 text-white mb-4">Track progress, manage attachments, and drive module actions to completion.</p>
+            <div>
+                <button class="btn btn-light btn-lg rounded-pill px-5 fw-800 shadow-lg text-indigo d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addTodoModal" style="height: 54px; font-size: 1.1rem; box-shadow: 0 10px 25px rgba(255,255,255,0.1) !important;">
+                    <i class="fas fa-plus-circle fa-lg"></i> Add Todo Task
+                </button>
+            </div>
+        </div>
+        
+        <!-- Analytics Card side -->
+        <div class="d-flex align-items-center gap-4 bg-white bg-opacity-10 p-4 rounded-4 shadow-lg" style="backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); z-index: 2; min-width: 320px;">
+            <!-- Premium Pie Chart -->
+            {% widthratio stats.completed stats.total|default:1 100 as percentage %}
+            <div class="position-relative d-flex align-items-center justify-content-center flex-shrink-0" style="width: 130px; height: 130px;">
+                <!-- Animated outer glow ring -->
+                <div style="position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(var(--color-accent, #34d399) {{ percentage|default:0 }}%, rgba(255,255,255,0.04) 0); filter: blur(2px); opacity: 0.5;"></div>
+                <!-- Main chart ring -->
+                <div style="position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(var(--color-accent, #34d399) {{ percentage|default:0 }}%, rgba(255,255,255,0.07) 0); box-shadow: 0 0 20px rgba(var(--wt-brand-rgb),0.3);"></div>
+                <!-- Inner dark circle -->
+                <div style="position: absolute; inset: 14px; background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 50%; box-shadow: 0 4px 16px rgba(0,0,0,0.5);"></div>
+                <!-- Center text -->
+                <div class="position-relative z-1 text-center text-white">
+                    <div class="fw-900 lh-1" style="font-size: 1.6rem;">{{ percentage|default:"0" }}<span style="font-size: 1rem; opacity: 0.8;">%</span></div>
+                    <div class="fw-800 opacity-70" style="font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase;">Done</div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-column gap-3 ms-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center text-white" style="width: 36px; height: 36px;"><i class="fas fa-layer-group"></i></div>
+                    <div>
+                        <div class="h5 fw-900 text-white mb-0 lh-1">{{ stats.total }}</div>
+                        <div class="small opacity-75 text-white fw-bold" style="font-size: 0.75rem;">Total Items</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-warning bg-opacity-25 d-flex align-items-center justify-content-center text-warning" style="width: 36px; height: 36px;"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="h5 fw-900 text-white mb-0 lh-1">{{ stats.pending }}</div>
+                        <div class="small opacity-75 text-white fw-bold" style="font-size: 0.75rem;">Pending</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-success bg-opacity-25 d-flex align-items-center justify-content-center text-success" style="width: 36px; height: 36px;"><i class="fas fa-check-double"></i></div>
+                    <div>
+                        <div class="h5 fw-900 text-white mb-0 lh-1">{{ stats.completed }}</div>
+                        <div class="small opacity-75 text-white fw-bold" style="font-size: 0.75rem;">Resolved</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Todo List Filters -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <h4 class="fw-900 mb-0" style="color: #0f172a;">Active Board</h4>
+            <div class="btn-group p-1 bg-white rounded-pill border" style="font-size: 0.8rem;">
+                <button class="btn btn-sm btn-light rounded-pill px-3 active" onclick="filterTodos('all')">All</button>
+                <button class="btn btn-sm btn-white rounded-pill px-3" onclick="filterTodos('pending')">Pending</button>
+                <button class="btn btn-sm btn-white rounded-pill px-3" onclick="filterTodos('completed')">Completed</button>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="text-muted small fw-bold me-2">
+                <i class="fas fa-sort me-1"></i> <span id="currentSortLabel">Sort Options</span>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-white bg-white rounded-pill px-3 fw-bold border shadow-sm" type="button" data-bs-toggle="dropdown" style="font-size: 0.8rem;">
+                    Sort <i class="fas fa-chevron-down ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 text-sm py-2">
+                    <li><a class="dropdown-item fw-semibold" href="#" onclick="sortTodos('newest', 'Newest First'); return false;"><i class="fas fa-clock text-muted me-2"></i>Newest First</a></li>
+                    <li><a class="dropdown-item fw-semibold" href="#" onclick="sortTodos('due', 'Due Date'); return false;"><i class="fas fa-calendar-alt text-muted me-2"></i>Due Date (Soonest)</a></li>
+                    <li><a class="dropdown-item fw-semibold" href="#" onclick="sortTodos('priority', 'Priority'); return false;"><i class="fas fa-exclamation-circle text-muted me-2"></i>Highest Priority</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Todo Items Container -->
+    <div class="todo-stack" id="todoStack">
+        {% for todo in todos %}
+        <div class="todo-card-v2 {% if todo.status == 'completed' %}completed{% endif %}" data-status="{{ todo.status }}" id="todo-{{ todo.id }}" data-priority="{% if todo.priority == 'high' %}3{% elif todo.priority == 'medium' %}2{% else %}1{% endif %}" data-due="{{ todo.due_date|date:'Y-m-d'|default:'9999-12-31' }}" data-created="{{ todo.id }}">
+            <div class="todo-status-bar {% if todo.status == 'completed' %}bg-success{% elif todo.priority == 'high' %}bg-danger{% elif todo.priority == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}"></div>
+            <div class="d-flex align-items-start gap-4 p-4 flex-grow-1">
+                <!-- Checkbox Orb -->
+                <div class="todo-check-wrap {% if todo.status == 'completed' %}checked{% endif %} action-check-todo" data-todo-id="{{ todo.id }}">
+                    <i class="fas {% if todo.status == 'completed' %}fa-check{% else %}fa-circle-notch{% endif %}"></i>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="todo-title fw-800 mb-0">{{ todo.title }}</h5>
+                            <span class="priority-tag priority-{{ todo.priority }}">{{ todo.priority }}</span>
+                        </div>
+                        <div class="todo-meta text-muted" style="font-size: 0.75rem;">
+                            <i class="far fa-user-circle me-1"></i> {{ todo.created_by.first_name }}
+                        </div>
+                    </div>
+                    
+                    {% if todo.description %}
+                    <p class="text-muted mb-3" style="font-size: 0.95rem; line-height: 1.6;">{{ todo.description }}</p>
+                    {% endif %}
+                    
+                    <!-- File Tags & Meta Row -->
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-auto">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for attachment in todo.attachments.all %}
+                            <a href="{{ attachment.file.url }}" target="_blank" class="file-tag" title="{{ attachment.original_filename }}">
+                                <i class="fas fa-paperclip"></i>
+                                <span>{{ attachment.original_filename|truncatechars:15 }}</span>
+                            </a>
+                            {% endfor %}
+                            {% if not todo.attachments.all %}
+                            <span class="text-muted italic opacity-50 small"><i class="fas fa-info-circle me-1"></i> No attachments</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex align-items-center gap-4">
+                            {% if todo.due_date %}
+                            <div class="text-muted small fw-bold">
+                                <i class="far fa-calendar-alt text-indigo me-1"></i> {{ todo.due_date|date:"M d, Y" }}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2">
+                                <button class="action-orb action-edit-todo" 
+                                    data-todo-id="{{ todo.id }}" 
+                                    data-todo-title="{{ todo.title|escapejs }}" 
+                                    data-todo-desc="{{ todo.description|escapejs }}" 
+                                    data-todo-priority="{{ todo.priority }}"
+                                    data-todo-date="{{ todo.due_date|date:'Y-m-d' }}"
+                                    title="Quick Edit">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <button class="action-orb delete action-delete-todo" data-todo-id="{{ todo.id }}" title="Delete Permanently">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <div class="mb-4 d-inline-block p-4 bg-light rounded-circle">
+                <i class="fas fa-clipboard-check text-muted" style="font-size: 4rem; opacity: 0.3;"></i>
+            </div>
+            <h3 class="fw-bold">All caught up!</h3>
+            <p class="text-muted">No pending actions for this module. Enjoy the clarity.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Todo Modal -->
+<div class="modal fade" id="addTodoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-premium">
+            <div class="modal-header border-0 pb-0" style="background: radial-gradient(60% 70% at 78% 42%, rgba(var(--wt-brand-rgb),.45), transparent 70%), radial-gradient(50% 60% at 15% 100%, rgba(var(--wt-brand-rgb),.35), transparent 70%), linear-gradient(160deg, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 55%, #0c0306 100%); color: white; padding: 2rem; border-radius: 20px 20px 0 0; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);"></div>
+                <div style="z-index: 1;">
+                    <h4 class="modal-title fw-900 mb-1" style="color: white;">New Strategic Action</h4>
+                    <p class="small mb-0 opacity-75">Create a highly visible task for the {{ module.name }} team.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 1.5rem; right: 1.5rem; z-index: 2;"></button>
+            </div>
+            <form id="addTodoForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body py-4 px-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Title</span><span class="lang-ar">العنوان</span></label>
+                        <input type="text" name="title" class="form-control form-control-lg border-0 bg-light rounded-4" placeholder="What needs to be done?" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></label>
+                        <textarea name="description" class="form-control border-0 bg-light rounded-4" rows="3" placeholder="Additional context (optional)..."></textarea>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></label>
+                            <select name="priority" class="form-select border-0 bg-light rounded-4 select-premium">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-800 text-muted small text-uppercase mb-2">DUE DATE</label>
+                            <input type="date" name="due_date" class="form-control border-0 bg-light rounded-4">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2">ATTACHMENTS (MULTI)</label>
+                        <div class="bg-light p-4 rounded-4 border-0 text-center position-relative" style="border: 2px dashed #e2e8f0 !important;">
+                            <i class="fas fa-cloud-upload-alt text-muted mb-2" style="font-size: 2rem;"></i>
+                            <p class="small text-muted mb-0">Drag and drop files or click to browse</p>
+                            <input type="file" name="files" multiple class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" onchange="updateAddFileCount(this)">
+                        </div>
+                        <div id="addFileFeedback" class="mt-2 small text-indigo fw-bold"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                    <button type="submit" class="btn btn-indigo rounded-pill px-5 fw-bold py-2"><span class="lang-en">Create Task</span><span class="lang-ar">إنشاء مهمة</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Todo Modal -->
+<div class="modal fade" id="editTodoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-premium">
+            <div class="modal-header border-0 pb-0" style="background: radial-gradient(60% 70% at 78% 42%, rgba(var(--wt-brand-rgb),.45), transparent 70%), radial-gradient(50% 60% at 15% 100%, rgba(var(--wt-brand-rgb),.35), transparent 70%), linear-gradient(160deg, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 55%, #0c0306 100%); color: white; padding: 2rem; border-radius: 20px 20px 0 0; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);"></div>
+                <div style="z-index: 1;">
+                    <h4 class="modal-title fw-900 mb-1" style="color: white;">Update Action</h4>
+                    <p class="small mb-0 opacity-75">Modify task details or add new attachments.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 1.5rem; right: 1.5rem; z-index: 2;"></button>
+            </div>
+            <form id="editTodoForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="todo_id" id="editTodoId">
+                <div class="modal-body py-4 px-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Title</span><span class="lang-ar">العنوان</span></label>
+                        <input type="text" name="title" id="editTitle" class="form-control form-control-lg border-0 bg-light rounded-4" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></label>
+                        <textarea name="description" id="editDescription" class="form-control border-0 bg-light rounded-4" rows="3"></textarea>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-800 text-muted small text-uppercase mb-2"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></label>
+                            <select name="priority" id="editPriority" class="form-select border-0 bg-light rounded-4">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-800 text-muted small text-uppercase mb-2">DUE DATE</label>
+                            <input type="date" name="due_date" id="editDueDate" class="form-control border-0 bg-light rounded-4">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-800 text-muted small text-uppercase mb-2">ADD MORE FILES</label>
+                        <div class="bg-light p-3 rounded-4 border-0 text-center position-relative" style="border: 2px dashed #e2e8f0 !important;">
+                            <input type="file" name="files" multiple class="position-absolute top-0 start-0 w-100 h-100 opacity-0" style="cursor: pointer;" onchange="updateEditFileCount(this)">
+                            <span class="small text-muted"><i class="fas fa-plus me-1"></i> Upload files</span>
+                        </div>
+                        <div id="editFileFeedback" class="mt-2 small text-indigo fw-bold"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-indigo rounded-pill w-100 fw-bold py-3 shadow-lg"><span class="lang-en">Save Changes</span><span class="lang-ar">حفظ التغييرات</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+let addPendingFiles = [];
+let editPendingFiles = [];
+
+function updateAddFileCount(input) {
+    for (let i = 0; i < input.files.length; i++) addPendingFiles.push(input.files[i]);
+    input.value = ''; renderAddFilePreview();
+}
+function removeAddPendingFile(index) {
+    addPendingFiles.splice(index, 1); renderAddFilePreview();
+}
+function renderAddFilePreview() {
+    const container = document.getElementById('addFileFeedback');
+    if (!container) return;
+    if (addPendingFiles.length === 0) { container.innerHTML = ''; return; }
+    let html = '<div class="d-flex flex-column gap-2 mt-3 text-start">';
+    addPendingFiles.forEach((file, index) => {
+        html += `
+            <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 shadow-sm">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <i class="fas fa-file-alt text-indigo"></i>
+                    <span class="small text-truncate fw-bold text-dark" style="max-width: 200px;">${file.name}</span>
+                    <span class="x-small text-muted">(${(file.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-light text-danger py-0 px-2 rounded" onclick="removeAddPendingFile(${index})" title="Remove file"><i class="fas fa-times"></i></button>
+            </div>`;
+    });
+    container.innerHTML = html + '</div>';
+}
+
+function updateEditFileCount(input) {
+    for (let i = 0; i < input.files.length; i++) editPendingFiles.push(input.files[i]);
+    input.value = ''; renderEditFilePreview();
+}
+function removeEditPendingFile(index) {
+    editPendingFiles.splice(index, 1); renderEditFilePreview();
+}
+function renderEditFilePreview() {
+    const container = document.getElementById('editFileFeedback');
+    if (!container) return;
+    if (editPendingFiles.length === 0) { container.innerHTML = ''; return; }
+    let html = '<div class="d-flex flex-column gap-2 mt-3 text-start">';
+    editPendingFiles.forEach((file, index) => {
+        html += `
+            <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 shadow-sm">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <i class="fas fa-file-alt text-indigo"></i>
+                    <span class="small text-truncate fw-bold text-dark" style="max-width: 200px;">${file.name}</span>
+                    <span class="x-small text-muted">(${(file.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-light text-danger py-0 px-2 rounded" onclick="removeEditPendingFile(${index})" title="Remove file"><i class="fas fa-times"></i></button>
+            </div>`;
+    });
+    container.innerHTML = html + '</div>';
+}
+
+function filterTodos(status) {
+    const cards = document.querySelectorAll('.todo-card-v2');
+    cards.forEach(card => {
+        if (status === 'all') card.style.display = 'flex';
+        else card.style.display = card.dataset.status === status ? 'flex' : 'none';
+    });
+    // Update active tab styling
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.toLowerCase() === status);
+        btn.classList.toggle('btn-light', btn.innerText.toLowerCase() === status);
+        btn.classList.toggle('btn-white', btn.innerText.toLowerCase() !== status);
+    });
+}
+
+function sortTodos(type, label) {
+    const container = document.getElementById('todoStack');
+    if (!container) return;
+    
+    const labelEl = document.getElementById('currentSortLabel');
+    if (labelEl) labelEl.innerText = "Sorted by " + label;
+    
+    const cards = Array.from(container.querySelectorAll('.todo-card-v2'));
+    cards.sort((a, b) => {
+        if (type === 'priority') {
+            return parseInt(b.dataset.priority) - parseInt(a.dataset.priority);
+        } else if (type === 'due') {
+            return a.dataset.due.localeCompare(b.dataset.due);
+        } else if (type === 'newest') {
+            return parseInt(b.dataset.created) - parseInt(a.dataset.created);
+        }
+        return 0;
+    });
+    
+    container.innerHTML = '';
+    cards.forEach(c => container.appendChild(c));
+}
+
+// Add Todo Submission
+document.getElementById('addTodoForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Creating...'; }
+    const fd = new FormData(this);
+    fd.delete('files'); // remove empty
+    addPendingFiles.forEach(f => fd.append('files', f));
+    
+    try {
+        const response = await fetch("{% url 'module-todo-add' module.slug %}", {
+            method: 'POST', body: fd, headers: { 'X-CSRFToken': CSRF_TOKEN }
+        });
+        const data = await response.json();
+        if (data.status === 'success') location.reload();
+        else {
+            amazingAlert({title: 'Error', text: data.message});
+            if (btn) { btn.disabled = false; btn.innerHTML = 'Create Task'; }
+        }
+    } catch (e) { 
+        console.error(e); 
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Create Task'; }
+    }
+};
+
+// Clear Add Modal
+document.getElementById('addTodoModal')?.addEventListener('hidden.bs.modal', function () {
+    addPendingFiles = [];
+    document.getElementById('addFileFeedback').innerHTML = '';
+    document.getElementById('addTodoForm').reset();
+});
+
+// Edit Modal Handler
+document.querySelectorAll('.action-edit-todo').forEach(btn => {
+    btn.onclick = function() {
+        document.getElementById('editTodoId').value = this.dataset.todoId;
+        document.getElementById('editTitle').value = this.dataset.todoTitle;
+        document.getElementById('editDescription').value = this.dataset.todoDesc;
+        document.getElementById('editPriority').value = this.dataset.todoPriority;
+        document.getElementById('editDueDate').value = this.dataset.todoDate || '';
+        editPendingFiles = [];
+        document.getElementById('editFileFeedback').innerHTML = '';
+        new bootstrap.Modal(document.getElementById('editTodoModal')).show();
+    };
+});
+
+// Update Todo Submission
+document.getElementById('editTodoForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...'; }
+    const id = document.getElementById('editTodoId').value;
+    const fd = new FormData(this);
+    fd.delete('files');
+    editPendingFiles.forEach(f => fd.append('files', f));
+    
+    try {
+        const response = await fetch(`{% url 'module-todo-update' 0 %}`.replace('0', id), {
+            method: 'POST', body: fd, headers: { 'X-CSRFToken': CSRF_TOKEN }
+        });
+        const data = await response.json();
+        if (data.status === 'success') location.reload();
+        else {
+            amazingAlert({title: 'Error', text: data.message});
+            if (btn) { btn.disabled = false; btn.innerHTML = 'Save Changes'; }
+        }
+    } catch (e) {
+        console.error(e);
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Save Changes'; }
+    }
+};
+
+// Toggle Status Handler
+document.querySelectorAll('.action-check-todo').forEach(btn => {
+    btn.onclick = async function() {
+        const id = this.dataset.todoId;
+        try {
+            const response = await fetch(`{% url 'module-todo-toggle' 0 %}`.replace('0', id), {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                const card = document.getElementById(`todo-${id}`);
+                const icon = this.querySelector('i');
+                if (data.new_status === 'completed') {
+                    card.classList.add('completed');
+                    this.classList.add('checked');
+                    icon.className = 'fas fa-check';
+                } else {
+                    card.classList.remove('completed');
+                    this.classList.remove('checked');
+                    icon.className = 'fas fa-circle-notch';
+                }
+                location.reload(); // Reload to refresh stats pill counts correctly
+            }
+        } catch (e) { console.error(e); }
+    };
+});
+
+// Delete Handler
+document.querySelectorAll('.action-delete-todo').forEach(btn => {
+    btn.onclick = async function() {
+        const id = this.dataset.todoId;
+        if (await amazingConfirm({ title: 'Delete Action?', text: 'This will permanently remove this item.' })) {
+            try {
+                const response = await fetch(`{% url 'module-todo-delete' 0 %}`.replace('0', id), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': CSRF_TOKEN }
+                });
+                const data = await response.json();
+                if (data.status === 'success') document.getElementById(`todo-${id}`).remove();
+            } catch (e) { console.error(e); }
+        }
+    };
+});
+</script>
+{% endblock %}

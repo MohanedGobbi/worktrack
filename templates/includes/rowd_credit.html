@@ -1,0 +1,7 @@
+{% load static %}{% comment %}
+  VENDOR CREDIT (fixed). This is not part of the theme layer: it stays on every install and every redesign.
+  variant: 'side' or 'dark' = on the brand surface (white mark), 'light' = on light surfaces (navy mark).
+{% endcomment %}<a class="wt-credit{% if variant == 'side' %} wt-credit--side{% endif %}" href="https://rowd.co" target="_blank" rel="noopener" title="ROWD Tech">
+    <b class="wt-credit-label" translate="no"><span class="lang-en">Built by</span><span class="lang-ar">تطوير</span></b>
+    <img src="{% if variant == 'side' or variant == 'dark' %}{% static 'wt/brand/rowd_logo_white_transparent.png' %}{% else %}{% static 'wt/brand/rowd_logo_navy_transparent.png' %}{% endif %}" alt="ROWD Tech" width="54" height="13">
+</a>

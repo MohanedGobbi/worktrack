@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-bell"></i><span class="lang-en">Notifications</span><span class="lang-ar">الإشعارات</span></h1>
+                <p class="text-muted">Stay updated with your notifications</p>
+            </div>
+            {% if unread_count %}
+                <button type="button" class="btn btn-outline-secondary" onclick="markAllAsRead()">
+                    <i class="fas fa-check-double"></i> Mark All as Read
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1">Total Notifications</p>
+                            <h3 class="mb-0">{{ total_notifications }}</h3>
+                        </div>
+                        <i class="fas fa-bell fa-2x" style="color: #667eea; opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1">Unread</p>
+                            <h3 class="mb-0 text-danger">{{ unread_count }}</h3>
+                        </div>
+                        <i class="fas fa-exclamation-circle fa-2x" style="color: #dc3545; opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1">Today</p>
+                            <h3 class="mb-0">{{ today_count }}</h3>
+                        </div>
+                        <i class="fas fa-calendar-today fa-2x" style="color: #ffc107; opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-1">This Week</p>
+                            <h3 class="mb-0">{{ week_count }}</h3>
+                        </div>
+                        <i class="fas fa-calendar-week fa-2x" style="color: var(--wt-brand); opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" placeholder="Search notifications..." value="{{ search|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="unread" {% if status == 'unread' %}selected{% endif %}>Unread</option>
+                        <option value="read" {% if status == 'read' %}selected{% endif %}>Read</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        <option value="task" {% if type == 'task' %}selected{% endif %}>Task</option>
+                        <option value="submission" {% if type == 'submission' %}selected{% endif %}>Submission</option>
+                        <option value="message" {% if type == 'message' %}selected{% endif %}>Message</option>
+                        <option value="admin" {% if type == 'admin' %}selected{% endif %}>Admin</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i><span class="lang-en">Filter</span><span class="lang-ar">تصفية</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-list">
+        {% if notifications %}
+            {% for notification in notifications %}
+                <div class="card mb-3 notification-item {% if not notification.is_read %}unread{% endif %}" id="notif-{{ notification.id }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    {% if notification.type == 'task' %}
+                                        <span class="badge bg-blue me-2"><i class="fas fa-tasks"></i> Task</span>
+                                    {% elif notification.type == 'submission' %}
+                                        <span class="badge bg-purple me-2"><i class="fas fa-inbox"></i> Submission</span>
+                                    {% elif notification.type == 'message' %}
+                                        <span class="badge bg-info me-2"><i class="fas fa-comment"></i> Message</span>
+                                    {% elif notification.type == 'admin' %}
+                                        <span class="badge bg-danger me-2"><i class="fas fa-shield-alt"></i> Admin</span>
+                                    {% endif %}
+                                    
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-warning ms-2"><i class="fas fa-circle"></i> New</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <h6 class="card-title mb-2">{{ notification.title }}</h6>
+                                <p class="card-text text-muted mb-2">{{ notification.message }}</p>
+                                
+                                {% if notification.related_task %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-link"></i> Related to: 
+                                        <a href="{% url 'task-detail' notification.related_task.id %}">{{ notification.related_task.title }}</a>
+                                    </small><br>
+                                {% endif %}
+                                
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> {{ notification.created_at|timesince }} ago
+                                </small>
+                            </div>
+                            
+                            <div class="btn-group" role="group">
+                                {% if not notification.is_read %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            data-id="{{ notification.id }}"
+                                            onclick="markAsRead(this.dataset.id);">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        data-id="{{ notification.id }}"
+                                        onclick="deleteNotification(this.dataset.id);">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No notifications</p>
+                    <small class="text-muted">You're all caught up!</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.notification-item {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.notification-item.unread {
+    background-color: #f0f4ff;
+    border-left-color: #667eea;
+}
+
+.notification-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.badge.bg-blue {
+    background-color: #0d6efd !important;
+}
+
+.badge.bg-purple {
+    background-color: #667eea !important;
+}
+
+.stat-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+</style>
+
+<script>
+function markAsRead(notificationId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/notifications/${notificationId}/mark-as-read/`;
+    form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function deleteNotification(notificationId) {
+    amazingConfirm('Are you sure you want to delete this notification?').then(confirmed => {
+        if (confirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/notifications/${notificationId}/delete/`;
+            form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+function markAllAsRead() {
+    amazingConfirm('Mark all notifications as read?').then(confirmed => {
+        if (confirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/notifications/mark-all-as-read/';
+            form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+</script>
+{% endblock %}

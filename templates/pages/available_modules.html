@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Hero Banner -->
+    <div class="system-hero-banner position-relative overflow-hidden mb-5 rounded-4 shadow-sm" style="background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); padding: 3rem; color: white;">
+        <div style="position: absolute; top: -50px; right: 5%; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);"></div>
+        <div style="position: relative; z-index: 2;">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; backdrop-filter: blur(4px);">
+                    <i class="fas fa-compass fa-lg"></i>
+                </div>
+                <h2 class="mb-0 fw-bold">Open Enrollment Modules</h2>
+            </div>
+            <p class="mb-0 fs-5 text-white-50 ms-1 ps-5">Discover and join available modules to expand your workflow and participation.</p>
+        </div>
+    </div>
+
+    <!-- Modules Grid -->
+    {% if modules %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+        {% for m in modules %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)';">
+                
+                <!-- Card Header with Banner -->
+                <div style="height: 100px; position: relative; background: {{ m.color|default:'#6366f1' }};">
+                    {% if m.banner_image %}
+                        <img src="{{ m.banner_image.url }}" alt="{{ m.name }}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+                    {% else %}
+                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%);"></div>
+                    {% endif %}
+                    <div class="position-absolute" style="bottom: -24px; left: 20px;">
+                        <div class="rounded-3 shadow-sm d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: white; color: {{ m.color|default:'#6366f1' }}; border: 3px solid white;">
+                            <i class="fas {{ m.icon_class|default:'fa-folder' }} fa-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body pt-4 mt-2 px-4">
+                    <h5 class="card-title fw-bold mb-1">{{ m.name }}</h5>
+                    <p class="card-text text-muted small mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ m.description|default:"No description provided." }}
+                    </p>
+                    
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="badge bg-light text-dark fw-normal border">
+                            <i class="fas fa-tasks text-muted me-1"></i> {{ m.tasks.count }} Tasks
+                        </span>
+                        {% if m.group_link %}
+                        <span class="badge bg-light text-dark fw-normal border">
+                            <i class="fas fa-layer-group text-muted me-1"></i> {{ m.group_link.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card Footer (Enroll Action) -->
+                <div class="card-footer bg-white border-top-0 px-4 pb-4 pt-0">
+                    <form method="POST" action="{% url 'enroll-module' m.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn w-100 fw-bold rounded-3 py-2" style="background: {{ m.color|default:'var(--wt-brand)' }}; color: {{ m.contrast_text_color|default:'#ffffff' }}; border: 1px solid color-mix(in srgb, {{ m.color|default:'var(--wt-brand)' }} 40%, rgba(255,255,255,0.25)); box-shadow: 0 4px 14px color-mix(in srgb, {{ m.color|default:'var(--wt-brand)' }} 32%, transparent); transition: all 0.25s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.filter='brightness(1.08)';" onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                            <i class="fas fa-sign-in-alt me-2" style="color: inherit;"></i> <span style="color: inherit;">Join Module</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <div class="d-inline-flex align-items-center justify-content-center bg-light text-muted rounded-circle mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-box-open fa-2x"></i>
+        </div>
+        <h4 class="fw-bold text-dark">No Available Modules</h4>
+        <p class="text-muted">There are currently no modules open for open enrollment or you are already enrolled in all of them.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ wt_lang|default:'ar' }}" dir="{% if wt_lang == 'en' %}ltr{% else %}rtl{% endif %}">
+<head>
+    {% include 'public/_head.html' %}
+    <title>{% if wt_lang == 'en' %}Request an account · {{ site_config.app_name|default:"WorkTrack Pro" }}{% else %}طلب حساب · {{ site_config.app_name_ar|default:"وورك تراك برو" }}{% endif %}</title>
+</head>
+<body class="wt-public{% if wt_lang != 'en' %} rtl-mode{% endif %}" data-scene="auth">
+    <div class="lp-field-light" aria-hidden="true"></div>
+    <canvas class="lp-canvas" id="lpCanvas" aria-hidden="true"></canvas>
+
+    <main class="lp-hero" aria-labelledby="lp-title">
+        {% include 'public/_header.html' %}
+        <div class="lp-hero-body lp-auth-body">
+            <h1 class="lp-auth-title" id="lp-title">
+                <span class="lang-en">Request an account</span>
+                <span class="lang-ar">طلب حساب جديد</span>
+            </h1>
+            <p class="lp-sub">
+                <span class="lang-en">New accounts start with the worker role. An administrator can change your role and add you to modules.</span>
+                <span class="lang-ar">تبدأ الحسابات الجديدة بصلاحية موظف، ويمكن للمشرف تعديل الصلاحية وإضافتك إلى الوحدات.</span>
+            </p>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="lp-alert{% if 'success' in message.tags %} is-ok{% endif %}" role="alert">
+                    <i class="fas {% if 'success' in message.tags %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                    <span>
+                    {% if message.message == 'All fields are required.' %}<span class="lang-en">Fill in every field.</span><span class="lang-ar">يرجى تعبئة جميع الحقول.</span>
+                    {% elif message.message == 'Passwords do not match.' %}<span class="lang-en">The two passwords are different. Type the same password twice.</span><span class="lang-ar">كلمتا المرور غير متطابقتين. اكتب كلمة المرور نفسها مرتين.</span>
+                    {% elif message.message == 'Password must be at least 8 characters long.' %}<span class="lang-en">Use a password of at least 8 characters.</span><span class="lang-ar">استخدم كلمة مرور من 8 أحرف على الأقل.</span>
+                    {% elif message.message == 'Email already registered.' %}<span class="lang-en">An account already uses this email. Sign in instead, or reset the password.</span><span class="lang-ar">هذا البريد مسجّل مسبقًا. سجّل الدخول أو استعد كلمة المرور.</span>
+                    {% else %}{{ message }}{% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="lp-stack" data-stack>
+                <div class="lp-slot lp-slot--a" data-slot="a" aria-hidden="true"></div>
+                <form method="post" action="{% url 'register' %}" class="lp-module lp-module--panel" data-module novalidate>
+                    {% csrf_token %}
+                    <div class="lp-panel-grid">
+                        <div class="lp-field">
+                            <label for="reg-first"><span class="lang-en">First name</span><span class="lang-ar">الاسم</span></label>
+                            <input id="reg-first" name="first_name" type="text" required autocomplete="given-name" value="{{ request.POST.first_name|default:'' }}">
+                        </div>
+                        <div class="lp-field">
+                            <label for="reg-last"><span class="lang-en">Last name</span><span class="lang-ar">اللقب</span></label>
+                            <input id="reg-last" name="last_name" type="text" required autocomplete="family-name" value="{{ request.POST.last_name|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="lp-field">
+                        <label for="reg-email"><span class="lang-en">Work email</span><span class="lang-ar">بريد العمل</span></label>
+                        <input id="reg-email" name="email" type="email" required autocomplete="email" inputmode="email" spellcheck="false" dir="ltr" placeholder="name@organisation.com" value="{{ request.POST.email|default:'' }}">
+                    </div>
+                    <div class="lp-panel-grid">
+                        <div class="lp-field lp-field--pw">
+                            <label for="reg-pw1"><span class="lang-en">Password</span><span class="lang-ar">كلمة المرور</span></label>
+                            <input id="reg-pw1" name="password1" type="password" required minlength="8" autocomplete="new-password">
+                            <button type="button" class="lp-reveal" data-reveal="reg-pw1" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="lp-field lp-field--pw">
+                            <label for="reg-pw2"><span class="lang-en">Repeat password</span><span class="lang-ar">تأكيد كلمة المرور</span></label>
+                            <input id="reg-pw2" name="password2" type="password" required minlength="8" autocomplete="new-password">
+                            <button type="button" class="lp-reveal" data-reveal="reg-pw2" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <p class="lp-hint"><span class="lang-en">At least 8 characters.</span><span class="lang-ar">8 أحرف على الأقل.</span></p>
+                    <button type="submit" class="lp-submit">
+                        <span class="lang-en">Create account</span><span class="lang-ar">إنشاء الحساب</span>
+                        <i class="fas fa-arrow-right rtl-flip" aria-hidden="true"></i>
+                    </button>
+                </form>
+                <div class="lp-slot lp-slot--c" data-slot="c" aria-hidden="true"></div>
+            </div>
+            <div class="lp-meta">
+                <span><span class="lang-en">Already have an account?</span><span class="lang-ar">لديك حساب؟</span> <a href="{% url 'login' %}"><span class="lang-en">Sign in</span><span class="lang-ar">سجّل الدخول</span></a></span>
+            </div>
+        </div>
+        <div class="lp-hero-foot">
+            {% include 'includes/rowd_credit.html' with variant='dark' %}
+        </div>
+    </main>
+
+    <script src="{% static 'vendor/gsap/gsap.min.js' %}"></script>
+    <script src="{% static 'wt/js/public.js' %}?v=1"></script>
+    <script type="module" src="{% static 'wt/js/stack-scene.js' %}?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,801 @@
+{% extends 'base.html' %}
+
+{% block title %}Administrative Correspondence — Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ===== CORRESPONDENCE HERO BANNER ===== */
+.corr-hero {
+    background: linear-gradient(160deg, rgba(20, 6, 10, 0.85) 0%, rgba(var(--wt-brand-rgb), 0.6) 50%, rgba(120, 6, 10, 0.95) 100%),
+                var(--dashboard-banner-url) center/cover no-repeat !important;
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 60px color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent);
+}
+
+/* Animated waves at bottom */
+.corr-hero-waves {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    line-height: 0;
+    pointer-events: none;
+}
+.corr-hero-waves svg { display: block; }
+
+/* Animated orbs */
+@keyframes orb1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(20px, -15px) scale(1.05); }
+}
+@keyframes orb2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-15px, 10px) scale(0.95); }
+}
+@keyframes orb3 {
+    0%, 100% { transform: translate(0, 0); opacity: 0.15; }
+    50% { transform: translate(10px, -10px); opacity: 0.22; }
+}
+.corr-orb1 {
+    position: absolute;
+    top: -60px; right: -40px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    animation: orb1 8s ease-in-out infinite;
+}
+.corr-orb2 {
+    position: absolute;
+    bottom: -80px; left: 60px;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    animation: orb2 10s ease-in-out infinite;
+}
+.corr-orb3 {
+    position: absolute;
+    top: 20px; left: 30%;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(var(--wt-brand-rgb),0.15);
+    animation: orb3 7s ease-in-out infinite;
+}
+
+/* Dot grid */
+.corr-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.corr-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 2.5rem 2.5rem 3.5rem;
+    color: white;
+}
+
+.corr-hero-breadcrumb {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.hero-back-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    color: white; text-decoration: none;
+    transition: all 0.25s;
+}
+.hero-back-btn:hover { background: rgba(255,255,255,0.25); color: white; }
+.hero-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 50px;
+    padding: 0.3rem 1rem;
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(255,255,255,0.9);
+}
+
+.corr-hero-title {
+    font-size: 2.5rem; font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 1rem;
+}
+.corr-hero-title .title-icon {
+    width: 64px; height: 64px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.7rem;
+    backdrop-filter: blur(8px);
+}
+.corr-hero-desc { opacity: 0.8; font-size: 1rem; margin-bottom: 1.5rem; max-width: 640px; }
+.corr-hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.hero-btn-primary {
+    padding: 0.6rem 1.5rem;
+    border-radius: 50px; font-weight: 700; font-size: 0.9rem;
+    background: rgba(255,255,255,0.95); color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+    border: none; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.hero-btn-primary:hover { background: white; transform: translateY(-2px); color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); }
+.hero-btn-outline {
+    padding: 0.6rem 1.5rem;
+    border-radius: 50px; font-weight: 700; font-size: 0.9rem;
+    background: transparent; color: white;
+    border: 1px solid rgba(255,255,255,0.4);
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all 0.25s;
+}
+.hero-btn-outline:hover { background: rgba(255,255,255,0.15); color: white; transform: translateY(-2px); }
+
+/* ===== STATS GRID ===== */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+@media(max-width:992px) { .stats-row { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:576px) { .stats-row { grid-template-columns: 1fr; } }
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    position: relative; overflow: hidden;
+    transition: all 0.3s;
+}
+.stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.stat-card::before { content: ''; position: absolute; bottom:0; left:0; right:0; height:3px; }
+.stat-card.indigo::before { background: linear-gradient(90deg,#6366f1,#818cf8); }
+.stat-card.amber::before  { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+.stat-card.green::before  { background: linear-gradient(90deg,var(--color-primary, #10b981),var(--color-accent, #34d399)); }
+.stat-card.blue::before   { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+
+.stat-icon {
+    width:44px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; margin-bottom:1rem;
+}
+.stat-icon.indigo { background:rgba(99,102,241,.1); color:#6366f1; }
+.stat-icon.amber  { background:rgba(245,158,11,.1); color:#f59e0b; }
+.stat-icon.green  { background:rgba(var(--wt-brand-rgb),.1); color:var(--color-primary, #10b981); }
+.stat-icon.blue   { background:rgba(37,99,235,.1);  color:#2563eb; }
+.stat-number { font-size:2rem; font-weight:800; color:#0f172a; line-height:1; }
+.stat-label  { font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#64748b; margin-top:.25rem; }
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+    background: white;
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex; align-items: center; gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+.filter-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; white-space: nowrap; }
+.filter-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; flex: 1; }
+.filter-chip {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.8rem; font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.filter-chip:hover { border-color: #6366f1; color: #6366f1; }
+.filter-chip.active { background: #6366f1; border-color: #6366f1; color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.25); }
+
+.search-wrap { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+.search-wrap-inner { position: relative; }
+.search-wrap-inner i { position: absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem; }
+.search-wrap-inner input {
+    padding: 0.5rem 1rem 0.5rem 2.2rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    background: #f8fafc;
+    transition: all 0.25s;
+    min-width: 240px;
+}
+.search-wrap-inner input:focus { border-color: #6366f1; background: white; outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+
+/* ===== PANEL CARD ===== */
+.panel-card { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); overflow: hidden; }
+.panel-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: start; justify-content: space-between;
+    flex-wrap: wrap; gap: 0.75rem;
+}
+.panel-title { font-weight: 700; font-size: 1rem; color: #0f172a; display: flex; align-items: center; gap: .5rem; margin:0; }
+.panel-subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: .15rem; }
+
+/* ===== LIST/GRID TOGGLES ===== */
+.layout-toggles { display: flex; background: white; border-radius: 50px; padding: 2px; border: 1.5px solid #e2e8f0; }
+.corr-layout-btn {
+    border: none; background: transparent; padding: .35rem .75rem; border-radius: 50px;
+    color: #94a3b8; font-size: .85rem; transition: all .2s; cursor: pointer;
+}
+.corr-layout-btn:hover { color: #6366f1; }
+.corr-layout-btn.active { background: #6366f1; color: white; box-shadow: 0 2px 6px rgba(99,102,241,.25); }
+
+/* ===== CONTAINER STRUCTURE ===== */
+.corr-container { display: flex; flex-direction: column; }
+.corr-header {
+    display: flex; align-items: center; font-weight: 700; font-size: .74rem; 
+    text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; 
+    padding: .85rem 1rem .85rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #f1f5f9;
+}
+.corr-item {
+    display: flex; align-items: center; background: white; 
+    border-bottom: 1px solid #f1f5f9; padding: .9rem 1rem .9rem 1.5rem; 
+    transition: background .2s;
+}
+.corr-item:hover { background: #fafbff; }
+.corr-item:last-child { border-bottom: none; }
+
+/* Grid specific text visibility */
+.grid-label { display: none; }
+
+/* Thumbnail styles */
+.corr-thumb {
+    width: 48px; height: 48px;
+    border-radius: 8px; object-fit: cover;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+.corr-thumb-placeholder {
+    width: 48px; height: 48px;
+    border-radius: 8px; background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    color: #94a3b8; flex-shrink: 0;
+}
+
+/* ===== GRID VIEW OVERRIDES ===== */
+.corr-grid-view {
+    padding: 1.25rem;
+    background: #f8fafc; /* slight off-white bg for grid area */
+    border-radius: 0 0 16px 16px;
+}
+.corr-grid-view #corrTableBody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+.corr-grid-view .corr-header { display: none !important; }
+.corr-grid-view .corr-item {
+    display: flex; flex-flow: row wrap; justify-content: space-between; align-items: flex-start;
+    border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+}
+.corr-grid-view .corr-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    background: white;
+}
+
+/* Grid columns layout adjustment */
+.corr-grid-view .corr-col { width: 48% !important; margin-bottom: 0.85rem; padding: 0 !important; flex-direction: column; align-items: flex-start; }
+.corr-grid-view .corr-col.c-subject { display: flex; flex-direction: column; width: 100% !important; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem !important; }
+.corr-grid-view .corr-col.c-subject .d-flex { display: flex; flex-direction: row; align-items: stretch !important; gap: 0 !important; }
+.corr-grid-view .corr-col.c-subject img, .corr-grid-view .corr-col.c-subject .corr-thumb-placeholder { margin-right: 1rem; margin-bottom: 0; width: 48px; height: 48px; }
+.corr-grid-view .corr-col.c-action { margin-bottom: 0; margin-top: auto; display: flex; justify-content: flex-end; width: 100% !important; border-top: 1px dashed #e2e8f0; padding-top: .85rem !important; }
+.corr-grid-view .grid-label { display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.25rem; }
+.corr-grid-view .d-flex-align { display: flex; align-items: flex-start; }
+
+/* Desktop Flex Widths (List View) */
+.corr-list-view .c-subject  { width: 30%; padding-right: 1rem; }
+.corr-list-view .c-type     { width: 12%; padding-right: 1rem; }
+.corr-list-view .c-module   { width: 15%; padding-right: 1rem; }
+.corr-list-view .c-priority { width: 10%; padding-right: 1rem; }
+.corr-list-view .c-deadline { width: 10%; padding-right: 1rem; }
+.corr-list-view .c-ack      { width: 15%; padding-right: 1rem; }
+.corr-list-view .c-action   { width: 8%; text-align: right; justify-content: flex-end; }
+
+/* ===== CHIPS ===== */
+.chip { display:inline-flex; align-items:center; gap:4px; padding:.3rem .75rem; border-radius:99px; font-size:.78rem; font-weight:600; }
+.chip-indigo { background:rgba(99,102,241,.1); color:#4338ca; border:1px solid rgba(99,102,241,.2); }
+.chip-red    { background:rgba(192, 40, 58,.1);  color:var(--color-primary, #10b981); border:1px solid rgba(192, 40, 58,.2); }
+.chip-amber  { background:rgba(245,158,11,.1); color:#d97706; border:1px solid rgba(245,158,11,.2); }
+.chip-green  { background:rgba(var(--wt-brand-rgb),.1); color:var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); border:1px solid rgba(var(--wt-brand-rgb),.2); }
+.chip-gray   { background:rgba(15,23,42,.06);  color:#334155; border:1px solid rgba(15,23,42,.15); }
+.chip-success { background:#fee2e2; color:color-mix(in oklab, var(--wt-brand) 62%, #000); }
+.chip-warning { background:#fef9c3; color:#854d0e; }
+.chip-danger  { background:#fee2e2; color:color-mix(in oklab, var(--wt-bad) 70%, #000); }
+.chip-secondary { background:#f1f5f9; color:#475569; }
+.chip-info   { background:#dbeafe; color:#1e40af; }
+
+/* ===== ACK PROGRESS ===== */
+.ack-bar { height: 6px; border-radius: 99px; background: #f1f5f9; overflow: hidden; margin-bottom: 3px; }
+.ack-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #6366f1, #818cf8); transition: width 1s ease; }
+
+/* ===== BUTTONS ===== */
+.btn-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: .4rem 1rem; border-radius: 50px;
+    font-size: .8rem; font-weight: 600;
+    border: 1.5px solid #e2e8f0; background: white; color: #334155;
+    text-decoration: none; transition: all .2s;
+}
+.btn-pill:hover { border-color: #94a3b8; background: #f8fafc; color: #0f172a; transform: translateY(-1px); }
+.btn-pill-indigo { background: #6366f1; border-color: #6366f1; color: white; }
+.btn-pill-indigo:hover { filter: brightness(1.1); color: white; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { text-align: center; padding: 3.5rem 2rem; }
+.empty-state-icon { font-size: 3.5rem; opacity: .15; margin-bottom: 1rem; color: #6366f1; }
+.empty-state h5 { font-weight: 700; color: #334155; margin-bottom: .5rem; }
+.empty-state p { color: #94a3b8; margin: 0; }
+
+/* ===== PAGINATION ===== */
+.pagination-wrap { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:.75rem; }
+.pagination { display:flex; gap:4px; list-style:none; margin:0; padding:0; }
+.pagination .page-item .page-link { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; border:1.5px solid #e2e8f0; background:white; color:#475569; font-size:.875rem; font-weight:600; cursor:pointer; text-decoration:none; transition:all .2s; }
+.pagination .page-item.active .page-link { background:#6366f1; border-color:#6366f1; color:white; }
+.pagination .page-item .page-link:hover:not([disabled]) { border-color:#6366f1; color:#6366f1; background:#f8fafc; }
+
+
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== PERSONAL HERO BANNER ===== -->
+    <div class="corr-hero">
+        <div class="corr-orb1"></div>
+        <div class="corr-orb2"></div>
+        <div class="corr-orb3"></div>
+
+        <div class="corr-hero-content">
+            <div class="corr-hero-breadcrumb">
+                <a href="{% if selected_module %}{% url 'module-dashboard' module_slug=selected_module.slug %}{% else %}/dashboard/{% endif %}" class="hero-back-btn">
+                    <i class="fas fa-arrow-left" style="font-size:.8rem;"></i>
+                </a>
+                <span class="hero-badge"><i class="fas fa-shield-alt me-1"></i><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></span>
+                {% if selected_module %}
+                    <span style="color:rgba(255,255,255,.45); font-size:.85rem;">/ {{ selected_module.name }}</span>
+                {% endif %}
+            </div>
+
+            <div class="corr-hero-title">
+                <div class="title-icon">
+                    <i class="fas fa-envelope-open-text"></i>
+                </div><span class="lang-en">Administrative Correspondence</span><span class="lang-ar">المراسلات الإدارية</span></div>
+
+            <p class="corr-hero-desc">
+                Official circulars, directives, memos, and notices requiring formal acknowledgement.
+                {% if user.role == 'worker' %}Your personal correspondence inbox — track, review, and acknowledge.
+                {% else %}Full oversight for your organisation's administrative communications.{% endif %}
+            </p>
+
+            <div class="corr-hero-actions">
+                {% if user.role in 'manager,super_admin' %}
+                <a href="{% url 'correspondence-create' %}{% if request.GET.module %}?module={{ request.GET.module }}{% endif %}" class="hero-btn-primary">
+                    <i class="fas fa-plus"></i> Issue New Correspondence
+                </a>
+
+                {% endif %}
+                <a href="{% if selected_module %}{% url 'module-dashboard' module_slug=selected_module.slug %}{% else %}/dashboard/{% endif %}" class="hero-btn-outline">
+                    <i class="fas {% if selected_module %}fa-layer-group{% else %}fa-th-large{% endif %}"></i> Back to {% if selected_module %}{{ selected_module.name }}{% else %}Dashboard{% endif %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Wave separator -->
+        <div class="corr-hero-waves">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 60" preserveAspectRatio="none" style="height:50px; width:100%;">
+                <path fill="#f1f5f9" fill-opacity="1" d="M0,32L80,37.3C160,43,320,53,480,53.3C640,53,800,43,960,37.3C1120,32,1280,32,1360,32L1440,32L1440,60L1360,60C1280,60,1120,60,960,60C800,60,640,60,480,60C320,60,160,60,80,60L0,60Z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ===== STATS ===== -->
+    <div class="stats-row">
+        <div class="stat-card indigo">
+            <div class="stat-icon indigo"><i class="fas fa-envelope-open-text"></i></div>
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card amber">
+            <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
+            <div class="stat-number">{{ stats.pending_ack }}</div>
+            <div class="stat-label">Pending Acknowledgement</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+            <div class="stat-number">{{ stats.fully_acknowledged }}</div>
+            <div class="stat-label">Fully Acknowledged</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-number">{{ stats.modules_count }}</div>
+            <div class="stat-label">Active Modules</div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- ===== FILTER BAR ===== -->
+    <div class="filter-bar">
+        <span class="filter-label"><i class="fas fa-filter me-1"></i> Filter:</span>
+        <div class="filter-chips">
+            <button class="filter-chip active" data-filter="all">All Types</button>
+            <button class="filter-chip" data-filter="circular"><i class="fas fa-circle-notch me-1"></i>Circular</button>
+            <button class="filter-chip" data-filter="directive"><i class="fas fa-arrow-right me-1"></i>Directive</button>
+            <button class="filter-chip" data-filter="memo"><i class="fas fa-sticky-note me-1"></i>Memo</button>
+            <button class="filter-chip" data-filter="notice"><i class="fas fa-bell me-1"></i>Notice</button>
+            <button class="filter-chip" data-filter="decision"><i class="fas fa-gavel me-1"></i>Decision</button>
+        </div>
+        <div class="search-wrap">
+            <div class="search-wrap-inner">
+                <i class="fas fa-search"></i>
+                <input type="text" id="corrSearchInput" placeholder="Search correspondence...">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN TABLE ===== -->
+    <div class="panel-card">
+        <div class="panel-header align-items-center">
+            <div>
+                <p class="panel-title"><i class="fas fa-list" style="color:#6366f1;"></i> Correspondence Registry</p>
+                <p class="panel-subtitle">{{ correspondence_items|length }} item{{ correspondence_items|length|pluralize }} in total</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                {% if selected_module %}
+                <a href="{% url 'admin-correspondence' %}" class="btn-pill"><i class="fas fa-globe"></i> View All Modules</a>
+                {% endif %}
+                <div class="layout-toggles">
+                    <button type="button" class="corr-layout-btn active" data-layout="list" title="List View"><i class="fas fa-list"></i></button>
+                    <button type="button" class="corr-layout-btn" data-layout="grid" title="Grid View"><i class="fas fa-th-large"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="corr-container corr-list-view" id="corrContainer">
+            <div class="corr-header">
+                <div class="corr-col c-subject">Subject &amp; Reference</div>
+                <div class="corr-col c-type">Type</div>
+                <div class="corr-col c-module">Module</div>
+                <div class="corr-col c-priority"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></div>
+                <div class="corr-col c-deadline">Deadline</div>
+                <div class="corr-col c-ack">Acknowledgement</div>
+                <div class="corr-col c-action"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></div>
+            </div>
+            
+            <div id="corrTableBody">
+                {% for item in correspondence_items %}
+                <div class="corr-item corr-row"
+                     data-type="{{ item.correspondence_type|default:'other' }}"
+                     data-attachment="{% if item.attachment %}{{ item.attachment.url }}{% endif %}"
+                     data-pdf="{% if item.pdf_version %}{{ item.pdf_version.url }}{% endif %}"
+                     data-cover="{% if item.cover_image %}{{ item.cover_image.url }}{% endif %}"
+                     data-title="{{ item.title|escapejs }}"
+                     data-corrtype="{% if item.correspondence_type == 'circular' %}Circular{% elif item.correspondence_type == 'directive' %}Directive{% elif item.correspondence_type == 'memo' %}Memo{% elif item.correspondence_type == 'notice' %}Notice{% elif item.correspondence_type == 'decision' %}Decision{% else %}Correspondence{% endif %}"
+                     data-module="{% if item.work_module %}{{ item.work_module.name|escapejs }}{% endif %}"
+                     data-taskurl="{{ item.detail_url }}"
+                     style="cursor:pointer;"
+                     onclick="window.location.href='{{ item.detail_url }}'">
+                    <div class="corr-col c-subject">
+                        <div class="d-flex align-items-center gap-3 w-100">
+                            {% if item.cover_image %}
+                                <img src="{{ item.cover_image.url }}" class="corr-thumb" alt="Cover Image">
+                            {% else %}
+                                <div class="corr-thumb-placeholder">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div class="fw-bold text-dark corr-search-title">
+                                    {{ item.title }}
+                                    {% if item.source == 'correspondence' %}
+                                        <span style="font-size:0.65rem;font-weight:700;background:#eef2ff;color:#6366f1;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:middle;border:1px solid #c7d2fe;">NEW</span>
+                                    {% endif %}
+                                </div>
+                                {% if item.reference_number %}
+                                    <div class="small text-muted mt-1">
+                                        <i class="fas fa-hashtag me-1" style="color:#6366f1;"></i>
+                                        <span class="corr-search-ref">{{ item.reference_number }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="corr-col c-type d-flex-align">
+                        <span class="grid-label">Type:</span>
+                        {% if item.correspondence_type == 'circular' %}
+                            <span class="chip chip-indigo"><i class="fas fa-circle-notch"></i> Circular</span>
+                        {% elif item.correspondence_type == 'directive' %}
+                            <span class="chip chip-red"><i class="fas fa-arrow-right"></i> Directive</span>
+                        {% elif item.correspondence_type == 'memo' %}
+                            <span class="chip chip-amber"><i class="fas fa-sticky-note"></i> Memo</span>
+                        {% elif item.correspondence_type == 'notice' %}
+                            <span class="chip chip-green"><i class="fas fa-bell"></i> Notice</span>
+                        {% elif item.correspondence_type == 'decision' %}
+                            <span class="chip chip-gray"><i class="fas fa-gavel"></i> Decision</span>
+                        {% else %}
+                            <span class="chip chip-secondary"><i class="fas fa-envelope"></i><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="corr-col c-module d-flex-align">
+                        <span class="grid-label">Module:</span>
+                        {% if item.work_module %}
+                            <a href="{% url 'module-dashboard' module_slug=item.work_module.slug %}" class="module-badge text-decoration-none">
+                                <i class="fas {{ item.work_module.icon_class|default:'fa-layer-group' }}"></i>
+                                {{ item.work_module.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="corr-col c-priority d-flex-align">
+                        <span class="grid-label">Priority:</span>
+                        {% if item.priority == 'high' or item.priority == 'critical' %}
+                            <span class="chip chip-danger"><i class="fas fa-arrow-up"></i> High</span>
+                        {% elif item.priority == 'medium' %}
+                            <span class="chip chip-warning"><i class="fas fa-minus"></i> Medium</span>
+                        {% else %}
+                            <span class="chip chip-info"><i class="fas fa-arrow-down"></i> Low</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="corr-col c-deadline d-flex-align">
+                        <span class="grid-label">Deadline:</span>
+                        {% if item.deadline %}
+                            <span class="fw-semibold small text-dark">{{ item.deadline|date:"M d, Y" }}</span>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="corr-col c-ack">
+                        <span class="grid-label d-block mb-1">Status:</span>
+                        {% if item.total_assigned > 0 and item.acknowledged_count >= item.total_assigned %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-1 px-2 rounded-pill"><i class="fas fa-check-double me-1"></i> Completed ({{ item.total_assigned }}/{{ item.total_assigned }})</span>
+                        {% elif item.total_assigned > 0 %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 py-1 px-2 rounded-pill"><i class="fas fa-hourglass-half me-1"></i> Pending ({{ item.acknowledged_count }}/{{ item.total_assigned }})</span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 py-1 px-2 rounded-pill"><i class="fas fa-info-circle me-1"></i> Unassigned</span>
+                        {% endif %}
+                        <div class="mt-1 ps-1">
+                            {% if item.user_acked %}
+                                <span class="text-success fw-bold" style="font-size:.7rem;"><i class="fas fa-check"></i> You Ack'd</span>
+                            {% elif user.role == 'worker' and item.total_assigned > 0 %}
+                                <span class="text-danger fw-bold" style="font-size:.7rem;"><i class="fas fa-exclamation-circle"></i> Requires Your Ack</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="corr-col c-action d-flex flex-row gap-2">
+                        <!-- Stop click propagation on action buttons so they don't open the preview -->
+                        {% if not item.user_acked and user.role == 'worker' %}
+                        <a href="{{ item.detail_url }}" class="btn-pill btn-pill-indigo" onclick="event.stopPropagation()">
+                            <i class="fas fa-check-circle"></i> Ack
+                        </a>
+                        {% else %}
+                        <a href="{{ item.detail_url }}" class="btn-pill" onclick="event.stopPropagation()">
+                            <i class="fas fa-eye"></i><span class="lang-en">View</span><span class="lang-ar">عرض</span></a>
+                        {% endif %}
+                        {% if user.role in 'manager,super_admin' %}
+                        <a href="{{ item.edit_url }}" class="btn-pill" title="Edit" onclick="event.stopPropagation()">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% if item.source == 'correspondence' %}
+                        <form method="POST" action="{{ item.delete_url }}" style="display:inline;" onclick="event.stopPropagation();" onsubmit="event.preventDefault(); amazingConfirm('Delete this correspondence?').then(c => { if(c) this.submit(); });">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-pill" style="color:var(--wt-bad);border-color:rgba(192, 40, 58,0.2);" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <button type="button" class="btn-pill" onclick="event.stopPropagation(); deleteTask('{{ item.obj.id }}')" style="color:var(--wt-bad);border-color:rgba(192, 40, 58,0.2);" title="Delete">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-4 w-100 placeholder-row">
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="fas fa-envelope-open-text"></i></div>
+                        <h5>No Correspondence Items</h5>
+                        <p>No administrative correspondence has been issued yet.</p>
+                        {% if user.role in 'manager,super_admin' %}
+                        <a href="{% url 'correspondence-create' %}{% if request.GET.module %}?module={{ request.GET.module }}{% endif %}" class="btn-pill btn-pill-indigo mt-3 d-inline-flex">
+                            <i class="fas fa-plus"></i> Issue First Correspondence
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="noCorrResults" class="empty-state" style="display:none;">
+                <div class="empty-state-icon"><i class="fas fa-search"></i></div>
+                <h5>No Results Found</h5>
+                <p>Try different search terms or clear your filter.</p>
+            </div>
+        </div>
+
+        <div class="pagination-wrap" id="corrPaginationWrap" style="display:none;">
+            <div class="small text-muted fw-semibold">
+                Showing <span id="corrPageStart">0</span>–<span id="corrPageEnd">0</span> of <span id="corrTotal">0</span>
+            </div>
+            <ul class="pagination" id="corrPaginationControls"></ul>
+        </div>
+    </div>
+
+
+
+</div><!-- end container-fluid -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const allRows = Array.from(document.querySelectorAll('.corr-row'));
+    const tbody = document.getElementById('corrTableBody');
+    const noResults = document.getElementById('noCorrResults');
+    const paginationWrap = document.getElementById('corrPaginationWrap');
+    const paginationControls = document.getElementById('corrPaginationControls');
+    const searchInput = document.getElementById('corrSearchInput');
+    const ITEMS_PER_PAGE = 15;
+    let currentPage = 1;
+    let activeFilter = 'all';
+    let filteredRows = [...allRows];
+
+    // Filter chips
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            activeFilter = this.dataset.filter;
+            applyFilters();
+        });
+    });
+
+    // Search
+    searchInput.addEventListener('input', applyFilters);
+
+    function applyFilters() {
+        const q = searchInput.value.toLowerCase().trim();
+        filteredRows = allRows.filter(row => {
+            const typeMatch = activeFilter === 'all' || row.dataset.type === activeFilter;
+            const titleEl = row.querySelector('.corr-search-title');
+            const refEl = row.querySelector('.corr-search-ref');
+            const textMatch = !q ||
+                (titleEl && titleEl.textContent.toLowerCase().includes(q)) ||
+                (refEl && refEl.textContent.toLowerCase().includes(q));
+            return typeMatch && textMatch;
+        });
+        currentPage = 1;
+        render();
+    }
+
+    function render() {
+        const n = filteredRows.length;
+        const pages = Math.ceil(n / ITEMS_PER_PAGE);
+        allRows.forEach(r => r.style.display = 'none');
+
+        if (n === 0) {
+            noResults.style.display = 'block';
+            tbody.style.display = 'none';
+            paginationWrap.style.display = 'none';
+            return;
+        }
+        noResults.style.display = 'none';
+        tbody.style.display = '';
+
+        const s = (currentPage - 1) * ITEMS_PER_PAGE;
+        const e = Math.min(s + ITEMS_PER_PAGE, n);
+        for (let i = s; i < e; i++) filteredRows[i].style.display = '';
+
+        document.getElementById('corrPageStart').textContent = s + 1;
+        document.getElementById('corrPageEnd').textContent = e;
+        document.getElementById('corrTotal').textContent = n;
+
+        if (pages > 1) {
+            paginationWrap.style.display = 'flex';
+            let html = '';
+            html += `<li class="page-item ${currentPage===1?'disabled':''}"><button class="page-link" onclick="__corrGoPage(${currentPage-1})"><i class="fas fa-chevron-left small"></i></button></li>`;
+            for (let i = 1; i <= pages; i++) {
+                html += `<li class="page-item ${i===currentPage?'active':''}"><button class="page-link" onclick="__corrGoPage(${i})">${i}</button></li>`;
+            }
+            html += `<li class="page-item ${currentPage===pages?'disabled':''}"><button class="page-link" onclick="__corrGoPage(${currentPage+1})"><i class="fas fa-chevron-right small"></i></button></li>`;
+            paginationControls.innerHTML = html;
+        } else {
+            paginationWrap.style.display = 'none';
+        }
+    }
+
+    window.__corrGoPage = function(page) {
+        const MathCeil = Math.ceil(filteredRows.length / ITEMS_PER_PAGE);
+        if (page < 1 || page > MathCeil) return;
+        currentPage = page;
+        render();
+    };
+
+    if (allRows.length > 0) render();
+
+    // VIEW TOGGLE LOGIC
+    const layoutBtns = document.querySelectorAll('.corr-layout-btn');
+    const corrContainer = document.getElementById('corrContainer');
+    const savedLayout = localStorage.getItem('corrLayout') || 'list';
+    
+    function setLayout(layout) {
+        if (!corrContainer) return;
+        
+        layoutBtns.forEach(btn => {
+            if (btn.dataset.layout === layout) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        if (layout === 'grid') {
+            corrContainer.classList.remove('corr-list-view');
+            corrContainer.classList.add('corr-grid-view');
+        } else {
+            corrContainer.classList.remove('corr-grid-view');
+            corrContainer.classList.add('corr-list-view');
+        }
+        localStorage.setItem('corrLayout', layout);
+    }
+    
+    // Set initial layout
+    setLayout(savedLayout);
+    
+    // Add click listeners to buttons
+    layoutBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            setLayout(this.dataset.layout);
+        });
+    });
+});
+
+async function deleteTask(taskId) {
+    const confirmed = await amazingConfirm({
+        title: 'Delete Correspondence?',
+        text: 'This action cannot be undone and will permanently remove this correspondence item.',
+        confirmButtonText: 'Yes, Delete Correspondence'
+    });
+
+    if (confirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/delete/`;
+        form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+
+</script>
+{% endblock %}

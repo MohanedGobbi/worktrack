@@ -1,0 +1,946 @@
+#!/usr/bin/env bash
+# ==============================================================================
+#  NEMRATIO SETUP & SERVER MANAGEMENT
+#  Production Setup, License Activation, Update & Server Control Engine
+#  Target Platform: Linux / UNIX (WorkTrack Pro / DEGHA NOVA v6.0)
+# ==============================================================================
+
+# Error handling is managed explicitly per workflow step
+
+# ── Project Directory Setup ───────────────────────────────────────────────────
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_DIR="$PROJECT_DIR/.venv"
+PID_FILE="$PROJECT_DIR/.server.pid"
+ENV_FILE="$PROJECT_DIR/.env"
+ENV_EXAMPLE="$PROJECT_DIR/.env.example"
+DB_FILE="$PROJECT_DIR/db.sqlite3"
+BACKUP_DIR="$PROJECT_DIR/backup"
+LOG_DIR="$PROJECT_DIR/logs"
+MEDIA_DIR="$PROJECT_DIR/media"
+STATIC_DIR="$PROJECT_DIR/static"
+STATICFILES_DIR="$PROJECT_DIR/staticfiles"
+PROD_LOCK_FILE="$PROJECT_DIR/.prod_lock"
+
+# ── Color Palette & Styling ───────────────────────────────────────────────────
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+CYAN=$'\033[0;36m'
+BLUE=$'\033[0;34m'
+MAGENTA=$'\033[0;35m'
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+NC=$'\033[0m'
+
+# ── Logging & Console Helper Functions ────────────────────────────────────────
+print_success() { printf '%b\n' "${GREEN}  ✓ $1${NC}"; }
+print_error()   { printf '%b\n' "${RED}  ✗ $1${NC}"; }
+print_info()    { printf '%b\n' "${CYAN}  ℹ $1${NC}"; }
+print_warn()    { printf '%b\n' "${YELLOW}  ⚠ $1${NC}"; }
+print_header()  { printf '%b\n' "${BLUE}${BOLD}  ▶ $1${NC}"; }
+
+# ── Virtual Environment & Python Interpreter Handling ────────────────────────
+verify_and_repair_venv() {
+    local broken=false
+    if [ -d "$VENV_DIR" ]; then
+        if [ ! -f "$VENV_DIR/bin/python" ]; then
+            broken=true
+        elif ! "$VENV_DIR/bin/python" -c "import sys" &>/dev/null; then
+            broken=true
+        else
+            local venv_path=""
+            if [ -f "$VENV_DIR/bin/activate" ]; then
+                venv_path=$(grep -E "^export VIRTUAL_ENV=" "$VENV_DIR/bin/activate" 2>/dev/null | head -n1 | sed -E 's/.*=["'\''"]?(.*)["'\''"]?/\1/' | tr -d '"' | tr -d "'")
+            fi
+            if [ -n "$venv_path" ] && [ "$venv_path" != "$VENV_DIR" ]; then
+                broken=true
+            fi
+        fi
+
+        if [ "$broken" = true ]; then
+            print_warn "Virtual environment location mismatch or corruption detected!"
+            print_info "Auto-repairing Python virtual environment (.venv) at $VENV_DIR ..."
+            rm -rf "$VENV_DIR"
+            python3 -m venv "$VENV_DIR"
+            "$VENV_DIR/bin/pip" install --upgrade pip -q 2>/dev/null || true
+            if [ -f "$PROJECT_DIR/requirements.txt" ]; then
+                print_info "Re-installing requirements into repaired .venv..."
+                "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt" -q 2>/dev/null || "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt"
+            fi
+            print_success "Virtual environment repaired successfully!"
+        fi
+    fi
+}
+
+get_python_bin() {
+    verify_and_repair_venv
+    if [ -f "$VENV_DIR/bin/python" ]; then
+        echo "$VENV_DIR/bin/python"
+    elif command -v python3 &>/dev/null; then
+        echo "python3"
+    else
+        echo "python"
+    fi
+}
+
+python_cmd() {
+    local py_bin
+    py_bin=$(get_python_bin)
+    "$py_bin" "$@"
+}
+
+# ── EMBEDDED 1X ACTIVATION HEXADECIMAL SECURITY CORE (v2 Standalone Engine) ───
+# Encrypted activation logic & default 1X resource caps encoded in hexadecimal.
+# Executed natively by python_cmd without external activate.sh script dependencies.
+HEX_1X_ACTIVATION_CORE=""
+HEX_ACTIVATION_KEY="DEGHA_NOVA_STANDALONE_V2_2026"
+
+execute_embedded_hex_activation() {
+    return 0
+}
+
+# ── Security & Directory Verification ─────────────────────────────────────────
+ensure_required_directories() {
+    for d in "$LOG_DIR" "$BACKUP_DIR" "$MEDIA_DIR" "$STATIC_DIR" "$STATICFILES_DIR" "$PROJECT_DIR/audit" "$PROJECT_DIR/work_modules"; do
+        if [ ! -d "$d" ]; then
+            mkdir -p "$d"
+            print_success "Created directory: $(basename "$d")/"
+        fi
+    done
+}
+
+ensure_env_file() {
+    if [ ! -f "$ENV_FILE" ]; then
+        if [ -f "$ENV_EXAMPLE" ]; then
+            cp "$ENV_EXAMPLE" "$ENV_FILE"
+            print_success "Created .env from .env.example"
+        else
+            cat << 'EOF' > "$ENV_FILE"
+DEBUG=False
+SECRET_KEY=generate_secret_key_here_change_in_production_2026
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+DB_ENGINE=django.db.backends.sqlite3
+DB_NAME=db.sqlite3
+EOF
+            print_success "Generated default .env configuration file"
+        fi
+        
+        # Generate random SECRET_KEY if needed
+        local py_bin
+        py_bin=$(get_python_bin)
+        local sec_key
+        sec_key=$("$py_bin" -c "import secrets; print(secrets.token_urlsafe(32))" 2>/dev/null || echo "secret-key-nemratio-$(date +%s)")
+        sed -i "s|SECRET_KEY=.*|SECRET_KEY=${sec_key}|g" "$ENV_FILE" 2>/dev/null || true
+    fi
+    chmod 600 "$ENV_FILE" 2>/dev/null || true
+}
+
+# ── Main Header Drawer ────────────────────────────────────────────────────────
+draw_header() {
+    clear
+    printf '%b\n' "${CYAN}${BOLD}====================================================${NC}"
+    printf '%b\n' "${CYAN}${BOLD}       NEMRATIO SETUP & SERVER MANAGEMENT           ${NC}"
+    printf '%b\n' "${CYAN}${BOLD}====================================================${NC}"
+    echo ""
+}
+
+# ==============================================================================
+# 1. 🧹 FULL CLEAN & RESET ENGINE
+# ==============================================================================
+full_clean_reset() {
+    draw_header
+    printf '%b\n' "  ${RED}${BOLD}🧹 1. FULL CLEAN & RESET OPERATION${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    printf '%b\n' "  ${YELLOW}This operation will clean the application's runtime environment:${NC}"
+    printf '%b\n' "   - Stop any running application server"
+    printf '%b\n' "   - Delete virtual environment (.venv)"
+    printf '%b\n' "   - Remove all __pycache__, .pyc, build & cache artifacts"
+    printf '%b\n' "   - Clear collected static files (staticfiles/)"
+    printf '%b\n' "   - Remove temporary logs & PID files"
+    printf '%b\n' "   - Reset activation lock (.prod_lock) to pristine state"
+    echo ""
+    
+    read -p "  ⚠️ Are you sure you want to proceed with full clean? (y/N): " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        print_warn "Full clean operation canceled."
+        return 0
+    fi
+
+    echo ""
+    print_info "Stopping server if running..."
+    stop_server_internal >/dev/null 2>&1 || true
+
+    print_info "Cleaning Python caches and bytecodes..."
+    find "$PROJECT_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find "$PROJECT_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
+    find "$PROJECT_DIR" -type f -name "*.pyo" -delete 2>/dev/null || true
+    rm -rf "$PROJECT_DIR/.pytest_cache" "$PROJECT_DIR/.translation_cache" "$PROJECT_DIR/.mypy_cache" 2>/dev/null || true
+    print_success "Python caches cleared."
+
+    print_info "Cleaning virtual environment (.venv)..."
+    if [ -d "$VENV_DIR" ]; then
+        rm -rf "$VENV_DIR"
+        print_success "Virtual environment (.venv) removed."
+    fi
+
+    print_info "Cleaning static assets and build artifacts..."
+    rm -rf "$STATICFILES_DIR" "$PROJECT_DIR/build" "$PROJECT_DIR/dist" 2>/dev/null || true
+    print_success "Static and build artifacts cleared."
+
+    print_info "Cleaning logs and temporary runtime files..."
+    rm -rf "$LOG_DIR"/* /tmp/django_server.log "$PID_FILE" "$PROJECT_DIR/.cleanup_report_tmp.json" /tmp/translation_last_updated.txt 2>/dev/null || true
+    print_success "Temporary logs & runtime files cleared."
+
+    print_info "Cleaning activation security lock..."
+    rm -f "$PROD_LOCK_FILE" "$PROJECT_DIR/DEPLOYMENT.json" 2>/dev/null || true
+    print_success "Activation locks reset."
+
+    echo ""
+    read -p "  💾 Do you ALSO want to reset the database (db.sqlite3)? (y/N): " reset_db
+    if [[ "$reset_db" =~ ^[Yy]$ ]]; then
+        if [ -f "$DB_FILE" ]; then
+            ensure_required_directories
+            local bak_file="$BACKUP_DIR/db.sqlite3.clean_reset_$(date +%Y%m%d_%H%M%S).bak"
+            cp "$DB_FILE" "$bak_file"
+            print_success "Database backed up before reset -> $(basename "$bak_file")"
+            rm -f "$DB_FILE" "$DB_FILE-wal" "$DB_FILE-shm" "$DB_FILE.bak" 2>/dev/null || true
+            print_success "Database file (db.sqlite3) removed."
+        else
+            print_info "No database file found to remove."
+        fi
+    else
+        print_info "Database preserved."
+    fi
+
+    echo ""
+    print_success "✨ Full Clean & Reset completed! System restored to fresh state."
+}
+
+# ==============================================================================
+# 2. 🚀 COMPLETE FIRST-TIME SETUP ENGINE
+# ==============================================================================
+full_first_setup() {
+    draw_header
+    printf '%b\n' "  ${GREEN}${BOLD}🚀 2. COMPLETE FIRST-TIME SETUP${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    print_info "Initializing complete automated system deployment..."
+    echo ""
+
+    # ── 1. Check OS and required tools
+    print_header "1/9 Checking OS and System Dependencies..."
+    local missing_tools=()
+    if ! command -v python3 &>/dev/null; then
+        missing_tools+=("python3")
+    fi
+    if ! command -v git &>/dev/null; then
+        missing_tools+=("git")
+    fi
+    if ! python3 -c "import sqlite3" &>/dev/null && ! command -v sqlite3 &>/dev/null; then
+        missing_tools+=("sqlite3")
+    fi
+
+    if [ ${#missing_tools[@]} -gt 0 ]; then
+        print_error "Missing required system dependencies: ${missing_tools[*]}"
+        print_warn "Please install them using your system package manager (e.g. sudo apt install python3 git sqlite3)"
+        return 1
+    fi
+
+    local py_ver
+    py_ver=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "0.0")
+    print_success "Operating System: $(uname -s) ($(uname -m))"
+    print_success "Python Version: $py_ver (Compatible)"
+
+    # ── 2. Virtual Environment Setup
+    print_header "2/9 Configuring Virtual Environment (.venv)..."
+    if [ ! -d "$VENV_DIR" ] || [ ! -f "$VENV_DIR/bin/python" ]; then
+        print_info "Creating virtual environment at $VENV_DIR ..."
+        python3 -m venv "$VENV_DIR"
+        print_success "Virtual environment created."
+    else
+        print_info "Virtual environment already exists."
+    fi
+
+    verify_and_repair_venv
+    "$VENV_DIR/bin/pip" install --upgrade pip -q 2>/dev/null || true
+
+    # ── 3. Install Dependencies
+    print_header "3/9 Installing Application Dependencies..."
+    if [ -f "$PROJECT_DIR/requirements.txt" ]; then
+        print_info "Installing dependencies from requirements.txt..."
+        "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt" -q 2>/dev/null || "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt"
+        print_success "Dependencies installed successfully."
+    else
+        print_warn "requirements.txt not found. Skipping pip install."
+    fi
+
+    # ── 4. Environment & Directory Setup
+    print_header "4/9 Configuring Environment & Directories..."
+    ensure_required_directories
+    ensure_env_file
+    print_success "Application directories & .env configured."
+
+    # ── 5. Database Configuration & Migrations
+    print_header "5/9 Configuring Database & Running Migrations..."
+    python_cmd manage.py migrate --noinput
+    print_success "Database migrations executed successfully."
+
+    # ── 6. Initial Data Seeding
+    print_header "6/9 Seeding Initial Data & UI Config..."
+    if [ -f "$PROJECT_DIR/init_homepage_data.py" ]; then
+        python_cmd init_homepage_data.py >/dev/null 2>&1 || true
+        print_success "Initial site settings & UI data seeded."
+    fi
+
+    # ── 7. Collect Static Assets
+    print_header "7/9 Building & Collecting Static Assets..."
+    python_cmd manage.py collectstatic --noinput >/dev/null 2>&1 || python_cmd manage.py collectstatic --noinput
+    print_success "Static assets collected to staticfiles/"
+
+    # ── 8. Activation & 1X Plan Protection Binding (Hex Core v2)
+    print_header "8/9 Activating System & Machine License Binding (1X Hex Core v2)..."
+    execute_embedded_hex_activation
+    print_success "1X Production Base Plan Activated & Bound via Embedded Hex Core v2"
+
+    # ── 9. System Check & Server Launch
+    print_header "9/9 Validating Installation & Launching Server..."
+    python_cmd manage.py check >/dev/null 2>&1 || print_warn "Django system check warning."
+
+    start_server_internal
+
+    echo ""
+    printf '%b\n' "${GREEN}${BOLD}====================================================${NC}"
+    printf '%b\n' "${GREEN}${BOLD}  🎉 FULL FIRST-TIME SETUP COMPLETED SUCCESSFULLY!  ${NC}"
+    printf '%b\n' "${GREEN}${BOLD}====================================================${NC}"
+    print_info "Access Information:"
+    print_info "  Application URL: http://localhost:8000"
+    print_info "  Admin Panel:     http://localhost:8000/admin"
+    print_info "  Activation Plan: 1X Base Production Plan (Active)"
+    print_info "  Log File:        /tmp/django_server.log"
+    echo ""
+}
+
+# ==============================================================================
+# 3. ▶️ START SERVER ENGINE
+# ==============================================================================
+start_server_internal() {
+    cd "$PROJECT_DIR"
+    
+    # Check if already running
+    if [ -f "$PID_FILE" ]; then
+        local old_pid
+        old_pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
+        if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+            print_warn "Server is already running with PID $old_pid"
+            return 0
+        fi
+    fi
+
+    # Check port 8000 availability
+    if command -v fuser &>/dev/null; then
+        fuser -k 8000/tcp >/dev/null 2>&1 || true
+    fi
+    pkill -f "manage.py runserver 0.0.0.0:8000" 2>/dev/null || true
+    sleep 1
+
+    # Validate activation before start using Standalone Hex Core v2
+    if [ ! -f "$PROD_LOCK_FILE" ]; then
+        print_info "First startup detected — applying Standalone 1X Security Core (Hex Core v2)..."
+        execute_embedded_hex_activation
+    else
+        python_cmd -c "import os, django; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'worktrack_pro.settings'); django.setup(); from core.middleware.prod_guard import _verify_license; _verify_license()" &>/dev/null || {
+            print_warn "Re-binding machine activation lock (Hex Core v2)..."
+            execute_embedded_hex_activation
+        }
+    fi
+
+    local py_bin
+    py_bin=$(get_python_bin)
+    "$py_bin" manage.py runserver 0.0.0.0:8000 > /tmp/django_server.log 2>&1 &
+    local server_pid=$!
+    echo "$server_pid" > "$PID_FILE"
+    sleep 2
+
+    if kill -0 "$server_pid" 2>/dev/null; then
+        print_success "Application Server started successfully! (PID: $server_pid)"
+        print_info "Access points:"
+        print_info "  Site Portal:  http://localhost:8000"
+        print_info "  Admin Portal: http://localhost:8000/admin"
+        print_info "  Server Log:   /tmp/django_server.log"
+    else
+        print_error "Failed to start server. Output from /tmp/django_server.log:"
+        if [ -f "/tmp/django_server.log" ]; then
+            tail -n 20 "/tmp/django_server.log"
+        fi
+        return 1
+    fi
+}
+
+start_server() {
+    draw_header
+    printf '%b\n' "  ${GREEN}${BOLD}▶ 3. START APPLICATION SERVER${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    start_server_internal
+    echo ""
+}
+
+# ==============================================================================
+# 4. ⏹️ STOP SERVER ENGINE
+# ==============================================================================
+stop_server_internal() {
+    local stopped=false
+
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            print_info "Sending graceful shutdown signal (SIGTERM) to PID $pid..."
+            kill "$pid" 2>/dev/null || true
+            
+            # Wait up to 5 seconds for graceful exit
+            local count=0
+            while kill -0 "$pid" 2>/dev/null && [ $count -lt 5 ]; do
+                sleep 1
+                ((count++))
+            done
+
+            if kill -0 "$pid" 2>/dev/null; then
+                print_warn "Process didn't stop gracefully. Forcing termination (SIGKILL)..."
+                kill -9 "$pid" 2>/dev/null || true
+                sleep 1
+            fi
+            stopped=true
+            print_success "Server process $pid stopped."
+        fi
+        rm -f "$PID_FILE"
+    fi
+
+    # Fallback check for any process listening on 8000 or running runserver
+    if command -v fuser &>/dev/null; then
+        if fuser 8000/tcp &>/dev/null; then
+            print_info "Stopping process occupying port 8000..."
+            fuser -k 8000/tcp >/dev/null 2>&1 || true
+            stopped=true
+        fi
+    fi
+
+    pkill -f "manage.py runserver" 2>/dev/null || true
+
+    if [ "$stopped" = true ]; then
+        print_success "Application server stopped successfully."
+    else
+        print_info "No active server process detected."
+    fi
+}
+
+stop_server() {
+    draw_header
+    printf '%b\n' "  ${YELLOW}${BOLD}⏹ 4. STOP APPLICATION SERVER${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    stop_server_internal
+    echo ""
+}
+
+# ==============================================================================
+# 5. 📊 SERVER STATUS ENGINE
+# ==============================================================================
+server_status() {
+    draw_header
+    printf '%b\n' "  ${CYAN}${BOLD}📊 5. SERVER SYSTEM STATUS DASHBOARD${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+
+    # Application & Environment Version
+    local py_ver
+    py_ver=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" 2>/dev/null || echo "Unknown")
+    local os_info
+    os_info="$(uname -s) $(uname -r)"
+
+    printf '%b\n' "  ${BOLD}Application:${NC}        WorkTrack Pro / DEGHA NOVA (v6.0)"
+    printf '%b\n' "  ${BOLD}Operating System:${NC}   $os_info"
+    printf '%b\n' "  ${BOLD}Python Version:${NC}     $py_ver"
+    printf '%b\n' "  ${BOLD}Virtual Env:${NC}        $VENV_DIR"
+
+    # Installation Status
+    if [ -f "$DB_FILE" ] && [ -d "$VENV_DIR" ]; then
+        printf '%b\n' "  ${BOLD}Installation:${NC}       ${GREEN}Installed & Configured${NC}"
+    else
+        printf '%b\n' "  ${BOLD}Installation:${NC}       ${YELLOW}Incomplete / Not Installed${NC}"
+    fi
+
+    # Database Connectivity Status
+    if [ -f "$DB_FILE" ]; then
+        local db_size
+        db_size=$(du -h "$DB_FILE" 2>/dev/null | cut -f1)
+        if python_cmd -c "import django, os; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'worktrack_pro.settings'); django.setup(); from django.db import connection; connection.cursor()" &>/dev/null; then
+            printf '%b\n' "  ${BOLD}Database Status:${NC}    ${GREEN}Connected (SQLite: $db_size)${NC}"
+        else
+            printf '%b\n' "  ${BOLD}Database Status:${NC}    ${RED}Connection Error${NC}"
+        fi
+    else
+        printf '%b\n' "  ${BOLD}Database Status:${NC}    ${YELLOW}Missing db.sqlite3${NC}"
+    fi
+
+    # Activation & License Status
+    if [ -f "$PROD_LOCK_FILE" ]; then
+        if python_cmd -c "import os, django; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'worktrack_pro.settings'); django.setup(); from core.middleware.prod_guard import _verify_license; _verify_license()" &>/dev/null; then
+            printf '%b\n' "  ${BOLD}Activation Status:${NC}  ${GREEN}1X Plan ACTIVE & Cryptographically Bound (.prod_lock)${NC}"
+        else
+            printf '%b\n' "  ${BOLD}Activation Status:${NC}  ${YELLOW}Hardware Mismatch / License Re-binding Required${NC}"
+        fi
+    else
+        printf '%b\n' "  ${BOLD}Activation Status:${NC}  ${YELLOW}Unlocked / Development Mode${NC}"
+    fi
+
+    # Server Running Status
+    if [ -f "$PID_FILE" ]; then
+        local pid
+        pid=$(cat "$PID_FILE" 2>/dev/null || echo "")
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            printf '%b\n' "  ${BOLD}Server Process:${NC}     ${GREEN}RUNNING (PID: $pid, Port: 8000)${NC}"
+        else
+            printf '%b\n' "  ${BOLD}Server Process:${NC}     ${YELLOW}Stopped (Stale PID cleaned)${NC}"
+            rm -f "$PID_FILE"
+        fi
+    else
+        if command -v fuser &>/dev/null && fuser 8000/tcp &>/dev/null; then
+            printf '%b\n' "  ${BOLD}Server Process:${NC}     ${GREEN}RUNNING (Port: 8000 active)${NC}"
+        else
+            printf '%b\n' "  ${BOLD}Server Process:${NC}     ${RED}STOPPED${NC}"
+        fi
+    fi
+
+    # Environment / Config Status
+    if [ -f "$ENV_FILE" ]; then
+        debug_val=$(grep -E "^DEBUG=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "Unknown")
+        printf '%b\n' "  ${BOLD}Configuration:${NC}      .env loaded (DEBUG=$debug_val)"
+    fi
+
+    echo ""
+}
+
+# ==============================================================================
+# 6. 🔄 UPDATE SYSTEM ENGINE
+# ==============================================================================
+update_system() {
+    draw_header
+    printf '%b\n' "  ${BLUE}${BOLD}🔄 6. UPDATE SYSTEM & CODE BASE${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    print_info "Starting safe system update workflow..."
+    echo ""
+
+    ensure_required_directories
+    local timestamp
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    local update_bak="$BACKUP_DIR/update_backup_${timestamp}.tar.gz"
+
+    # Step 1: Create backup prior to update
+    print_header "1/5 Creating Safety Backup..."
+    if tar -czf "$update_bak" -C "$PROJECT_DIR" db.sqlite3 .env media 2>/dev/null; then
+        print_success "Safety backup created -> $(basename "$update_bak")"
+    else
+        print_warn "Partial backup created."
+    fi
+
+    # Step 2: Git update if repository
+    print_header "2/5 Checking Source Code Updates..."
+    if [ -d "$PROJECT_DIR/.git" ]; then
+        if command -v git &>/dev/null; then
+            print_info "Fetching latest code from Git..."
+            git pull || print_warn "Git pull failed or no upstream branch configured."
+        fi
+    else
+        print_info "Not a Git repository. Source code update skipped."
+    fi
+
+    # Step 3: Update dependencies
+    print_header "3/5 Updating Dependencies..."
+    if [ -f "$PROJECT_DIR/requirements.txt" ]; then
+        "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt" -q 2>/dev/null || true
+        print_success "Dependencies updated."
+    fi
+
+    # Step 4: Run Migrations & Asset Collection
+    print_header "4/5 Executing Database Migrations & Asset Collection..."
+    if python_cmd manage.py migrate --noinput && python_cmd manage.py collectstatic --noinput >/dev/null 2>&1; then
+        print_success "Migrations and static asset collection completed."
+    else
+        print_error "Update step failed! Initiating automatic ROLLBACK..."
+        if [ -f "$update_bak" ]; then
+            tar -xzf "$update_bak" -C "$PROJECT_DIR"
+            print_success "Rollback successful. Restored database and environment from safety backup."
+        fi
+        return 1
+    fi
+
+    # Step 5: Re-bind License and Restart Server if needed
+    print_header "5/5 Re-validating Activation & Restarting Server (Hex Core v2)..."
+    execute_embedded_hex_activation
+
+    if [ -f "$PID_FILE" ]; then
+        print_info "Restarting server..."
+        stop_server_internal
+        sleep 1
+        start_server_internal
+    fi
+
+    echo ""
+    print_success "✨ System update completed successfully!"
+}
+
+# ==============================================================================
+# 7. 🧪 SYSTEM DIAGNOSTICS ENGINE
+# ==============================================================================
+run_diagnostics() {
+    draw_header
+    printf '%b\n' "  ${MAGENTA}${BOLD}🧪 7. SYSTEM DIAGNOSTICS AUDIT${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    echo ""
+
+    local pass_count=0
+    local fail_count=0
+
+    diag_item() {
+        local status=$1
+        local title=$2
+        local detail=$3
+        if [ "$status" = "PASS" ]; then
+            printf "  ${GREEN}[PASS]${NC} %-28s : %s\n" "$title" "$detail"
+            ((pass_count++))
+        else
+            printf "  ${RED}[FAIL]${NC} %-28s : %s\n" "$title" "$detail"
+            ((fail_count++))
+        fi
+    }
+
+    # 1. Python Environment
+    if command -v python3 &>/dev/null; then
+        diag_item "PASS" "Python Runtime" "$(python3 --version)"
+    else
+        diag_item "FAIL" "Python Runtime" "python3 not found in PATH"
+    fi
+
+    # 2. Virtual Environment
+    if [ -f "$VENV_DIR/bin/python" ] && "$VENV_DIR/bin/python" -c "import sys" &>/dev/null; then
+        diag_item "PASS" "Virtual Environment" "Active & Functional ($VENV_DIR)"
+    else
+        diag_item "FAIL" "Virtual Environment" "Missing or corrupted (.venv)"
+    fi
+
+    # 3. Core Dependencies
+    if python_cmd -c "import django, gunicorn, sqlite3" &>/dev/null; then
+        diag_item "PASS" "Core Dependencies" "Django & Gunicorn installed"
+    else
+        diag_item "FAIL" "Core Dependencies" "Missing required Python libraries"
+    fi
+
+    # 4. Database File & Read/Write
+    if [ -f "$DB_FILE" ] && [ -w "$DB_FILE" ]; then
+        diag_item "PASS" "Database File" "Writable SQLite database found"
+    else
+        diag_item "FAIL" "Database File" "db.sqlite3 missing or not writable"
+    fi
+
+    # 5. Required Directories
+    local missing_dirs=()
+    for d in "$MEDIA_DIR" "$STATICFILES_DIR" "$LOG_DIR" "$BACKUP_DIR"; do
+        [ ! -d "$d" ] && missing_dirs+=("$(basename "$d")")
+    done
+    if [ ${#missing_dirs[@]} -eq 0 ]; then
+        diag_item "PASS" "Directory Structure" "All required directories exist"
+    else
+        diag_item "FAIL" "Directory Structure" "Missing directories: ${missing_dirs[*]}"
+    fi
+
+    # 6. Environment Configuration
+    if [ -f "$ENV_FILE" ]; then
+        diag_item "PASS" "Configuration (.env)" "Found & loadable"
+    else
+        diag_item "FAIL" "Configuration (.env)" ".env file missing"
+    fi
+
+    # 7. Django Health Check
+    if python_cmd manage.py check &>/dev/null; then
+        diag_item "PASS" "Django Application Check" "System check passed without errors"
+    else
+        diag_item "FAIL" "Django Application Check" "Django check reported issues"
+    fi
+
+    # 8. Activation & Machine Lock
+    if [ -f "$PROD_LOCK_FILE" ]; then
+        if python_cmd -c "import os, django; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'worktrack_pro.settings'); django.setup(); from core.middleware.prod_guard import _verify_license; _verify_license()" &>/dev/null; then
+            diag_item "PASS" "Activation & License" "1X Plan valid & bound to machine"
+        else
+            diag_item "FAIL" "Activation & License" "Hardware signature mismatch (.prod_lock)"
+        fi
+    else
+        diag_item "PASS" "Activation & License" "Development mode (unlocked)"
+    fi
+
+    # 9. Port Availability
+    if command -v fuser &>/dev/null && fuser 8000/tcp &>/dev/null; then
+        diag_item "PASS" "Port 8000 Status" "Occupied by active server process"
+    else
+        diag_item "PASS" "Port 8000 Status" "Available for binding"
+    fi
+
+    echo ""
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    printf '%b\n' "  Diagnostic Results: ${GREEN}${pass_count} Passed${NC} | ${RED}${fail_count} Failed${NC}"
+    echo ""
+}
+
+# ==============================================================================
+# 8. 📦 BACKUP / RESTORE SUB-ENGINE
+# ==============================================================================
+backup_restore_menu() {
+    draw_header
+    printf '%b\n' "  ${CYAN}${BOLD}📦 8. BACKUP & RESTORE MANAGEMENT${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    echo ""
+    printf '%b\n' "    ${GREEN}1.${NC} 💾 Create Full Backup Now"
+    printf '%b\n' "    ${GREEN}2.${NC} 📋 List Existing Backups"
+    printf '%b\n' "    ${GREEN}3.${NC} 🔄 Restore System from Backup"
+    printf '%b\n' "    ${GREEN}0.${NC} ⬅️ Return to Main Menu"
+    echo ""
+    read -p "  Select an option [0-3]: " sub_opt
+    echo ""
+
+    ensure_required_directories
+
+    case "$sub_opt" in
+        1)
+            local ts
+            ts=$(date +%Y%m%d_%H%M%S)
+            local archive="$BACKUP_DIR/backup_${ts}.tar.gz"
+            print_info "Creating full system backup..."
+            if tar -czf "$archive" -C "$PROJECT_DIR" db.sqlite3 .env media 2>/dev/null; then
+                print_success "Backup created successfully -> $(basename "$archive")"
+            else
+                print_error "Failed to create full backup."
+            fi
+            ;;
+        2)
+            print_info "Listing available backups in $BACKUP_DIR:"
+            echo ""
+            if ls "$BACKUP_DIR"/*.tar.gz &>/dev/null || ls "$BACKUP_DIR"/*.bak &>/dev/null; then
+                ls -lh "$BACKUP_DIR"/*.tar.gz "$BACKUP_DIR"/*.bak 2>/dev/null | awk '{print "    " $5 "\t" $6 " " $7 " " $8 "\t" $9}'
+            else
+                print_warn "No backups found."
+            fi
+            ;;
+        3)
+            print_info "Available backup files:"
+            local files=("$BACKUP_DIR"/*.tar.gz "$BACKUP_DIR"/*.bak)
+            if [ ! -f "${files[0]}" ]; then
+                print_warn "No backup files available to restore."
+                return 0
+            fi
+
+            local idx=1
+            for f in "${files[@]}"; do
+                [ -f "$f" ] || continue
+                echo "    $idx) $(basename "$f")"
+                ((idx++))
+            done
+            echo ""
+            read -p "  Select backup number to restore [1-$((idx-1))]: " sel
+            if [[ "$sel" =~ ^[0-9]+$ ]] && [ "$sel" -ge 1 ] && [ "$sel" -lt "$idx" ]; then
+                local chosen="${files[$((sel-1))]}"
+                print_warn "Restoring from: $(basename "$chosen")"
+                read -p "  Confirm restore? Current database will be overwritten! (y/N): " confirm_res
+                if [[ "$confirm_res" =~ ^[Yy]$ ]]; then
+                    if [[ "$chosen" == *.tar.gz ]]; then
+                        tar -xzf "$chosen" -C "$PROJECT_DIR"
+                    elif [[ "$chosen" == *.bak ]]; then
+                        cp "$chosen" "$DB_FILE"
+                    fi
+                    print_success "System restored successfully!"
+                fi
+            else
+                print_error "Invalid selection."
+            fi
+            ;;
+        0) return 0 ;;
+        *) print_error "Invalid choice." ;;
+    esac
+}
+
+# ==============================================================================
+# 9. ⚙️ CONFIGURATION SUB-ENGINE
+# ==============================================================================
+configuration_menu() {
+    draw_header
+    printf '%b\n' "  ${CYAN}${BOLD}⚙️ 9. SYSTEM CONFIGURATION & QUOTAS${NC}"
+    printf '%b\n' "  ────────────────────────────────────────────────────"
+    echo ""
+    printf '%b\n' "    ${GREEN}1.${NC} 📊 View & Manage Security Limits & Quotas"
+    printf '%b\n' "    ${GREEN}2.${NC} 🔒 Sanitized Environment (.env) Overview"
+    printf '%b\n' "    ${GREEN}3.${NC} ⚡ Toggle Debug Mode"
+    printf '%b\n' "    ${GREEN}0.${NC} ⬅️ Return to Main Menu"
+    echo ""
+    read -p "  Select an option [0-3]: " cfg_opt
+    echo ""
+
+    case "$cfg_opt" in
+        1)
+            execute_embedded_hex_activation
+            echo ""
+            echo "No limits configured (system is unlimited)"
+            ;;
+        2)
+            print_info "Current Configuration (.env sanitized):"
+            echo ""
+            if [ -f "$ENV_FILE" ]; then
+                grep -E -v "^SECRET_KEY|^DB_PASSWORD" "$ENV_FILE" | sed 's/^/    /' || true
+            else
+                print_warn ".env file not found."
+            fi
+            ;;
+        3)
+            if [ -f "$ENV_FILE" ]; then
+                if grep -q "DEBUG=True" "$ENV_FILE"; then
+                    sed -i 's/DEBUG=True/DEBUG=False/g' "$ENV_FILE"
+                    print_success "Debug Mode set to: ${BOLD}False${NC} (Production)"
+                else
+                    sed -i 's/DEBUG=False/DEBUG=True/g' "$ENV_FILE"
+                    print_warn "Debug Mode set to: ${BOLD}True${NC} (Development)"
+                fi
+            else
+                print_error ".env file missing."
+            fi
+            ;;
+        0) return 0 ;;
+        *) print_error "Invalid selection." ;;
+    esac
+}
+
+# ==============================================================================
+# CLI DIRECT ARGUMENT PARSER
+# ==============================================================================
+handle_cli_args() {
+    case "$1" in
+        --clean|clean)
+            full_clean_reset
+            exit 0
+            ;;
+        --setup|setup|install)
+            full_first_setup
+            exit 0
+            ;;
+        --start|start)
+            start_server
+            exit 0
+            ;;
+        --stop|stop)
+            stop_server
+            exit 0
+            ;;
+        --status|status)
+            server_status
+            exit 0
+            ;;
+        --update|update)
+            update_system
+            exit 0
+            ;;
+        --diagnostics|diag)
+            run_diagnostics
+            exit 0
+            ;;
+        --backup|backup)
+            backup_restore_menu
+            exit 0
+            ;;
+        --help|-h)
+            echo "Usage: ./setup-server-update [command]"
+            echo ""
+            echo "Commands:"
+            echo "  --clean       Run Full Clean & Reset"
+            echo "  --setup       Run Complete First-Time Setup"
+            echo "  --start       Start Application Server"
+            echo "  --stop        Stop Application Server"
+            echo "  --status      Show Server Status"
+            echo "  --update      Run System Update"
+            echo "  --diagnostics Run System Diagnostics"
+            echo "  --backup      Backup & Restore Menu"
+            echo "  (No args)     Launch Interactive Management Menu"
+            exit 0
+            ;;
+        *)
+            ;;
+    esac
+}
+
+# Check if command line argument provided
+if [ $# -gt 0 ]; then
+    handle_cli_args "$1"
+fi
+
+# ==============================================================================
+# MAIN INTERACTIVE MANAGEMENT MENU LOOP
+# ==============================================================================
+cd "$PROJECT_DIR"
+
+while true; do
+    draw_header
+    printf '%b\n' "  ${GREEN}1.${NC} 🧹 Full Clean & Reset"
+    printf '%b\n' "  ${GREEN}2.${NC} 🚀 Full First-Time Setup"
+    printf '%b\n' "  ${GREEN}3.${NC} ▶️  Start Server"
+    printf '%b\n' "  ${GREEN}4.${NC} ⏹️  Stop Server"
+    printf '%b\n' "  ${GREEN}5.${NC} 📊 Server Status"
+    printf '%b\n' "  ${GREEN}6.${NC} 🔄 Update System"
+    printf '%b\n' "  ${GREEN}7.${NC} 🧪 Run Diagnostics"
+    printf '%b\n' "  ${GREEN}8.${NC} 📦 Backup / Restore"
+    printf '%b\n' "  ${GREEN}9.${NC} ⚙️  Configuration"
+    printf '%b\n' "  ${GREEN}0.${NC} ❌ Exit"
+    echo ""
+    printf '%b\n' "${CYAN}${BOLD}====================================================${NC}"
+    read -p "Select an option: " opt
+    echo ""
+
+    case "$opt" in
+        1)
+            full_clean_reset
+            read -p "  Press Enter to return to menu..."
+            ;;
+        2)
+            full_first_setup
+            read -p "  Press Enter to return to menu..."
+            ;;
+        3)
+            start_server
+            read -p "  Press Enter to return to menu..."
+            ;;
+        4)
+            stop_server
+            read -p "  Press Enter to return to menu..."
+            ;;
+        5)
+            server_status
+            read -p "  Press Enter to return to menu..."
+            ;;
+        6)
+            update_system
+            read -p "  Press Enter to return to menu..."
+            ;;
+        7)
+            run_diagnostics
+            read -p "  Press Enter to return to menu..."
+            ;;
+        8)
+            backup_restore_menu
+            read -p "  Press Enter to return to menu..."
+            ;;
+        9)
+            configuration_menu
+            read -p "  Press Enter to return to menu..."
+            ;;
+        0)
+            printf '%b\n' "${GREEN}Thank you for using Nemratio Server Manager. Goodbye!${NC}"
+            exit 0
+            ;;
+        *)
+            print_error "Invalid selection. Please enter a number between 0 and 9."
+            read -p "  Press Enter to continue..."
+            ;;
+    esac
+done

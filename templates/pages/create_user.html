@@ -1,0 +1,707 @@
+<!-- create_user.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if target_user %}Edit Staff: {{ target_user.get_full_name }}{% else %}Create New User{% endif %} · WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-gradient {
+        background: linear-gradient(135deg, #18060b 0%, var(--color-primary, #10b981) 55%, var(--color-primary, #10b981) 100%);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px color-mix(in srgb, var(--color-primary, #10b981) 28%, transparent);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .header-gradient::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+        background-size: 24px 24px;
+        pointer-events: none;
+        opacity: 0.6;
+    }
+    
+    .form-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        background: #ffffff;
+        overflow: hidden;
+    }
+    
+    .form-label {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.25s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 0 0 4px rgba(var(--wt-brand-rgb), 0.12);
+        background-color: #ffffff;
+    }
+    
+    .password-strength {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+    
+    .strength-weak { background: var(--wt-bad); width: 33%; }
+    .strength-fair { background: #f59e0b; width: 66%; }
+    .strength-good { background: var(--wt-brand); width: 100%; }
+    
+    .form-section {
+        padding: 2.25rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+    }
+    
+    .section-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .section-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+    
+    .section-icon-basic {
+        background: #fee2e2;
+        color: var(--color-primary, #10b981);
+    }
+    
+    .section-icon-security {
+        background: #fee2e2;
+        color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+    }
+    
+    .section-icon-org {
+        background: #fef2f2;
+        color: var(--color-primary, #10b981);
+    }
+    
+    .btn-create {
+        padding: 0.8rem 2.2rem;
+        font-weight: 700;
+        border-radius: 50px;
+        background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 100%);
+        border: none;
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(var(--wt-brand-rgb), 0.35);
+        transition: all 0.25s ease;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(192, 40, 58, 0.45);
+        color: #ffffff;
+    }
+    
+    .btn-cancel {
+        padding: 0.8rem 2rem;
+        font-weight: 700;
+        border-radius: 50px;
+    }
+    
+    .work-group-card {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.9rem;
+        background: #ffffff;
+        transition: all 0.2s ease;
+    }
+    
+    .work-group-card:hover {
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 4px 12px rgba(var(--wt-brand-rgb), 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Header Section (System Styled Cyber Crimson) -->
+    <div class="header-gradient p-4 p-md-5 mb-4 text-white">
+        <div class="d-flex align-items-center justify-content-between position-relative" style="z-index: 2;">
+            <div>
+                <h1 class="h2 fw-bold mb-2 d-flex align-items-center gap-2">
+                    <i class="fas {% if target_user %}fa-user-edit{% else %}fa-user-plus{% endif %}"></i>
+                    {% if target_user %}
+                        <span class="lang-en">Edit Staff Profile:</span>
+                        <span class="lang-ar">تعديل ملف الموظف:</span>
+                        <span>{{ target_user.get_full_name }}</span>
+                    {% else %}
+                        <span class="lang-en">Create New User</span>
+                        <span class="lang-ar">إضافة مستخدم جديد</span>
+                    {% endif %}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    {% if target_user %}
+                        <span class="lang-en">Modify user credentials, organizational assignments, avatar image, and permissions.</span>
+                        <span class="lang-ar">تعديل بيانات المستخدم والمهام التنظيمية والصورة الشخصية والصلاحيات.</span>
+                    {% else %}
+                        <span class="lang-en">Add a new user to the Worktrack Pro platform with custom roles, avatar, and permissions.</span>
+                        <span class="lang-ar">إضافة مستخدم جديد إلى منصة Worktrack Pro بالأدوار والصورة الشخصية والصلاحيات.</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="d-none d-md-block opacity-25" style="font-size: 3.8rem;">
+                <i class="fas fa-id-badge"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Alert -->
+    <div class="alert alert-light border border-danger border-opacity-25 rounded-4 shadow-sm mb-4 d-flex align-items-center justify-content-between" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas fa-info-circle text-danger"></i>
+            <span class="small text-muted">
+                <strong><span class="lang-en">Notice:</span><span class="lang-ar">تنبيه:</span></strong> 
+                <span class="lang-en">Fields marked with</span><span class="lang-ar">الحقول المميزة بـ</span> <span class="text-danger">*</span> <span class="lang-en">are mandatory.</span><span class="lang-ar">إلزامية.</span>
+                {% if target_user %}
+                    <span class="lang-en">Leave password blank to preserve current credentials.</span>
+                    <span class="lang-ar">اترك كلمة المرور فارغة للاحتفاظ بكلمة المرور الحالية.</span>
+                {% endif %}
+            </span>
+        </div>
+        <a href="{% url 'user-management' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+            <i class="fas fa-arrow-left me-1"></i>
+            <span class="lang-en">Back to Users</span>
+            <span class="lang-ar">العودة لقائمة المستخدمين</span>
+        </a>
+    </div>
+
+    <!-- Form Card with Multipart Upload Support -->
+    <div class="form-card">
+        <form method="post" id="userForm" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show m-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Basic Information & Avatar Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <div class="section-icon section-icon-basic">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <span class="lang-en">Basic Identity & Profile Image</span>
+                    <span class="lang-ar">الهوية الأساسية والصورة الشخصية</span>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Avatar Upload & Live Preview -->
+                    <div class="col-12">
+                        <label class="form-label d-flex align-items-center gap-2">
+                            <i class="fas fa-camera text-danger"></i>
+                            <span class="lang-en">Profile Picture / Avatar</span>
+                            <span class="lang-ar">الصورة الشخصية / الصورة الرمزية</span>
+                        </label>
+                        <div class="d-flex flex-wrap align-items-center gap-3 p-3 rounded-4 bg-light border">
+                            <div class="position-relative">
+                                {% if target_user.profile.avatar %}
+                                    <img id="avatarPreview" src="{{ target_user.profile.avatar.url }}" alt="Avatar" class="rounded-circle shadow-sm" style="width: 82px; height: 82px; object-fit: cover; border: 3px solid var(--color-primary, #10b981);">
+                                {% else %}
+                                    <img id="avatarPreview" src="/static/img/default-avatar.png" alt="Avatar" class="rounded-circle shadow-sm" style="width: 82px; height: 82px; object-fit: cover; border: 3px solid var(--color-primary, #10b981);" onerror="this.src='https://ui-avatars.com/api/?name={{ target_user.first_name|default:'User' }}+{{ target_user.last_name|default:'' }}&background=dc2626&color=fff';">
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1" style="min-width: 240px;">
+                                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" onchange="previewUserAvatar(event)">
+                                <small class="text-muted d-block mt-1">
+                                    <span class="lang-en">Upload a photo (JPEG, PNG, WEBP, max 5MB). Live preview updates immediately.</span>
+                                    <span class="lang-ar">رفع صورة شخصية (JPEG, PNG, WEBP، بحد أقصى 5 ميغابايت). المعاينة الفورية تتحدث تلقائياً.</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">
+                            <i class="fas fa-user text-danger me-1"></i>
+                            <span class="lang-en">First Name</span>
+                            <span class="lang-ar">الاسم الأول</span>
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required placeholder="e.g., Jean" value="{{ target_user.first_name|default:'' }}">
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">
+                            <i class="fas fa-user text-danger me-1"></i>
+                            <span class="lang-en">Last Name</span>
+                            <span class="lang-ar">اللقب</span>
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required placeholder="e.g., Dupont" value="{{ target_user.last_name|default:'' }}">
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope text-danger me-1"></i>
+                            <span class="lang-en">Professional Email</span>
+                            <span class="lang-ar">البريد الإلكتروني المهني</span>
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="user@worktrack.com" value="{{ target_user.email|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security & Role Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <div class="section-icon section-icon-security">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <span class="lang-en">Security & Role Assignment</span>
+                    <span class="lang-ar">الأمان وتعيين الدور</span>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock text-danger me-1"></i>
+                            <span class="lang-en">Password</span>
+                            <span class="lang-ar">كلمة المرور</span>
+                            {% if not target_user %}<span class="text-danger">*</span>{% endif %}
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="{% if target_user %}Leave blank to keep unchanged{% else %}Enter secure password{% endif %}" {% if not target_user %}required{% endif %}>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="strengthBar"></div>
+                        </div>
+                        <small class="text-muted d-block mt-1" id="strengthText"><span class="lang-en">Password strength</span><span class="lang-ar">قوة كلمة المرور</span></small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="role" class="form-label">
+                            <i class="fas fa-user-tag text-danger me-1"></i>
+                            <span class="lang-en">System Role</span>
+                            <span class="lang-ar">الدور في النظام</span>
+                            <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="role" name="role" required>
+                            {% for role_key, role_name in role_choices %}
+                                <option value="{{ role_key }}" {% if target_user.role == role_key %}selected{% elif not target_user and role_key == 'worker' %}selected{% endif %}>
+                                    {{ role_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organizational Hierarchy & Work Groups (With Search + 3-per-page Pagination) -->
+            <div class="form-section">
+                <div class="section-title">
+                    <div class="section-icon section-icon-org">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <span class="lang-en">Organizational Hierarchy & Work Groups</span>
+                    <span class="lang-ar">الهيكل التنظيمي ومجموعات العمل</span>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="department" class="form-label d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-building text-danger me-1"></i><span class="lang-en">Department</span><span class="lang-ar">القسم</span></span>
+                            <a href="javascript:void(0)" class="text-danger small text-decoration-none fw-bold" onclick="toggleNewDept()">
+                                <i class="fas fa-plus-circle me-1"></i><span class="lang-en">Create New</span><span class="lang-ar">إنشاء جديد</span>
+                            </a>
+                        </label>
+                        <div id="dept-select-container">
+                            <select class="form-select" id="department" name="department">
+                                <option value="">-- <span class="lang-en">No Department (Global)</span><span class="lang-ar">بدون قسم (عام)</span> --</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if target_user.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="new-dept-container" class="d-none">
+                            <div class="input-group">
+                                <input type="text" class="form-control border-danger" id="new_department_name" name="new_department_name" placeholder="Enter department name...">
+                                <button class="btn btn-danger" type="button" onclick="cancelNewDept()"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="manager" class="form-label">
+                            <i class="fas fa-user-tie text-danger me-1"></i>
+                            <span class="lang-en">Reporting Manager</span>
+                            <span class="lang-ar">المدير المباشر</span>
+                        </label>
+                        <select class="form-select" id="manager" name="manager">
+                            <option value="">-- <span class="lang-en">Direct Report (No Manager)</span><span class="lang-ar">تقرير مباشر (بدون مدير)</span> --</option>
+                            {% for mgr in potential_managers %}
+                                <option value="{{ mgr.id }}" {% if target_user.profile.manager_id == mgr.id %}selected{% endif %}>{{ mgr.get_full_name }} ({{ mgr.get_role_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Work Groups with Live Search and 3-Per-Page Pagination -->
+                    <div class="col-12 mt-2">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">
+                                <i class="fas fa-layer-group text-danger me-1"></i>
+                                <span class="lang-en">Assigned Work Groups</span>
+                                <span class="lang-ar">مجموعات العمل المعينة</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger ms-2" id="groupsCountBadge">{{ all_groups|length }} groups</span>
+                            </label>
+                            <a href="{% url 'manage-groups' %}" target="_blank" class="text-danger small text-decoration-none fw-bold">
+                                <i class="fas fa-external-link-alt me-1"></i><span class="lang-en">Manage All Groups</span><span class="lang-ar">إدارة كافة المجموعات</span>
+                            </a>
+                        </div>
+
+                        <!-- Live Search Bar -->
+                        <div class="input-group mb-3 shadow-sm rounded-3 overflow-hidden">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                            <input type="text" id="groupSearchInput" class="form-control border-start-0" placeholder="Search work groups by name..." oninput="filterWorkGroups()">
+                        </div>
+
+                        <!-- Groups Container -->
+                        <div class="p-3 bg-light rounded-4 border">
+                            <div class="row g-2" id="groupsListContainer">
+                                {% for g in all_groups %}
+                                <div class="col-md-4 work-group-item" data-group-name="{{ g.name|lower }}">
+                                    <div class="work-group-card h-100 d-flex align-items-center">
+                                        <div class="form-check m-0 p-0 d-flex align-items-center w-100">
+                                            <input class="form-check-input ms-1 me-3" type="checkbox" name="groups" value="{{ g.id }}" id="group_chk_{{ g.id }}"
+                                                   {% if g.id in user_group_ids %}checked{% endif %} style="cursor: pointer; width: 1.25rem; height: 1.25rem;">
+                                            <label class="form-check-label w-100 d-flex align-items-center cursor-pointer mb-0" for="group_chk_{{ g.id }}">
+                                                <span class="badge rounded-circle p-2 me-2" style="background-color: {{ g.color|default:'var(--color-primary, #10b981)' }}; color: white; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas {{ g.icon_class|default:'fa-cube' }}"></i>
+                                                </span>
+                                                <div class="overflow-hidden flex-grow-1">
+                                                    <div class="fw-bold text-dark small text-truncate">{{ g.name }}</div>
+                                                    <div class="text-muted" style="font-size: 0.72rem;">{{ g.modules.count }} <span class="lang-en">modules</span><span class="lang-ar">وحدة</span></div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="col-12 text-muted small py-3 text-center">
+                                    <i class="fas fa-info-circle me-1"></i>No work groups available.
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- 3 Items Per Page Pagination Controls -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top" id="groupsPaginationBar">
+                                <span class="small text-muted" id="groupsPageInfo">Page 1 of 1</span>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="prevGroupPageBtn" onclick="changeGroupPage(-1)">
+                                        <i class="fas fa-chevron-left me-1"></i> <span class="lang-en">Prev</span><span class="lang-ar">السابق</span>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3" id="nextGroupPageBtn" onclick="changeGroupPage(1)">
+                                        <span class="lang-en">Next</span><span class="lang-ar">التالي</span> <i class="fas fa-chevron-right ms-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extended Profile Details Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <div class="section-icon" style="background: #fee2e2; color: var(--color-primary, #10b981);">
+                        <i class="fas fa-address-card"></i>
+                    </div>
+                    <span class="lang-en">Extended Profile Details</span>
+                    <span class="lang-ar">تفاصيل الملف الشخصي الإضافية</span>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="position" class="form-label">
+                            <i class="fas fa-briefcase text-danger me-1"></i>
+                            <span class="lang-en">Job Title / Position</span>
+                            <span class="lang-ar">المسمى الوظيفي</span>
+                        </label>
+                        <input type="text" class="form-control" id="position" name="position" placeholder="e.g., Senior Data Analyst" value="{{ target_user.profile.position|default:'' }}">
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">
+                            <i class="fas fa-phone text-danger me-1"></i>
+                            <span class="lang-en">Phone Number</span>
+                            <span class="lang-ar">رقم الهاتف</span>
+                        </label>
+                        <input type="text" class="form-control" id="phone" name="phone" placeholder="e.g., +213 555 123 456" value="{{ target_user.profile.phone|default:'' }}">
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="bio" class="form-label">
+                            <i class="fas fa-align-left text-danger me-1"></i>
+                            <span class="lang-en">Biography / Professional Notes</span>
+                            <span class="lang-ar">نبذة تعريفية وملاحظات</span>
+                        </label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Additional details about the personnel...">{{ target_user.profile.bio|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences & Notifications Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <div class="section-icon" style="background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <span class="lang-en">Preferences & Notifications</span>
+                    <span class="lang-ar">التفضيلات والإشعارات</span>
+                </div>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label for="theme" class="form-label">
+                            <i class="fas fa-palette text-danger me-1"></i>
+                            <span class="lang-en">Interface Theme</span>
+                            <span class="lang-ar">المظهر</span>
+                        </label>
+                        <select class="form-select" id="theme" name="theme">
+                            <option value="light" {% if target_user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                            <option value="dark" {% if target_user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                            <option value="auto" {% if target_user.theme == 'auto' or not target_user %}selected{% endif %}>System Auto</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="language" class="form-label">
+                            <i class="fas fa-globe text-danger me-1"></i>
+                            <span class="lang-en">Default Language</span>
+                            <span class="lang-ar">اللغة الافتراضية</span>
+                        </label>
+                        <select class="form-select" id="language" name="language">
+                            <option value="en" {% if target_user.language == 'en' or not target_user %}selected{% endif %}>English (الإنجليزية)</option>
+                            <option value="ar" {% if target_user.language == 'ar' %}selected{% endif %}>العربية (Arabic)</option>
+                            <option value="fr" {% if target_user.language == 'fr' %}selected{% endif %}>Français (الفرنسية)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="form-check m-0 p-0 d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" id="email_notifications" name="email_notifications" {% if target_user.email_notifications or not target_user %}checked{% endif %} style="cursor: pointer; width: 1.3rem; height: 1.3rem;">
+                                <label class="form-check-label cursor-pointer" for="email_notifications">
+                                    <span class="fw-bold d-block text-dark small"><span class="lang-en">Email Alerts</span><span class="lang-ar">تنبيهات البريد</span></span>
+                                    <small class="text-muted"><span class="lang-en">Send system notifications by email.</span><span class="lang-ar">إرسال إشعارات النظام عبر البريد.</span></small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="form-check m-0 p-0 d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" id="task_notifications" name="task_notifications" {% if target_user.task_notifications or not target_user %}checked{% endif %} style="cursor: pointer; width: 1.3rem; height: 1.3rem;">
+                                <label class="form-check-label cursor-pointer" for="task_notifications">
+                                    <span class="fw-bold d-block text-dark small"><span class="lang-en">Task Alerts</span><span class="lang-ar">تنبيهات المهام</span></span>
+                                    <small class="text-muted"><span class="lang-en">Notify on assignment & status updates.</span><span class="lang-ar">إشعار عند تعيين المهام وتحديثاتها.</span></small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <div class="form-check m-0 p-0 d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" id="submission_notifications" name="submission_notifications" {% if target_user.submission_notifications or not target_user %}checked{% endif %} style="cursor: pointer; width: 1.3rem; height: 1.3rem;">
+                                <label class="form-check-label cursor-pointer" for="submission_notifications">
+                                    <span class="fw-bold d-block text-dark small"><span class="lang-en">Review Alerts</span><span class="lang-ar">تنبيهات المراجعة</span></span>
+                                    <small class="text-muted"><span class="lang-en">Notify on deliverable reviews.</span><span class="lang-ar">إشعار عند مراجعة التسليمات.</span></small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="p-4 d-flex justify-content-between align-items-center border-top bg-light">
+                <a href="{% url 'user-management' %}" class="btn btn-cancel btn-outline-secondary">
+                    <i class="fas fa-chevron-left me-1"></i><span class="lang-en">Back to User Management</span><span class="lang-ar">العودة لإدارة المستخدمين</span>
+                </a>
+                <button type="submit" class="btn btn-create">
+                    <i class="fas {% if target_user %}fa-save{% else %}fa-check-circle{% endif %} me-2"></i> 
+                    {% if target_user %}
+                        <span class="lang-en">Save All Profile Changes</span>
+                        <span class="lang-ar">حفظ كافة تعديلات الملف</span>
+                    {% else %}
+                        <span class="lang-en">Create User Account</span>
+                        <span class="lang-ar">إنشاء حساب المستخدم</span>
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Live Avatar Preview
+    function previewUserAvatar(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('avatarPreview');
+                if (img) img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Work Groups Search and 3-Per-Page Pagination
+    let currentGroupPage = 1;
+    const groupsPerPage = 3;
+
+    function getFilteredGroups() {
+        const query = (document.getElementById('groupSearchInput')?.value || '').toLowerCase().trim();
+        const items = Array.from(document.querySelectorAll('.work-group-item'));
+        return items.filter(item => {
+            const name = item.getAttribute('data-group-name') || '';
+            return name.includes(query);
+        });
+    }
+
+    function renderGroupPagination() {
+        const query = (document.getElementById('groupSearchInput')?.value || '').toLowerCase().trim();
+        const allItems = Array.from(document.querySelectorAll('.work-group-item'));
+        const filtered = getFilteredGroups();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / groupsPerPage));
+        
+        if (currentGroupPage > totalPages) currentGroupPage = totalPages;
+        if (currentGroupPage < 1) currentGroupPage = 1;
+
+        // Hide all items first
+        allItems.forEach(item => item.classList.add('d-none'));
+
+        // Display items for current page
+        const startIndex = (currentGroupPage - 1) * groupsPerPage;
+        const pageItems = filtered.slice(startIndex, startIndex + groupsPerPage);
+        pageItems.forEach(item => item.classList.remove('d-none'));
+
+        // Update pagination bar
+        const info = document.getElementById('groupsPageInfo');
+        if (info) {
+            info.textContent = `Page ${currentGroupPage} of ${totalPages} (${filtered.length} matching)`;
+        }
+
+        const prevBtn = document.getElementById('prevGroupPageBtn');
+        const nextBtn = document.getElementById('nextGroupPageBtn');
+        if (prevBtn) prevBtn.disabled = currentGroupPage <= 1;
+        if (nextBtn) nextBtn.disabled = currentGroupPage >= totalPages;
+    }
+
+    function changeGroupPage(delta) {
+        currentGroupPage += delta;
+        renderGroupPagination();
+    }
+
+    function filterWorkGroups() {
+        currentGroupPage = 1;
+        renderGroupPagination();
+    }
+
+    // Initialize pagination on DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+        renderGroupPagination();
+    });
+
+    // Password Strength Script
+    const passwordInput = document.getElementById('password');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.length >= 12) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[!@#$%^&*]/.test(password)) strength++;
+        return strength;
+    }
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const strength = checkPasswordStrength(this.value);
+            strengthBar.className = 'password-strength-bar';
+            if (strength === 0) {
+                strengthText.textContent = 'Password strength: None';
+                strengthBar.style.width = '0%';
+                strengthBar.style.background = '#e2e8f0';
+            } else if (strength <= 2) {
+                strengthText.textContent = 'Password strength: Weak';
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 3) {
+                strengthText.textContent = 'Password strength: Fair';
+                strengthBar.classList.add('strength-fair');
+            } else {
+                strengthText.textContent = 'Password strength: Strong & Secure';
+                strengthBar.classList.add('strength-good');
+            }
+        });
+    }
+
+    function toggleNewDept() {
+        document.getElementById('dept-select-container')?.classList.add('d-none');
+        document.getElementById('new-dept-container')?.classList.remove('d-none');
+        document.getElementById('department').value = "";
+        document.getElementById('new_department_name')?.focus();
+    }
+
+    function cancelNewDept() {
+        document.getElementById('new-dept-container')?.classList.add('d-none');
+        document.getElementById('dept-select-container')?.classList.remove('d-none');
+        const input = document.getElementById('new_department_name');
+        if (input) input.value = "";
+    }
+</script>
+{% endblock %}

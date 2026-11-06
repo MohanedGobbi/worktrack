@@ -1,0 +1,667 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T23:30:00Z",
+  "title": "Design System: WorkTrack Pro",
+  "extensions": {
+    "colorMeta": {
+      "rowd-blue": {
+        "role": "primary",
+        "displayName": "Rowd Blue",
+        "canonical": "oklch(37.8% 0.182 262.5)",
+        "tonalRamp": [
+          "#000729",
+          "#011c5d",
+          "#053496",
+          "#1f54c2",
+          "#3e76e8",
+          "#699cfd",
+          "#a6c5fd",
+          "#e6effe"
+        ],
+        "cssVar": "--wt-brand",
+        "overridable": "Site Settings (preset, or custom primary_color)"
+      },
+      "on-brand": {
+        "role": "primary",
+        "displayName": "On-Brand White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#7d7d7d",
+          "#9e9e9e",
+          "#c4c4c4",
+          "#eeeeee"
+        ],
+        "cssVar": "--wt-on-brand",
+        "overridable": "Site Settings (custom button_text_color)"
+      },
+      "signal-blue": {
+        "role": "secondary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(58.0% 0.229 263.6)",
+        "tonalRamp": [
+          "#000331",
+          "#001765",
+          "#012ca4",
+          "#0f49dc",
+          "#3771f8",
+          "#6d9bfc",
+          "#a8c4fc",
+          "#e7effe"
+        ],
+        "cssVar": "--wt-signal"
+      },
+      "cyan-pulse": {
+        "role": "tertiary",
+        "displayName": "Cyan Pulse",
+        "canonical": "oklch(73.9% 0.127 214.9)",
+        "tonalRamp": [
+          "#000e12",
+          "#032931",
+          "#004855",
+          "#04697b",
+          "#198ca2",
+          "#23b0cb",
+          "#47d9f7",
+          "#d4f5fe"
+        ],
+        "cssVar": "--wt-accent",
+        "overridable": "Site Settings (preset, or custom accent_color)"
+      },
+      "steel": {
+        "role": "neutral",
+        "displayName": "Steel",
+        "canonical": "oklch(50.1% 0.026 260.7)",
+        "tonalRamp": [
+          "#050b16",
+          "#1d2431",
+          "#38404e",
+          "#555e6d",
+          "#747e8d",
+          "#959faf",
+          "#bbc5d6",
+          "#e6effe"
+        ],
+        "cssVar": "--wt-steel"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted (Steel)",
+        "canonical": "oklch(50.1% 0.026 260.7)",
+        "tonalRamp": [
+          "#050b16",
+          "#1d2431",
+          "#38404e",
+          "#555e6d",
+          "#747e8d",
+          "#959faf",
+          "#bbc5d6",
+          "#e6effe"
+        ],
+        "cssVar": "--wt-muted"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(21.3% 0.026 263.8)",
+        "tonalRamp": [
+          "#060b16",
+          "#1e2431",
+          "#39404e",
+          "#565e6c",
+          "#757d8d",
+          "#969faf",
+          "#bcc4d5",
+          "#e6efff"
+        ],
+        "cssVar": "--wt-ink"
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "oklch(31.7% 0.031 264.0)",
+        "tonalRamp": [
+          "#050b18",
+          "#1c2433",
+          "#374050",
+          "#555e70",
+          "#747d90",
+          "#959fb2",
+          "#bac4d9",
+          "#e7effe"
+        ],
+        "cssVar": "--wt-ink-2"
+      },
+      "faint": {
+        "role": "neutral",
+        "displayName": "Faint",
+        "canonical": "oklch(66.4% 0.029 262.3)",
+        "tonalRamp": [
+          "#050b17",
+          "#1c2432",
+          "#37404f",
+          "#555e6f",
+          "#747e8f",
+          "#959fb1",
+          "#bac5d8",
+          "#e6effe"
+        ],
+        "cssVar": "--wt-faint"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(91.1% 0.015 260.7)",
+        "tonalRamp": [
+          "#080b12",
+          "#20242b",
+          "#3b4048",
+          "#595e66",
+          "#787e86",
+          "#999fa8",
+          "#bfc4ce",
+          "#e9eff9"
+        ],
+        "cssVar": "--wt-line"
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Hairline Soft",
+        "canonical": "oklch(94.2% 0.010 261.8)",
+        "tonalRamp": [
+          "#090b10",
+          "#212429",
+          "#3d4045",
+          "#5a5e64",
+          "#7a7d84",
+          "#9b9fa5",
+          "#c0c4cb",
+          "#ebeff6"
+        ],
+        "cssVar": "--wt-line-soft"
+      },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Blue-Grey Ground",
+        "canonical": "oklch(95.7% 0.007 260.7)",
+        "tonalRamp": [
+          "#090b0e",
+          "#222428",
+          "#3d4044",
+          "#5b5e62",
+          "#7b7d82",
+          "#9c9ea3",
+          "#c1c4c9",
+          "#eceff4"
+        ],
+        "cssVar": "--wt-ground"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface White",
+        "canonical": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#7d7d7d",
+          "#9e9e9e",
+          "#c4c4c4",
+          "#eeeeee"
+        ],
+        "cssVar": "--wt-surface"
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Surface 2",
+        "canonical": "oklch(97.8% 0.005 258.3)",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#232426",
+          "#3e4042",
+          "#5c5e60",
+          "#7c7d80",
+          "#9d9ea1",
+          "#c2c4c7",
+          "#edeff1"
+        ],
+        "cssVar": "--wt-surface-2"
+      },
+      "ok": {
+        "role": "status",
+        "displayName": "OK Green",
+        "canonical": "oklch(52.0% 0.108 163.3)",
+        "tonalRamp": [
+          "#000f08",
+          "#002c1c",
+          "#044c34",
+          "#0c6f4d",
+          "#2f916b",
+          "#56b48b",
+          "#7ddab0",
+          "#c3fee1"
+        ],
+        "cssVar": "--wt-ok"
+      },
+      "ok-soft": {
+        "role": "status",
+        "displayName": "OK Soft",
+        "canonical": "oklch(95.3% 0.020 169.3)",
+        "tonalRamp": [
+          "#030e0a",
+          "#1a2722",
+          "#36433e",
+          "#53615c",
+          "#72817b",
+          "#93a39c",
+          "#b8c9c2",
+          "#e2f3ec"
+        ],
+        "cssVar": "--wt-ok-soft"
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Alert Amber",
+        "canonical": "oklch(55.8% 0.129 61.7)",
+        "tonalRamp": [
+          "#150700",
+          "#371d03",
+          "#5f3301",
+          "#884d04",
+          "#b36916",
+          "#d78a41",
+          "#fbb271",
+          "#ffeada"
+        ],
+        "cssVar": "--wt-warn"
+      },
+      "warn-soft": {
+        "role": "status",
+        "displayName": "Alert Amber Soft",
+        "canonical": "oklch(96.3% 0.028 79.5)",
+        "tonalRamp": [
+          "#110a01",
+          "#2b2314",
+          "#483e2f",
+          "#665c4c",
+          "#867c6b",
+          "#a89d8b",
+          "#cec2b0",
+          "#f9edda"
+        ],
+        "cssVar": "--wt-warn-soft"
+      },
+      "bad": {
+        "role": "status",
+        "displayName": "Bad Red",
+        "canonical": "oklch(53.0% 0.186 20.7)",
+        "tonalRamp": [
+          "#1e0003",
+          "#4a000c",
+          "#7b051b",
+          "#ae0e2c",
+          "#d53f4b",
+          "#fd646b",
+          "#fcabaa",
+          "#fee9e8"
+        ],
+        "cssVar": "--wt-bad"
+      },
+      "bad-soft": {
+        "role": "status",
+        "displayName": "Bad Soft",
+        "canonical": "oklch(94.5% 0.022 7.2)",
+        "tonalRamp": [
+          "#130709",
+          "#2e2022",
+          "#4b3b3e",
+          "#69595b",
+          "#8a787b",
+          "#ab999c",
+          "#d2bfc1",
+          "#fde9ec"
+        ],
+        "cssVar": "--wt-bad-soft"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Public hero title only (product name over the stack)."
+      },
+      "display-ar": {
+        "displayName": "Display (Arabic)",
+        "purpose": "Thmanyah Serif Display for public hero, story, close and auth titles in RTL."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Public story sections, close section, auth page titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "App page heading; app h1-h6 use the display face at 700 (Thmanyah Sans in RTL)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text on working screens; lining numerals."
+      },
+      "body-ar": {
+        "displayName": "Body (Arabic)",
+        "purpose": "Thmanyah Sans for all Arabic UI and body text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels and compact UI labels."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Scoring formula (LTR-isolated), weights, timestamps, kbd, code."
+      },
+      "data-label": {
+        "displayName": "Data Label",
+        "purpose": "Uppercase mono table headers, sidebar groups, dropdown and search section labels; Thmanyah Sans without case or tracking in RTL."
+      }
+    },
+    "derivedColors": [
+      {
+        "name": "--wt-brand-strong",
+        "value": "color-mix(in oklab, var(--wt-brand) 80%, #000)",
+        "purpose": "Hover on brand fills."
+      },
+      {
+        "name": "--wt-brand-deep",
+        "value": "color-mix(in oklab, var(--wt-brand) 62%, #000)",
+        "purpose": "Active/pressed brand; nav pill shadow base."
+      },
+      {
+        "name": "--wt-brand-soft",
+        "value": "color-mix(in oklab, var(--wt-brand) 7%, var(--wt-surface))",
+        "purpose": "Hover fills, focused sign-in fields, table hover."
+      },
+      {
+        "name": "--wt-brand-tint",
+        "value": "color-mix(in oklab, var(--wt-brand) 14%, var(--wt-surface))",
+        "purpose": "Primary badges, loader track."
+      },
+      {
+        "name": "--wt-brand-line",
+        "value": "color-mix(in oklab, var(--wt-brand) 26%, var(--wt-surface))",
+        "purpose": "Hover borders, outline-primary border."
+      },
+      {
+        "name": "--wt-on-brand-muted",
+        "value": "color-mix(in oklab, var(--wt-on-brand) 72%, var(--wt-brand))",
+        "purpose": "Secondary text on sidebar and brand bars."
+      },
+      {
+        "name": "--wt-on-brand-faint",
+        "value": "color-mix(in oklab, var(--wt-on-brand) 14%, var(--wt-brand))",
+        "purpose": "Hover fills and dividers on brand surfaces."
+      },
+      {
+        "name": "--wt-focus",
+        "value": "color-mix(in oklab, var(--wt-signal) 55%, transparent)",
+        "purpose": "3px focus halo on fields and buttons."
+      }
+    ],
+    "shadows": [
+      {
+        "name": "rest",
+        "value": "0 1px 2px color-mix(in oklab, var(--wt-brand) 7%, transparent), 0 2px 8px color-mix(in oklab, var(--wt-ink) 5%, transparent)",
+        "purpose": "Cards, panels, stat cards, active language segment (--wt-shadow-1)."
+      },
+      {
+        "name": "raised",
+        "value": "0 2px 6px color-mix(in oklab, var(--wt-brand) 8%, transparent), 0 12px 32px color-mix(in oklab, var(--wt-ink) 11%, transparent)",
+        "purpose": "Dropdowns, floating notes button, public alerts (--wt-shadow-2)."
+      },
+      {
+        "name": "overlay",
+        "value": "0 4px 12px color-mix(in oklab, var(--wt-brand) 10%, transparent), 0 24px 64px color-mix(in oklab, var(--wt-ink) 18%, transparent)",
+        "purpose": "Toasts, dialogs, search, drawers (--wt-shadow-3)."
+      },
+      {
+        "name": "nav-pill",
+        "value": "0 2px 10px color-mix(in oklab, var(--wt-brand-deep) 35%, transparent)",
+        "purpose": "Lifts the active white nav pill off the brand sidebar."
+      },
+      {
+        "name": "slab-edge",
+        "value": "inset 0 2px 0 #fff, inset 0 -3px 0 color-mix(in oklab, var(--wt-brand) 10%, var(--wt-surface)), 0 1px 0 color-mix(in oklab, var(--wt-brand) 22%, var(--wt-surface)), 0 6px 0 color-mix(in oklab, var(--wt-brand) 14%, #c9d4ea), 0 30px 70px color-mix(in oklab, #000 36%, transparent)",
+        "purpose": "Sign-in module only: the DOM module rendered as the same extruded slab as its WebGL neighbours."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "All UI transitions (--wt-ease); ease-out, no bounce."
+      },
+      {
+        "name": "t-fast",
+        "value": "160ms",
+        "purpose": "Hover, colour and border changes (--wt-t-fast)."
+      },
+      {
+        "name": "t",
+        "value": "240ms",
+        "purpose": "Overlays, toasts, drawers, backdrop fades (--wt-t)."
+      },
+      {
+        "name": "t-slow",
+        "value": "420ms",
+        "purpose": "Notes drawer slide (--wt-t-slow)."
+      },
+      {
+        "name": "public-intro",
+        "value": "1.5s expo.out (stack); 1.1s expo.out (copy, module)",
+        "purpose": "One-time public intro; off under reduced motion."
+      },
+      {
+        "name": "scroll-scene",
+        "value": "Lenis duration 1.05 on the GSAP ticker; keyframes stack > modules > tasks > review > score > stack",
+        "purpose": "Landing page only; the single scroll-scrubbed timeline."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition 1ms; no intro, tilt, idle float, ambient field or smooth scroll",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "720px"
+      },
+      {
+        "name": "public-stack",
+        "value": "900px"
+      },
+      {
+        "name": "shell-drawer",
+        "value": "991.98px"
+      }
+    ],
+    "layout": [
+      {
+        "name": "side-w",
+        "value": "264px"
+      },
+      {
+        "name": "top-h",
+        "value": "60px"
+      },
+      {
+        "name": "container-main",
+        "value": "1480px"
+      },
+      {
+        "name": "signin-bar-h",
+        "value": "76px (60px under 720px)"
+      },
+      {
+        "name": "signin-bar-w",
+        "value": "min(880px, 100%)"
+      }
+    ],
+    "identity": {
+      "themeLayer": [
+        "static/wt/theme-rowd.css",
+        "templates/includes/wt_theme.html",
+        "static/wt/app.css",
+        "static/wt/public.css",
+        "core/context_processors.py (_wt_theme, _logo_tone, _wt_lang)"
+      ],
+      "vendorCredit": "templates/includes/rowd_credit.html (fixed; survives any redesign)",
+      "rebrandNoCode": "Site Settings: app_name, app_name_ar, logo; theme_preset rowd, or custom with primary_color, accent_color, button_text_color.",
+      "newTheme": "Copy static/wt/theme-rowd.css to theme-<name>.css and repoint the <link> in templates/includes/wt_theme.html; that link is the theme switch. Brand, accent and on-brand still come from Site Settings."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action on working screens: brand stadium, 600 weight, 160ms ease-out colour change.",
+      "html": "<button class=\"ds-btn-primary\">Submit work</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:.45rem;padding:.5rem 1rem;border:1px solid var(--wt-brand, #0033a0);border-radius:999px;background:var(--wt-brand, #0033a0);color:var(--wt-on-brand, #ffffff);font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);font-weight:600;font-size:.875rem;cursor:pointer;transition:background-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1)),border-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-btn-primary:hover{background:color-mix(in oklab,var(--wt-brand, #0033a0) 80%,#000);border-color:color-mix(in oklab,var(--wt-brand, #0033a0) 80%,#000)}.ds-btn-primary:active{background:color-mix(in oklab,var(--wt-brand, #0033a0) 62%,#000)}.ds-btn-primary:focus-visible{outline:2px solid var(--wt-signal, #2d6bff);outline-offset:2px;box-shadow:0 0 0 3px color-mix(in oklab, var(--wt-signal, #2d6bff) 55%, transparent)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral action: white stadium with hairline border; hover hands border and text to the brand.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid var(--wt-line, #dce2ec);border-radius:999px;background:var(--wt-surface, #ffffff);color:var(--wt-ink-2, #2a3242);font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);font-weight:600;font-size:.875rem;cursor:pointer;transition:border-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1)),color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-btn-secondary:hover{background:var(--wt-surface-2, #f6f8fb);border-color:color-mix(in oklab,var(--wt-brand, #0033a0) 26%,#fff);color:var(--wt-brand, #0033a0)}.ds-btn-secondary:focus-visible{outline:2px solid var(--wt-signal, #2d6bff);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "8px field, hairline border; brand border plus 3px signal halo on focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Work email</span><input class=\"ds-input\" type=\"email\" placeholder=\"name@company.com\"></label>",
+      "css": ".ds-field{display:grid;gap:6px;font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);max-width:320px}.ds-field-label{font-size:.82rem;font-weight:600;color:var(--wt-ink-2, #2a3242)}.ds-input{min-height:40px;padding:.5rem .8rem;border:1px solid var(--wt-line, #dce2ec);border-radius:8px;background:var(--wt-surface, #ffffff);color:var(--wt-ink, #131925);font:inherit;font-size:.9rem;caret-color:var(--wt-brand, #0033a0);transition:border-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1)),box-shadow 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-input::placeholder{color:var(--wt-faint, #8a94a6)}.ds-input:hover{border-color:color-mix(in oklab,var(--wt-brand, #0033a0) 30%,#dce2ec)}.ds-input:focus{outline:0;border-color:var(--wt-brand, #0033a0);box-shadow:0 0 0 3px color-mix(in oklab, var(--wt-signal, #2d6bff) 55%, transparent)}"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Brand-blue sidebar; items are pills, the active item is the white stadium module.",
+      "html": "<nav class=\"ds-side\"><span class=\"ds-side-group\">WORK</span><a class=\"ds-side-link is-active\" href=\"#\">My tasks</a><a class=\"ds-side-link\" href=\"#\">Modules</a><a class=\"ds-side-link\" href=\"#\">Reviews <span class=\"ds-count\">3</span></a></nav>",
+      "css": ".ds-side{display:flex;flex-direction:column;gap:2px;width:240px;padding:12px;background:var(--wt-brand, #0033a0);border-radius:12px;font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif)}.ds-side-group{margin:6px 12px;font-family:var(--wt-font-mono, \"IBM Plex Mono\", ui-monospace, monospace);font-size:.68rem;font-weight:500;letter-spacing:.08em;color:color-mix(in oklab,var(--wt-on-brand, #ffffff) 72%,var(--wt-brand, #0033a0))}.ds-side-link{display:flex;align-items:center;min-height:40px;padding:8px 12px;border-radius:999px;color:var(--wt-on-brand, #ffffff);font-size:.875rem;font-weight:500;text-decoration:none;transition:background-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-side-link:hover{background:color-mix(in oklab,var(--wt-on-brand, #ffffff) 14%,var(--wt-brand, #0033a0))}.ds-side-link.is-active{background:var(--wt-surface, #ffffff);color:var(--wt-brand, #0033a0);font-weight:600;box-shadow:0 2px 10px color-mix(in oklab,color-mix(in oklab,var(--wt-brand, #0033a0) 62%,#000) 35%,transparent)}.ds-side-link:focus-visible{outline:2px solid var(--wt-signal, #2d6bff);outline-offset:2px}.ds-count{margin-inline-start:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--wt-accent, #19bedc);color:var(--wt-ink, #131925);font-size:.7rem;font-weight:700;line-height:20px;text-align:center}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White 12px panel on the blue-grey ground, hairline border, resting tinted shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-head\">Due this week</div><div class=\"ds-card-body\"><span class=\"ds-num\">7</span> tasks across 3 modules</div></div>",
+      "css": ".ds-card{max-width:340px;background:var(--wt-surface, #ffffff);border:1px solid var(--wt-line, #dce2ec);border-radius:12px;box-shadow:0 1px 2px color-mix(in oklab,var(--wt-brand, #0033a0) 7%,transparent),0 2px 8px color-mix(in oklab,var(--wt-ink, #131925) 5%,transparent);font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);color:var(--wt-ink, #131925)}.ds-card-head{padding:14px 18px;border-bottom:1px solid var(--wt-line-soft, #e8ecf3);font-weight:600}.ds-card-body{padding:18px;font-size:.9375rem;line-height:1.55}.ds-num{font-family:var(--wt-font-display, \"Montserrat Alternates\", \"Thmanyah Sans\", \"Segoe UI\", sans-serif);font-weight:700;font-size:1.6rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Status Badges",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Stadium badges: soft tint fill, strong status text; amber only for alerts.",
+      "html": "<span class=\"ds-badge ds-badge--ok\">Approved</span> <span class=\"ds-badge ds-badge--warn\">Overdue</span> <span class=\"ds-badge ds-badge--brand\">In review</span>",
+      "css": ".ds-badge{display:inline-block;padding:.36em .6em;border-radius:999px;font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);font-size:.72rem;font-weight:600;font-variant-numeric:tabular-nums}.ds-badge--ok{background:var(--wt-ok-soft, #e3f4ed);color:var(--wt-ok, #0e7c57)}.ds-badge--warn{background:var(--wt-warn-soft, #fdf1de);color:var(--wt-warn, #a85f00)}.ds-badge--brand{background:color-mix(in oklab,var(--wt-brand, #0033a0) 14%,#fff);color:var(--wt-brand, #0033a0)}"
+    },
+    {
+      "name": "Sign-in Module Stack",
+      "kind": "custom",
+      "refersTo": "signin-module",
+      "description": "Signature: three offset stadium modules on the brand field; the middle one is the working sign-in form (this is the static no-WebGL composition).",
+      "html": "<div class=\"ds-stack\"><div class=\"ds-slot ds-slot--a\"></div><form class=\"ds-module\" onsubmit=\"return false\"><label class=\"ds-mf\"><span>Email</span><input type=\"email\" placeholder=\"name@company.com\"></label><label class=\"ds-mf\"><span>Password</span><input type=\"password\" placeholder=\"Password\"></label><button class=\"ds-submit\">Sign in <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></button></form><div class=\"ds-slot ds-slot--c\"></div></div>",
+      "css": ".ds-stack{display:grid;gap:12px;padding:40px 48px;background:var(--wt-brand, #0033a0);border-radius:16px;font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);overflow:hidden}.ds-slot{height:58px;border-radius:999px}.ds-slot--a{width:92%;margin-inline-start:-4%;background:var(--wt-signal, #2d6bff)}.ds-slot--c{width:56%;margin-inline-start:44%;background:var(--wt-accent, #19bedc)}.ds-module{display:flex;min-height:72px;padding:8px;border-radius:999px;background:var(--wt-surface, #ffffff);box-shadow:inset 0 2px 0 #fff,inset 0 -3px 0 color-mix(in oklab,var(--wt-brand, #0033a0) 10%,#fff),0 1px 0 color-mix(in oklab,var(--wt-brand, #0033a0) 22%,#fff),0 6px 0 color-mix(in oklab,var(--wt-brand, #0033a0) 14%,#c9d4ea),0 30px 70px color-mix(in oklab,#000 36%,transparent)}.ds-mf{flex:1;display:flex;flex-direction:column;justify-content:center;padding:6px 22px;border-radius:999px;transition:background-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-mf:focus-within{background:color-mix(in oklab,var(--wt-brand, #0033a0) 7%,#fff)}.ds-mf span{font-size:.76rem;font-weight:600;color:var(--wt-muted, #5b6473)}.ds-mf input{border:0;outline:0;padding:0;background:transparent;font:inherit;font-size:1rem;font-weight:500;color:var(--wt-ink, #131925)}.ds-submit{display:inline-flex;align-items:center;gap:12px;padding:0 24px;border:0;border-radius:999px;background:var(--wt-brand, #0033a0);color:var(--wt-on-brand, #ffffff);font-family:var(--wt-font-display, \"Montserrat Alternates\", \"Thmanyah Sans\", \"Segoe UI\", sans-serif);font-weight:700;font-size:1rem;cursor:pointer;transition:background-color 160ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1)),gap 240ms var(--wt-ease, cubic-bezier(0.22, 1, 0.36, 1))}.ds-submit:hover{background:color-mix(in oklab,var(--wt-brand, #0033a0) 80%,#000);gap:16px}.ds-submit:focus-visible{outline:2px solid var(--wt-accent, #19bedc);outline-offset:3px}"
+    },
+    {
+      "name": "Vendor Credit",
+      "kind": "custom",
+      "description": "Fixed ROWD credit, not part of the theme layer. White mark on brand surfaces, navy mark on light ones; never restyled or recoloured. The wordmark is a text stand-in here; production uses static/wt/brand/rowd_logo_*_transparent.png.",
+      "html": "<a class=\"ds-credit\" href=\"https://rowd.co\">Built by <strong>ROWD</strong></a>",
+      "css": ".ds-credit{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--wt-brand, #0033a0);color:color-mix(in oklab,var(--wt-on-brand, #ffffff) 72%,var(--wt-brand, #0033a0));font-family:var(--wt-font-body, \"Montserrat\", \"Thmanyah Sans\", \"Segoe UI\", system-ui, sans-serif);font-size:.72rem;text-decoration:none;white-space:nowrap}.ds-credit strong{color:var(--wt-on-brand, #ffffff);letter-spacing:.04em}.ds-credit:hover{color:var(--wt-on-brand, #ffffff)}.ds-credit:focus-visible{outline:2px solid var(--wt-accent, #19bedc);outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Three Modules, One System",
+    "overview": "The ROWD stadium module (a rounded slab with true semicircular ends) is the unit of work, and everything is built from it. On the public pages a Rowd Blue field holds a stack of three offset modules. The top and bottom ones are satin extruded slabs in WebGL, and the middle one is the white sign-in form. Inside the product the same atom shrinks to a working size: the white pill that marks the active sidebar item, the pill buttons, the three-module watermark on page banners, and the default module cover. A screen should still read as this world with all copy removed: a blue field, offset rounded slabs, and white working surfaces.\n\nThe system has two registers. Public pages (landing, sign-in, register, password reset) are where the show happens: full-bleed brand field, large display type, one scroll-scrubbed 3D scene. Working screens are tools. They use a calm blue-grey ground (#eef1f6), white 12px cards, hairline lines, a brand-blue sidebar, and no 3D. Density is office-desktop first, with a full phone layout (brand mobile bar plus a five-item bottom nav).\n\nIdentity comes in two layers that must never mix. The **theme layer** (product name in EN and AR, customer logo, colours, fonts, imagery) can be swapped per customer. The **vendor credit** (the ROWD mark plus \"Built by / تطوير\", linked to rowd.co) is fixed and survives every redesign. Arabic is designed first. RTL mirrors layout, gradients, the banner motif and the 3D stage, and Arabic gets its own faces instead of falling back to Latin ones.",
+    "keyCharacteristics": [
+      "One atom: the stadium module, used at every scale from a 3D slab down to a nav pill.",
+      "Brand inputs are kept to a minimum (brand, accent, on-brand). Every tint, shade, line and shadow is derived with `color-mix(in oklab, ...)`, so any customer colour re-tints the whole product, including the 3D scene.",
+      "Spectacle stays on public pages. Working screens stay calm and fast.",
+      "Pills for actions and navigation, 12px cards, 8px inputs.",
+      "Soft blue-tinted ambient shadows. Nothing glossy, nothing hard-edged except the extruded slab edge of the sign-in module.",
+      "Arabic-first type: Thmanyah Sans for UI, Thmanyah Serif Display for public headlines."
+    ],
+    "rules": [
+      {
+        "name": "The Two Inputs Rule",
+        "body": "A customer changes brand and accent (plus on-brand), and nothing else needs to change. Any new colour on a component must be a `color-mix` of an existing token, never a new hex.",
+        "section": "colors"
+      },
+      {
+        "name": "The Amber Is Alarm Rule",
+        "body": "Warn amber appears only for alerts, overdue states and impersonation. It is never used as decoration or as a second accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cyan Carries Ink Rule",
+        "body": "On Cyan Pulse fills (count badges, the notes badge) the text is Ink, not white.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono Means Machine Rule",
+        "body": "IBM Plex Mono is for data: numbers, the formula, times, keys, and the small column and group labels that index data. It never sets a heading, a sentence or a button.",
+        "section": "typography"
+      },
+      {
+        "name": "The Arabic Is Not A Fallback Rule",
+        "body": "Every Latin type rule has an explicit `html[dir=\"rtl\"]` counterpart that swaps the family, sets letter spacing to 0, drops uppercase and opens up the line height (about 1.22–1.45). Never let Arabic inherit negative tracking or uppercase.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Numbers Rule",
+        "body": "Tables, stat values, badges and `.wt-num` use `font-variant-numeric: tabular-nums`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Tool Rule",
+        "body": "No 3D, WebGL or scroll choreography on working screens. Depth there comes only from the shadow vocabulary above.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Tinted Shadow Rule",
+        "body": "Shadows are never neutral grey or black. They mix brand and ink at low opacity.",
+        "section": "elevation"
+      },
+      {
+        "name": "The True Cap Rule",
+        "body": "A module's ends are always full semicircles. Never scale a stadium non-uniformly, and never swap it for a rounded rectangle with a small radius when it means \"module\".",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** read only `--wt-*` tokens in components, and derive any new tint with `color-mix(in oklab, var(--wt-brand) N%, var(--wt-surface))`.",
+      "**Do** use the stadium for anything that is an action, a navigation target or a unit of work, and keep its caps true semicircles.",
+      "**Do** write an `html[dir=\"rtl\"]` counterpart for every Latin type rule (Thmanyah family, letter spacing 0, no uppercase, taller line height), and use logical properties for layout.",
+      "**Do** keep the ROWD credit (`includes/rowd_credit.html`) on every shell and public page, with the white mark on brand surfaces and the navy mark on light ones.",
+      "**Do** source the product name and logo only from Site Settings, and let `_logo_tone` choose the logo backdrop.",
+      "**Do** use IBM Plex Mono for numbers, the formula, times, keys and data-index labels, and keep the formula LTR-isolated.",
+      "**Do** give every 3D surface a static, readable fallback and honour `prefers-reduced-motion`."
+    ],
+    "donts": [
+      "**Don't** load three.js, GSAP scroll scenes or Lenis on working screens. Spectacle belongs on public pages only.",
+      "**Don't** hard-code a customer name, logo or brand colour, or a hex value in the component layer.",
+      "**Don't** recolour, distort or add effects to the ROWD mark, or move the credit into the theme layer.",
+      "**Don't** use amber for anything but alerts, overdue states and warnings.",
+      "**Don't** use bounce, overshoot or spring easing. UI motion stays in the 160–240ms ease-out band.",
+      "**Don't** set headings, sentences or buttons in IBM Plex Mono.",
+      "**Don't** let Arabic inherit negative letter spacing or uppercase.",
+      "**Don't** add new multi-colour icon tiles or rows of identical stat cards. They are legacy patterns awaiting page passes, not system components."
+    ]
+  }
+}

@@ -1,0 +1,100 @@
+/* ==========================================================================
+   WorkTrack Pro · THEME LAYER · "ROWD" (default)
+   --------------------------------------------------------------------------
+   This file is the only place a theme lives: typefaces and design tokens.
+   To re-theme an install, copy this file, change the values, and point the
+   <link> in templates/includes/wt_theme.html at it. Brand + accent colours are also overridable per install
+   from Site Settings (they are injected inline after this file loads).
+   Nothing in app.css may hard-code a colour, a font or a radius.
+   ========================================================================== */
+
+/* ── Typefaces (self-hosted) ─────────────────────────────────────────────── */
+@font-face { font-family: "Montserrat Alternates"; src: url("fonts/montserrat-alternates-latin-500.woff2") format("woff2"); font-weight: 500; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat Alternates"; src: url("fonts/montserrat-alternates-latin-600.woff2") format("woff2"); font-weight: 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat Alternates"; src: url("fonts/montserrat-alternates-latin-700.woff2") format("woff2"); font-weight: 700; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat Alternates"; src: url("fonts/montserrat-alternates-latin-800.woff2") format("woff2"); font-weight: 800; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat Alternates"; src: url("fonts/montserrat-alternates-latin-ext-700.woff2") format("woff2"); font-weight: 700; font-display: swap; unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-400.woff2") format("woff2"); font-weight: 400; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-500.woff2") format("woff2"); font-weight: 500; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-600.woff2") format("woff2"); font-weight: 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-700.woff2") format("woff2"); font-weight: 700; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-ext-400.woff2") format("woff2"); font-weight: 400; font-display: swap; unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Montserrat"; src: url("fonts/montserrat-latin-ext-600.woff2") format("woff2"); font-weight: 600; font-display: swap; unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-latin-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-latin-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("fonts/ibm-plex-mono-latin-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+
+/* Arabic: Thmanyah (Sans for UI and body, Serif Display for public headlines). */
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/sans-light.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/sans-regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/sans-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/sans-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Thmanyah Sans"; src: url("fonts/sans-black.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+@font-face { font-family: "Thmanyah Serif Display"; src: url("fonts/serif-display-medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Thmanyah Serif Display"; src: url("fonts/serif-display-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Thmanyah Serif Display"; src: url("fonts/serif-display-black.woff2") format("woff2"); font-weight: 900; font-display: swap; }
+
+/* ── Tokens ──────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand inputs. Site Settings may override these two (+ on-brand) inline. */
+  --wt-brand: #0033a0;            /* Rowd Blue: primary actions, sidebar, selection */
+  --wt-accent: #19bedc;           /* Cyan Pulse: data highlight, live states */
+  --wt-on-brand: #ffffff;
+
+  /* Supporting brand roles */
+  --wt-signal: #2d6bff;           /* Signal Blue: links, focus, secondary series */
+  --wt-steel: #5b6473;
+
+  /* Neutral scale (blue-tinted, from the ROWD neutral scale) */
+  --wt-ink: #131925;
+  --wt-ink-2: #2a3242;
+  --wt-muted: #5b6473;
+  --wt-faint: #8a94a6;
+  --wt-line: #dce2ec;
+  --wt-line-soft: #e8ecf3;
+  --wt-ground: #eef1f6;
+  --wt-surface: #ffffff;
+  --wt-surface-2: #f6f8fb;
+
+  /* Status (amber is reserved for alerts, per the brand) */
+  --wt-ok: #0e7c57;
+  --wt-ok-soft: #e3f4ed;
+  --wt-warn: #a85f00;
+  --wt-warn-soft: #fdf1de;
+  --wt-bad: #c0283a;
+  --wt-bad-soft: #fbe7ea;
+
+  /* Type */
+  --wt-font-display: "Montserrat Alternates", "Thmanyah Sans", "Segoe UI", sans-serif;
+  --wt-font-body: "Montserrat", "Thmanyah Sans", "Segoe UI", system-ui, sans-serif;
+  --wt-font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --wt-font-ar: "Thmanyah Sans", "Segoe UI", sans-serif;
+  --wt-font-ar-display: "Thmanyah Serif Display", "Thmanyah Sans", serif;
+
+  /* Shape */
+  --wt-r-card: 12px;
+  --wt-r-input: 8px;
+  --wt-r-pill: 999px;
+
+  /* Space (8px base: 8·16·24·32·48) */
+  --wt-s1: 4px;
+  --wt-s2: 8px;
+  --wt-s3: 12px;
+  --wt-s4: 16px;
+  --wt-s5: 24px;
+  --wt-s6: 32px;
+  --wt-s7: 48px;
+  --wt-s8: 64px;
+
+  /* Motion: restrained, precise, ease-out, no bounce */
+  --wt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --wt-t-fast: 160ms;
+  --wt-t: 240ms;
+  --wt-t-slow: 420ms;
+
+  /* Layout */
+  --wt-side-w: 264px;
+  --wt-top-h: 60px;
+}

@@ -1,0 +1,1175 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Kanban Board — WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --kanban-bg: #f8fafc;
+        --column-bg: #ffffff;
+        --card-bg: #0f172a;
+        --glass-blur: 20px;
+        --accent-emerald: var(--color-primary, #10b981);
+        --accent-glow: color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent);
+    }
+
+    body {
+        background-color: var(--kanban-bg) !important;
+        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+        background-size: 24px 24px;
+        color: #1e293b !important;
+    }
+
+    /* ── COMMANDER HERO BANNER (ONE LINE STREAMLINED) ── */
+    .kanban-hero-banner {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 20px;
+        padding: 2rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+        box-shadow: 0 10px 30px rgba(var(--wt-brand-rgb), 0.25) !important;
+        color: #ffffff !important;
+    }
+
+    .kanban-hero-title {
+        font-size: clamp(1.6rem, 2.8vw, 2.3rem);
+        font-weight: 800;
+        margin: 0;
+        color: #ffffff !important;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+    }
+
+    .kanban-hero-accent {
+        color: var(--color-accent, #34d399);
+        font-weight: 800;
+        text-shadow: 0 0 25px color-mix(in srgb, var(--color-accent, #34d399) 40%, transparent);
+    }
+
+    .kanban-subtag {
+        font-family: 'Space Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        color: var(--color-primary, #10b981);
+        font-weight: 800;
+    }
+
+    .btn-emerald-action {
+        background: var(--color-primary, #10b981);
+        color: #ffffff !important;
+        font-weight: 800;
+        font-size: 0.85rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 999px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 15px rgba(var(--wt-brand-rgb), 0.35);
+        transition: all 0.25s ease;
+        text-decoration: none;
+    }
+    .btn-emerald-action:hover {
+        background: var(--wt-brand);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--wt-brand-rgb), 0.5);
+    }
+
+    .btn-hero-glass {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.55rem 1.15rem;
+        border-radius: 999px;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+    }
+    .btn-hero-glass:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+    }
+
+    /* ── GREEN STATS UNDER BANNER ── */
+    .kanban-stats-strip {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1rem;
+    }
+    @media (max-width: 1200px) {
+        .kanban-stats-strip {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    @media (max-width: 640px) {
+        .kanban-stats-strip {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .stat-green-card {
+        background: linear-gradient(135deg, color-mix(in oklab, var(--wt-brand) 62%, #000) 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 100%);
+        border: 1px solid rgba(var(--wt-brand-rgb), 0.3);
+        border-radius: 16px;
+        padding: 1.15rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+    .stat-green-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), 0 0 15px rgba(var(--wt-brand-rgb), 0.2);
+    }
+    .stat-green-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--wt-brand-tint);
+        margin-bottom: 0.4rem;
+        z-index: 2;
+    }
+    .stat-green-value {
+        font-size: 1.9rem;
+        font-weight: 900;
+        color: #ffffff;
+        line-height: 1;
+        letter-spacing: -1px;
+        z-index: 2;
+    }
+    .stat-green-icon {
+        position: absolute;
+        top: 1.1rem;
+        right: 1.2rem;
+        font-size: 1.4rem;
+        opacity: 0.22;
+        color: var(--wt-accent);
+        z-index: 1;
+    }
+
+    /* ── MODULE FILTER BOX ── */
+    .kanban-filter-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.1rem 1.35rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .module-search-box {
+        position: relative;
+    }
+    .module-search-box .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.85rem;
+        pointer-events: none;
+    }
+    .module-search-box input {
+        padding-left: 38px;
+        padding-right: 32px;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .module-search-box input:focus {
+        border-color: var(--wt-brand);
+        box-shadow: 0 0 0 3px rgba(var(--wt-brand-rgb), 0.18);
+    }
+    .module-search-box .clear-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        color: #94a3b8;
+        font-size: 1.2rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .module-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        z-index: 1050;
+        display: none;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    .module-dropdown-menu.show {
+        display: block;
+    }
+    .module-item-option {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.6rem 0.9rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s;
+    }
+    .module-item-option:hover {
+        background: #f0fdf4;
+    }
+    .module-item-option.selected {
+        background: var(--wt-brand-soft);
+    }
+    .module-item-title {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: block;
+    }
+    .module-item-group {
+        font-size: 0.7rem;
+        color: #64748b;
+        display: block;
+    }
+
+    .module-filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: var(--wt-brand-soft);
+        border: 1px solid var(--wt-brand-tint);
+        color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(var(--wt-brand-rgb), 0.1);
+    }
+    .module-filter-pill:hover {
+        background: var(--wt-brand-soft);
+        border-color: var(--wt-accent);
+        transform: translateY(-1px);
+    }
+    .module-filter-pill i {
+        font-size: 0.72rem;
+        opacity: 0.65;
+        transition: opacity 0.2s;
+    }
+    .module-filter-pill:hover i {
+        opacity: 1;
+        color: var(--wt-bad);
+    }
+
+    /* ── KANBAN BOARD ── */
+    .kanban-board-container {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 2rem;
+        min-height: 800px;
+        height: auto;
+        align-items: stretch;
+    }
+
+    .kanban-column-wow {
+        flex: 1 1 240px;
+        min-width: 250px;
+        max-width: 350px;
+        background: var(--column-bg);
+        border-radius: 20px;
+        padding: 1.25rem 0.75rem 0 0.75rem;
+        min-height: 600px;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .kanban-column-wow.drag-over {
+        background: #f1f5f9;
+        border-color: var(--accent-emerald);
+    }
+
+    .task-list-area {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 1rem;
+        min-height: 400px;
+    }
+
+    .column-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .column-title {
+        font-weight: 800;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .column-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 0.75rem;
+        box-shadow: 0 0 10px var(--col-color);
+        background-color: var(--col-color);
+    }
+
+    .column-count {
+        margin-left: auto;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+    }
+
+    /* ── BLACK STYLE TASK CARDS ── */
+    .task-card-wow {
+        background: #0f172a;
+        border-radius: 12px;
+        padding: 1.15rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        cursor: grab;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: 1px solid rgba(255,255,255,0.05);
+        position: relative;
+        overflow: hidden;
+        display: none; /* Controlled by JS Pagination */
+    }
+
+    .task-card-wow.visible { display: block; }
+
+    .task-card-wow::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0; width: 3px;
+        background: var(--col-color);
+        box-shadow: 0 0 10px var(--col-color);
+    }
+
+    .task-card-wow:hover {
+        transform: translateY(-5px);
+        background: #1e293b;
+        border-color: var(--accent-emerald);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+
+    .task-card-wow.dragging { opacity: 0.1; }
+
+    .card-title-wow {
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #ffffff;
+        margin-bottom: 0.75rem;
+        line-height: 1.3;
+    }
+    .card-title-wow a { color: inherit !important; text-decoration: none; }
+
+    .card-meta-wow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
+
+    .meta-badge {
+        padding: 0.2rem 0.45rem;
+        border-radius: 5px;
+        font-size: 8.5px;
+        font-weight: 900;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .priority-critical { background: rgba(192, 40, 58, 0.2); color: #f87171; border: 1px solid rgba(192, 40, 58, 0.1); }
+    .priority-high     { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.1); }
+    .priority-medium   { background: color-mix(in srgb, var(--color-primary, #10b981) 22%, transparent); color: var(--color-accent, #34d399); border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent); }
+    .priority-low      { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.1); }
+
+    .card-footer-wow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .avatar-stack { display: flex; align-items: center; }
+    .avatar-sm-pill {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.55rem;
+        font-weight: 900;
+        border: 2px solid #0f172a;
+        margin-left: -8px;
+        color: var(--accent-emerald);
+    }
+    .avatar-sm-pill:first-child { margin-left: 0; }
+    .avatar-sm-pill img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+    .card-stats {
+        display: flex;
+        gap: 0.75rem;
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 700;
+    }
+    .card-stats span i { color: var(--accent-emerald); opacity: 0.7; }
+
+    .kanban-restricted {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        color: #cbd5e1;
+        font-size: 0.7rem;
+    }
+
+    /* ── PAGINATION CONTROLS ── */
+    .kanban-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        margin-top: auto;
+        border-top: 1px solid #f1f5f9;
+        background: #fafafa;
+        border-radius: 0 0 20px 20px;
+    }
+
+    .pager-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .pager-btn:hover:not(:disabled) { border-color: var(--accent-emerald); color: var(--accent-emerald); }
+    .pager-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .pager-info { font-size: 0.65rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* RTL specific overrides */
+    html[dir="rtl"] .module-search-box .search-icon,
+    body.rtl-mode .module-search-box .search-icon {
+        left: auto;
+        right: 14px;
+    }
+    html[dir="rtl"] .module-search-box input,
+    body.rtl-mode .module-search-box input {
+        padding-left: 32px;
+        padding-right: 38px;
+    }
+    html[dir="rtl"] .module-search-box .clear-btn,
+    body.rtl-mode .module-search-box .clear-btn {
+        right: auto;
+        left: 12px;
+    }
+    html[dir="rtl"] .stat-green-icon,
+    body.rtl-mode .stat-green-icon {
+        right: auto;
+        left: 1.2rem;
+    }
+    html[dir="rtl"] .pulse-dot-premium,
+    body.rtl-mode .pulse-dot-premium {
+        margin-right: 0;
+        margin-left: 12px;
+    }
+    html[dir="rtl"] .task-card-wow::before,
+    body.rtl-mode .task-card-wow::before {
+        left: auto;
+        right: 0;
+    }
+    html[dir="rtl"] .column-dot,
+    body.rtl-mode .column-dot {
+        margin-right: 0;
+        margin-left: 0.75rem;
+    }
+    html[dir="rtl"] .column-count,
+    body.rtl-mode .column-count {
+        margin-left: 0;
+        margin-right: auto;
+    }
+    html[dir="rtl"] .avatar-sm-pill,
+    body.rtl-mode .avatar-sm-pill {
+        margin-left: 0;
+        margin-right: -8px;
+    }
+    html[dir="rtl"] .avatar-sm-pill:first-child,
+    body.rtl-mode .avatar-sm-pill:first-child {
+        margin-right: 0;
+    }
+    html[dir="rtl"] .pager-btn.prev i,
+    body.rtl-mode .pager-btn.prev i {
+        transform: rotate(180deg);
+    }
+    html[dir="rtl"] .pager-btn.next i,
+    body.rtl-mode .pager-btn.next i {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Hero Banner (Simplified Minimal Green Design) -->
+    <div class="kanban-hero-banner mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 position-relative" style="z-index: 2;">
+            <div>
+                <h1 class="kanban-hero-title mb-0 fw-bold text-white">
+                    <span class="lang-en">Kanban Board</span><span class="lang-ar">لوحة متابعة المهام</span>
+                </h1>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                {% if user.role == 'manager' or user.role == 'super_admin' %}
+                <a href="{% url 'task-create' %}" class="btn btn-emerald-action">
+                    <i class="fas fa-plus"></i>
+                    <span><span class="lang-en">New Task</span><span class="lang-ar">مهمة جديدة</span></span>
+                </a>
+                {% endif %}
+                <a href="{% url 'task-list' %}" class="btn btn-hero-glass">
+                    <i class="fas fa-th-list"></i>
+                    <span><span class="lang-en">Structured List</span><span class="lang-ar">القائمة الهيكلية</span></span>
+                </a>
+                <a href="{% url 'task-calendar' %}" class="btn btn-hero-glass">
+                    <i class="far fa-calendar-alt"></i>
+                    <span><span class="lang-en">Calendar</span><span class="lang-ar">التقويم</span></span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Green Statistics Strip Under Banner -->
+    <div class="kanban-stats-strip mb-4">
+        <div class="stat-green-card">
+            <i class="fas fa-layer-group stat-green-icon"></i>
+            <span class="stat-green-label"><span class="lang-en">Tactical Volume</span><span class="lang-ar">إجمالي المهام</span></span>
+            <span class="stat-green-value" id="stat-total">0</span>
+        </div>
+        <div class="stat-green-card">
+            <i class="fas fa-clock stat-green-icon" style="color: #f59e0b;"></i>
+            <span class="stat-green-label"><span class="lang-en">Queued Ops</span><span class="lang-ar">قيد الانتظار</span></span>
+            <span class="stat-green-value text-warning" id="stat-pending">0</span>
+        </div>
+        <div class="stat-green-card">
+            <i class="fas fa-spinner stat-green-icon" style="color: #3b82f6;"></i>
+            <span class="stat-green-label"><span class="lang-en">Live Processing</span><span class="lang-ar">قيد الإنجاز</span></span>
+            <span class="stat-green-value text-info" id="stat-in_progress">0</span>
+        </div>
+        <div class="stat-green-card">
+            <i class="fas fa-paper-plane stat-green-icon" style="color: #8b5cf6;"></i>
+            <span class="stat-green-label"><span class="lang-en">Deployments</span><span class="lang-ar">تم التسليم</span></span>
+            <span class="stat-green-value" style="color: #c4b5fd;" id="stat-submitted">0</span>
+        </div>
+        <div class="stat-green-card">
+            <i class="fas fa-check-circle stat-green-icon" style="color: var(--wt-ok);"></i>
+            <span class="stat-green-label"><span class="lang-en">Certified</span><span class="lang-ar">تمت المصادقة</span></span>
+            <span class="stat-green-value text-success" id="stat-approved">0</span>
+        </div>
+        <div class="stat-green-card">
+            <i class="fas fa-exclamation-triangle stat-green-icon" style="color: var(--wt-bad);"></i>
+            <span class="stat-green-label"><span class="lang-en">Critical Alerts</span><span class="lang-ar">متأخرة</span></span>
+            <span class="stat-green-value text-danger" id="stat-overdue">0</span>
+        </div>
+    </div>
+
+    <!-- Module Multi-Select Filter Bar -->
+    <div class="kanban-filter-container mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-cubes text-emerald" style="color: var(--color-primary, #10b981);"></i>
+                <span class="fw-bold" style="font-size: 0.92rem; color: #1e293b;">
+                    <span class="lang-en">Filter by Module</span><span class="lang-ar">تصفية المهام حسب الوحدة</span>
+                </span>
+                <span class="badge rounded-pill bg-light text-muted border px-2.5 py-1" id="filterStatusText">
+                    <span class="lang-en">All Modules Displayed</span><span class="lang-ar">عرض كل الوحدات</span>
+                </span>
+            </div>
+            <div id="clearFilterWrapper" style="display: none;">
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-bold" onclick="clearAllModuleFilters()">
+                    <i class="fas fa-times me-1"></i> <span class="lang-en">Clear Filter</span><span class="lang-ar">إلغاء التصفية</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5 col-lg-4 position-relative">
+                <div class="module-search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="moduleSearchInput" class="form-control" placeholder="Search module name..." autocomplete="off">
+                    <button type="button" id="moduleSearchClear" class="clear-btn" style="display: none;" onclick="resetModuleSearchInput()">&times;</button>
+                </div>
+                <!-- Dropdown suggestions -->
+                <div id="moduleDropdownList" class="module-dropdown-menu shadow">
+                    <div class="p-2 border-bottom d-flex justify-content-between align-items-center bg-light">
+                        <span class="small text-muted fw-bold"><span class="lang-en">Select Modules</span><span class="lang-ar">اختر الوحدات</span></span>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small text-success fw-bold" onclick="clearAllModuleFilters()">
+                            <span class="lang-en">Reset</span><span class="lang-ar">إعادة ضبط</span>
+                        </button>
+                    </div>
+                    <div class="module-dropdown-items" id="moduleDropdownItems">
+                        {% for mod in modules %}
+                        <div class="module-item-option" data-module-id="{{ mod.id }}" data-module-name="{{ mod.name|lower }}" onclick="toggleModuleFilter('{{ mod.id }}', '{{ mod.name|escapejs }}')">
+                            <div class="form-check m-0 pointer-events-none">
+                                <input class="form-check-input module-chk" type="checkbox" id="chk-mod-{{ mod.id }}" value="{{ mod.id }}">
+                            </div>
+                            <div class="module-item-info flex-grow-1">
+                                <span class="module-item-title">{{ mod.name }}</span>
+                                {% if mod.group_link %}
+                                <span class="module-item-group">{{ mod.group_link.name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="p-3 text-center text-muted small">No modules available</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-7 col-lg-8">
+                <!-- Active Module Pills Container -->
+                <div class="selected-pills-container d-flex flex-wrap gap-2 align-items-center" id="selectedModulePills">
+                    <span class="text-muted small fst-italic" id="noFilterHelpText">
+                        <span class="lang-en">Type above or click to select specific modules to focus on.</span>
+                        <span class="lang-ar">ابحث أعلاه أو اختر وحدات محددة لعرض مهامها فقط.</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-board-container" id="kanbanBoard">
+        {% for status, col in columns.items %}
+        {% with col_color=col.color|default:'#64748b' %}
+        <div class="kanban-column-wow" data-status="{{ status }}" ondragover="onDragOver(event)" ondrop="onDrop(event, this)" style="--col-color: {{ col_color }};">
+            <div class="column-header">
+                <div class="column-dot" style="background-color: var(--col-color);"></div>
+                <h5 class="column-title">{{ col.label }}</h5>
+                <span class="column-count" id="count-{{ status }}">{{ col.tasks|length }}</span>
+            </div>
+            
+            <div class="task-list-area" id="list-{{ status }}">
+                {% for task in col.tasks %}
+                <div class="task-card-wow" 
+                     draggable="{% if user.role == 'manager' or user.role == 'super_admin' %}true{% else %}false{% endif %}"
+                     data-task-id="{{ task.id }}"
+                     data-move-url="{% url 'task-kanban-move' task.id %}"
+                     data-status="{{ status }}"
+                     data-module-id="{{ task.work_module.id|default:'' }}"
+                     data-module-name="{{ task.work_module.name|escapejs|default:'' }}"
+                     ondragstart="onDragStart(event)"
+                     ondragend="onDragEnd(event)"
+                     onclick="window.location.href='{% url 'task-detail' task.id %}'"
+                     style="cursor: pointer;">
+                    
+                    {% if user.role != 'manager' and user.role != 'super_admin' %}
+                    <div class="kanban-restricted" title="Only managers can move tasks">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-title-wow">
+                        <a href="{% url 'task-detail' task.id %}" class="text-decoration-none text-white">{{ task.title }}</a>
+                    </div>
+                    
+                    <div class="card-meta-wow">
+                        <span class="meta-badge priority-{{ task.priority }}">
+                            <i class="fas fa-bolt"></i> {{ task.get_priority_display }}
+                        </span>
+                        {% if task.work_module %}
+                        <span class="meta-badge" style="background: rgba(var(--wt-brand-rgb), 0.18); color: var(--wt-accent); border: 1px solid rgba(var(--wt-brand-rgb), 0.25);" title="{{ task.work_module.name }}">
+                            <i class="fas fa-cube"></i> {{ task.work_module.name|truncatechars:18 }}
+                        </span>
+                        {% endif %}
+                        {% if task.deadline %}
+                        <span class="meta-badge" style="background: rgba(255,255,255,0.08); color: #cbd5e1;">
+                            <i class="far fa-calendar-alt"></i> {{ task.deadline|date:"M d" }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-footer-wow">
+                        <div class="avatar-stack">
+                            {% for worker in task.assigned_to.all|slice:":3" %}
+                                <div class="avatar-sm-pill" title="{{ worker.get_full_name }}">
+                                    {% if worker.profile.profile_image %}
+                                        <img src="{{ worker.profile.profile_image.url }}">
+                                    {% else %}
+                                        {{ worker.first_name|first }}{{ worker.last_name|first }}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            {% if task.assigned_to.count > 3 %}
+                                <div class="avatar-sm-pill bg-dark text-white border-0">+{{ task.assigned_to.count|add:"-3" }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="card-stats">
+                            <span><i class="far fa-comment-alt me-1"></i>{{ task.comments.count }}</span>
+                            {% if task.submissions.count > 0 %}
+                            <span><i class="fas fa-paperclip me-1"></i>{{ task.submissions.count }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-tasks-placeholder text-center py-5 text-muted small">
+                    <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i><br>Operational Cleared
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Column Pagination -->
+            <div class="kanban-pager" id="pager-{{ status }}">
+                <button class="pager-btn prev" onclick="changePage('{{ status }}', -1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="pager-info">P. <span class="current-page">1</span></div>
+                <button class="pager-btn next" onclick="changePage('{{ status }}', 1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Response Toast -->
+<div id="kanban-toast" style="display:none; position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#1e293b; color:white; padding:12px 24px; border-radius:50px; z-index:9999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-weight:600; animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;">
+</div>
+
+<style>
+@keyframes slideUp {
+    from { transform: translate(-50%, 100px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let draggedCard = null;
+const CSRF_TOKEN = '{{ csrf_token }}';
+const getIsArabic = () => localStorage.getItem('worktrack_lang') === 'ar';
+const USER_ROLE = '{% if user.role == "manager" or user.role == "super_admin" %}admin{% else %}worker{% endif %}';
+
+// ── MODULE FILTER LOGIC ─────────────────────────────
+const selectedModules = new Map(); // id -> name
+
+function isTaskCardMatching(card) {
+    if (selectedModules.size === 0) return true;
+    const cardModId = card.dataset.moduleId;
+    return cardModId && selectedModules.has(cardModId);
+}
+
+function toggleModuleFilter(modId, modName) {
+    if (selectedModules.has(modId)) {
+        selectedModules.delete(modId);
+    } else {
+        selectedModules.set(modId, modName);
+    }
+    renderSelectedModulePills();
+    updateModuleDropdownChecks();
+    applyModuleFilter();
+}
+
+function removeModuleFilter(modId) {
+    selectedModules.delete(modId);
+    renderSelectedModulePills();
+    updateModuleDropdownChecks();
+    applyModuleFilter();
+}
+
+function clearAllModuleFilters() {
+    selectedModules.clear();
+    renderSelectedModulePills();
+    updateModuleDropdownChecks();
+    applyModuleFilter();
+}
+
+function updateModuleDropdownChecks() {
+    document.querySelectorAll('.module-item-option').forEach(item => {
+        const id = item.dataset.moduleId;
+        const isChecked = selectedModules.has(id);
+        const chk = item.querySelector('.module-chk');
+        if (chk) chk.checked = isChecked;
+        if (isChecked) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+}
+
+function renderSelectedModulePills() {
+    const container = document.getElementById('selectedModulePills');
+    const helpText = document.getElementById('noFilterHelpText');
+    const statusText = document.getElementById('filterStatusText');
+    const clearWrapper = document.getElementById('clearFilterWrapper');
+
+    if (selectedModules.size === 0) {
+        if (helpText) helpText.style.display = 'inline-block';
+        if (clearWrapper) clearWrapper.style.display = 'none';
+        container.querySelectorAll('.module-filter-pill').forEach(el => el.remove());
+        if (statusText) {
+            statusText.innerHTML = getIsArabic() ? 'عرض كل الوحدات' : 'All Modules Displayed';
+        }
+        return;
+    }
+
+    if (helpText) helpText.style.display = 'none';
+    if (clearWrapper) clearWrapper.style.display = 'block';
+    if (statusText) {
+        statusText.innerHTML = getIsArabic() 
+            ? `مصفى حسب ${selectedModules.size} وحدات` 
+            : `Filtered by ${selectedModules.size} module${selectedModules.size > 1 ? 's' : ''}`;
+    }
+
+    // Clear old pills
+    container.querySelectorAll('.module-filter-pill').forEach(el => el.remove());
+
+    // Append pills
+    selectedModules.forEach((name, id) => {
+        const pill = document.createElement('span');
+        pill.className = 'module-filter-pill';
+        pill.innerHTML = `<span>${name}</span> <i class="fas fa-times"></i>`;
+        pill.title = getIsArabic() ? 'انقر للإزالة من التصفية' : 'Click to remove filter';
+        pill.onclick = () => removeModuleFilter(id);
+        container.appendChild(pill);
+    });
+}
+
+function applyModuleFilter() {
+    // Reset all column pages to 1
+    document.querySelectorAll('.kanban-column-wow').forEach(col => {
+        const status = col.dataset.status;
+        columnStates[status] = 1;
+        updateColumnView(status);
+    });
+    updateCounts();
+}
+
+// Search input handling for modules
+const moduleSearchInput = document.getElementById('moduleSearchInput');
+const moduleDropdownList = document.getElementById('moduleDropdownList');
+const moduleSearchClear = document.getElementById('moduleSearchClear');
+
+if (moduleSearchInput) {
+    moduleSearchInput.addEventListener('focus', () => {
+        moduleDropdownList.classList.add('show');
+    });
+
+    moduleSearchInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim().toLowerCase();
+        moduleSearchClear.style.display = val.length > 0 ? 'block' : 'none';
+        moduleDropdownList.classList.add('show');
+
+        document.querySelectorAll('.module-item-option').forEach(item => {
+            const name = item.dataset.moduleName || '';
+            const text = item.textContent.toLowerCase();
+            if (!val || name.includes(val) || text.includes(val)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.module-search-box') && !e.target.closest('#moduleDropdownList')) {
+            moduleDropdownList.classList.remove('show');
+        }
+    });
+}
+
+function resetModuleSearchInput() {
+    if (moduleSearchInput) {
+        moduleSearchInput.value = '';
+        moduleSearchClear.style.display = 'none';
+        document.querySelectorAll('.module-item-option').forEach(item => {
+            item.style.display = 'flex';
+        });
+    }
+}
+
+// ── DRAG AND DROP ──────────────────────────────────
+function onDragStart(e) {
+    if (USER_ROLE !== 'admin') {
+        e.preventDefault();
+        return;
+    }
+    draggedCard = e.currentTarget;
+    draggedCard.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragEnd(e) {
+    if (draggedCard) {
+        draggedCard.classList.remove('dragging');
+        draggedCard = null;
+    }
+    document.querySelectorAll('.kanban-column-wow').forEach(c => c.classList.remove('drag-over'));
+}
+
+function onDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function onDrop(e, column) {
+    e.preventDefault();
+    column.classList.remove('drag-over');
+    
+    if (!draggedCard || USER_ROLE !== 'admin') return;
+
+    const listArea = column.querySelector('.task-list-area');
+    const newStatus = column.dataset.status;
+    const oldStatus = draggedCard.dataset.status;
+
+    if (newStatus === oldStatus) return;
+
+    // Remove placeholder if it exists
+    const placeholder = listArea.querySelector('.no-tasks-placeholder');
+    if (placeholder) placeholder.remove();
+
+    // Real-time DOM Move
+    listArea.appendChild(draggedCard);
+    draggedCard.dataset.status = newStatus;
+    
+    // Update border color based on column color
+    const columnColor = column.querySelector('.column-dot').style.backgroundColor;
+    draggedCard.style.borderLeftColor = columnColor;
+
+    // Update Counts & View
+    updateCounts();
+
+    // Background API Call
+    const taskId = draggedCard.dataset.taskId;
+    const moveUrl = draggedCard.dataset.moveUrl;
+    fetch(moveUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': CSRF_TOKEN,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `status=${newStatus}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(getIsArabic() ? `تم نقل المهمة إلى ${data.new_status_display}` : `Task moved to ${data.new_status_display}`);
+        } else {
+            showToast(getIsArabic() ? "فشل النقل. يرجى المحاولة مرة أخرى." : "Move failed. Please try again.", "error");
+            location.reload();
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        showToast(getIsArabic() ? "خطأ في الشبكة." : "Network error.", "error");
+        location.reload();
+    });
+}
+
+// ── PAGINATION LOGIC ────────────────────────────────
+const ITEMS_PER_PAGE = 15;
+const columnStates = {};
+
+function initBannerFX() {
+    const container = document.getElementById('kanbanParticles');
+    if(!container) return;
+    
+    for (let i = 0; i < 25; i++) {
+        const star = document.createElement('div');
+        star.className = 'k-star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDuration = 5 + Math.random() * 10 + 's';
+        star.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(star);
+    }
+}
+
+function initPagination() {
+    initBannerFX();
+    document.querySelectorAll('.kanban-column-wow').forEach(col => {
+        const status = col.dataset.status;
+        columnStates[status] = 1;
+        updateColumnView(status);
+    });
+    updateCounts();
+}
+
+function updateColumnView(status) {
+    const listArea = document.getElementById(`list-${status}`);
+    const allCards = Array.from(listArea.querySelectorAll('.task-card-wow'));
+    const matchingCards = allCards.filter(isTaskCardMatching);
+    
+    // Hide non-matching cards completely
+    allCards.forEach(c => {
+        if (!isTaskCardMatching(c)) {
+            c.classList.remove('visible');
+            c.style.display = 'none';
+        }
+    });
+
+    const total = matchingCards.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+    
+    // Clamp current page
+    if (columnStates[status] > totalPages) columnStates[status] = totalPages;
+    if (columnStates[status] < 1) columnStates[status] = 1;
+
+    const start = (columnStates[status] - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+
+    matchingCards.forEach((card, idx) => {
+        if (idx >= start && idx < end) {
+            card.classList.add('visible');
+            card.style.display = 'block';
+        } else {
+            card.classList.remove('visible');
+            card.style.display = 'none';
+        }
+    });
+
+    // Update Pager UI
+    const pager = document.getElementById(`pager-${status}`);
+    if (pager) {
+        const info = pager.querySelector('.current-page');
+        if (info) info.textContent = `${columnStates[status]} / ${totalPages}`;
+        
+        const prevBtn = pager.querySelector('.prev');
+        const nextBtn = pager.querySelector('.next');
+        if (prevBtn) prevBtn.disabled = columnStates[status] === 1;
+        if (nextBtn) nextBtn.disabled = columnStates[status] === totalPages;
+        
+        pager.style.display = totalPages <= 1 ? 'none' : 'flex';
+    }
+}
+
+window.changePage = function(status, delta) {
+    columnStates[status] = (columnStates[status] || 1) + delta;
+    updateColumnView(status);
+};
+
+document.addEventListener('DOMContentLoaded', initPagination);
+
+function updateCounts() {
+    let total = 0;
+    const statusCounts = {
+        pending: 0,
+        in_progress: 0,
+        submitted: 0,
+        approved: 0,
+        overdue: 0
+    };
+
+    document.querySelectorAll('.kanban-column-wow').forEach(col => {
+        const status = col.dataset.status;
+        const allCards = Array.from(col.querySelectorAll('.task-card-wow'));
+        const matchingCards = allCards.filter(isTaskCardMatching);
+        const count = matchingCards.length;
+        
+        const countBadge = col.querySelector('.column-count');
+        if (countBadge) countBadge.textContent = count;
+        
+        total += count;
+        if (statusCounts.hasOwnProperty(status)) {
+            statusCounts[status] = count;
+        }
+
+        // Show placeholder if empty
+        const listArea = col.querySelector('.task-list-area');
+        const existingPlaceholder = listArea.querySelector('.no-tasks-placeholder');
+        if (count === 0) {
+            if (!existingPlaceholder) {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'no-tasks-placeholder text-center py-5 text-muted small';
+                placeholder.innerHTML = `<i class="fas fa-inbox fa-2x mb-2 opacity-50"></i><br>${getIsArabic() ? 'لا توجد مهام مطابقة' : 'Operational Cleared'}`;
+                listArea.appendChild(placeholder);
+            }
+        } else if (existingPlaceholder) {
+            existingPlaceholder.remove();
+        }
+        
+        updateColumnView(status);
+    });
+
+    // Update Banner / Under-Banner Stats
+    const elTotal = document.getElementById('stat-total');
+    if (elTotal) elTotal.textContent = total;
+    const elPending = document.getElementById('stat-pending');
+    if (elPending) elPending.textContent = statusCounts.pending;
+    const elInProgress = document.getElementById('stat-in_progress');
+    if (elInProgress) elInProgress.textContent = statusCounts.in_progress;
+    const elSubmitted = document.getElementById('stat-submitted');
+    if (elSubmitted) elSubmitted.textContent = statusCounts.submitted;
+    const elApproved = document.getElementById('stat-approved');
+    if (elApproved) elApproved.textContent = statusCounts.approved;
+    const elOverdue = document.getElementById('stat-overdue');
+    if (elOverdue) elOverdue.textContent = statusCounts.overdue;
+}
+
+function showToast(msg, type = "success") {
+    const toast = document.getElementById('kanban-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.style.background = type === "success" ? "var(--color-primary, #10b981)" : "#ef4444";
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
+
+window.addEventListener('languagechange', () => {
+    updateCounts();
+    renderSelectedModulePills();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'public/auth_base.html' %}
+{% block title %}{% if wt_lang == 'en' %}Session refreshed{% else %}تم تحديث الجلسة{% endif %} · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}
+{% block heading %}<span class="lang-en">Your session was refreshed</span><span class="lang-ar">تم تحديث جلستك</span>{% endblock %}
+{% block lede %}<span class="lang-en">The page was open for a while, so its security token expired. Nothing was saved. Go back and send it again.</span><span class="lang-ar">بقيت الصفحة مفتوحة مدة طويلة فانتهت صلاحية رمز الأمان، ولم يُحفظ شيء. ارجع وأعد الإرسال.</span>{% endblock %}
+{% block module %}
+<div class="lp-module" data-module>
+    <a class="lp-submit lp-submit--block" href="{% if path|first == '/' and path|slice:'1:2' != '/' and path|slice:'1:2' != '\\' %}{{ path }}{% else %}/{% endif %}"><span class="lang-en">Try again</span><span class="lang-ar">أعد المحاولة</span><i class="fas fa-arrow-right rtl-flip" aria-hidden="true"></i></a>
+</div>
+{% endblock %}
+{% block meta %}
+<a href="{% url 'login' %}"><span class="lang-en">Sign in again</span><span class="lang-ar">سجّل الدخول من جديد</span></a>
+{% if reason %}<span translate="no" style="font-family: var(--wt-font-mono); font-size: .76rem; opacity: .7;" dir="ltr">{{ reason }}</span>{% endif %}
+{% endblock %}

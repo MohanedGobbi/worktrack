@@ -1,0 +1,31 @@
+{% load static %}<!DOCTYPE html>
+<html lang="{{ wt_lang|default:'ar' }}" dir="{% if wt_lang == 'en' %}ltr{% else %}rtl{% endif %}">
+<head>
+    {% include 'public/_head.html' %}
+    <title>{% block title %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}</title>
+</head>
+<body class="wt-public{% if wt_lang != 'en' %} rtl-mode{% endif %}" data-scene="auth">
+    <div class="lp-field-light" aria-hidden="true"></div>
+    <canvas class="lp-canvas" id="lpCanvas" aria-hidden="true"></canvas>
+    <main class="lp-hero" aria-labelledby="lp-title">
+        {% include 'public/_header.html' %}
+        <div class="lp-hero-body lp-auth-body">
+            <h1 class="lp-auth-title" id="lp-title">{% block heading %}{% endblock %}</h1>
+            <p class="lp-sub">{% block lede %}{% endblock %}</p>
+            {% block alerts %}{% endblock %}
+            <div class="lp-stack" data-stack>
+                <div class="lp-slot lp-slot--a" data-slot="a" aria-hidden="true"></div>
+                {% block module %}{% endblock %}
+                <div class="lp-slot lp-slot--c" data-slot="c" aria-hidden="true"></div>
+            </div>
+            <div class="lp-meta">{% block meta %}{% endblock %}</div>
+        </div>
+        <div class="lp-hero-foot">
+            {% include 'includes/rowd_credit.html' with variant='dark' %}
+        </div>
+    </main>
+    <script src="{% static 'vendor/gsap/gsap.min.js' %}"></script>
+    <script src="{% static 'wt/js/public.js' %}?v=1"></script>
+    <script type="module" src="{% static 'wt/js/stack-scene.js' %}?v=2"></script>
+</body>
+</html>

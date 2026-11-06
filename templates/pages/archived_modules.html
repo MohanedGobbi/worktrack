@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Archive Vault · Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --archive-navy: #0f172a;
+    --archive-accent: #6366f1;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+}
+
+.vault-hero {
+    background: radial-gradient(60% 70% at 78% 42%, rgba(var(--wt-brand-rgb),.45), transparent 70%), radial-gradient(50% 60% at 15% 100%, rgba(var(--wt-brand-rgb),.35), transparent 70%), linear-gradient(160deg, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000)) 55%, #0c0306 100%);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    margin-bottom: 2.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 60px rgba(var(--wt-brand-rgb),0.15);
+}
+
+.vault-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+    opacity: 0.5;
+}
+
+.vault-hero .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.3); }
+
+/* View Mode Toggles */
+.view-toggle-wrap {
+    background: #f1f5f9;
+    padding: 0.35rem;
+    border-radius: 12px;
+    display: inline-flex;
+    gap: 4px;
+}
+.view-btn {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent; color: #64748b;
+    border-radius: 8px; transition: all 0.2s;
+}
+.view-btn.active {
+    background: white; color: var(--archive-accent);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+/* Card Styling */
+.vault-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    transition: opacity 0.3s;
+}
+
+.v-card {
+    background: white;
+    border-radius: 20px;
+    border-top: 4px solid var(--border-color, #64748b);
+    padding: 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.v-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+}
+
+.v-icon-box {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(var(--icon-rgb, 100, 116, 139), 0.1);
+    color: var(--border-color, #64748b);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.v-badge {
+    font-size: 0.65rem; font-weight: 800;
+    padding: 0.25rem 0.6rem; border-radius: 6px;
+    background: #f1f5f9; color: #64748b;
+    letter-spacing: 0.05em;
+}
+
+.v-stats {
+    background: #f8fafc; border-radius: 12px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    padding: 0.75rem; gap: 10px;
+}
+.v-stat-item { text-align: center; }
+.v-stat-val { font-weight: 800; font-size: 1.1rem; color: #1e293b; display: block; }
+.v-stat-lbl { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; }
+
+/* Selection UI */
+.v-check {
+    position: absolute; top: 15px; left: 15px; z-index: 5;
+}
+.custom-box input { display: none; }
+.custom-box label {
+    width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 50%;
+    background: white; cursor: pointer; position: relative; transition: all 0.2s;
+}
+.custom-box input:checked + label {
+    background: var(--archive-accent); border-color: var(--archive-accent);
+}
+.custom-box input:checked + label::after {
+    content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900;
+    color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 0.65rem;
+}
+
+/* List View Override */
+.vault-grid.list-mode {
+    grid-template-columns: 1fr;
+}
+.vault-grid.list-mode .v-card {
+    display: flex; align-items: center; padding: 1rem 1.5rem;
+    border-top: none; border-left: 4px solid var(--border-color, #64748b);
+}
+.vault-grid.list-mode .v-check { position: relative; top: 0; left: 0; margin-right: 1.5rem; }
+.vault-grid.list-mode .v-icon-box { width: 44px; height: 44px; font-size: 1.1rem; margin-right: 1.5rem; }
+.vault-grid.list-mode .v-content { flex: 1; display: flex; align-items: center; justify-content: space-between; }
+.vault-grid.list-mode .v-meta { width: 150px; }
+.vault-grid.list-mode .v-stats { background: transparent; padding: 0; gap: 20px; width: 200px; }
+.vault-grid.list-mode .v-actions { width: 180px; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Switch Styling */
+.form-switch .form-check-input {
+    width: 3rem; height: 1.5rem; cursor: pointer;
+}
+
+/* Floating Action Bar */
+.v-bulk-bar {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(150%);
+    background: rgba(255, 255, 255, 0.95); opacity: 0; visibility: hidden;
+    backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05);
+    padding: 0.75rem 2rem; border-radius: 99px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 2rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000;
+}
+.v-bulk-bar.active { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; }
+
+/* Animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.anime-up { 
+    animation: fadeInUp 0.5s ease forwards; 
+    animation-delay: var(--delay, 0ms);
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Hero Banner -->
+    <div class="vault-hero anime-up">
+        <div class="position-relative z-index-2">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-white-50"><span class="lang-en">Dashboard</span><span class="lang-ar">لوحة التحكم</span></a></li>
+                    <li class="breadcrumb-item active text-white" aria-current="page">Archive</li>
+                </ol>
+            </nav>
+            <h1 class="fw-black mb-1 display-5">Archive Vault</h1>
+            <p class="text-white-50 mb-0">Manage and restore archived project modules.</p>
+        </div>
+    </div>
+
+    <!-- Header & Controls -->
+    <div class="d-flex align-items-center justify-content-between mb-4 anime-up" style="animation-delay: 100ms;">
+        <div>
+            <h4 class="fw-bold mb-0">Archived Modules <span class="text-muted ms-1" style="font-weight: 400;">({{ module_count }})</span></h4>
+        </div>
+        
+        <div class="d-flex align-items-center gap-4">
+            <!-- Grid/List Toggle -->
+            <div class="view-toggle-wrap">
+                <button class="view-btn active" id="gridToggle" title="Grid View">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="view-btn" id="listToggle" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+
+            <!-- Select All Switch -->
+            <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+                <label class="form-check-label small fw-bold text-muted" for="selectAllModules">Select All</label>
+                <input class="form-check-input" type="checkbox" id="selectAllModules">
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Layout -->
+    <div class="vault-grid" id="mainVaultGrid">
+        {% for m_stat in module_stats_list %}
+        <div class="v-card anime-up" 
+             style="--delay: {{ forloop.counter|add:1 }}00ms; --border-color: {{ m_stat.obj.color|default:'#64748b' }}; --icon-rgb: 99, 102, 241;"
+             data-id="{{ m_stat.obj.id }}" 
+             data-slug="{{ m_stat.name }}">
+            
+            <div class="v-check">
+                <div class="custom-box">
+                    <input type="checkbox" class="module-checkbox" id="check_{{ m_stat.name }}" data-slug="{{ m_stat.name }}">
+                    <label for="check_{{ m_stat.name }}"></label>
+                </div>
+            </div>
+
+            <div class="v-icon-box mb-3 mx-auto">
+                <i class="fas {{ m_stat.obj.icon_class|default:'fa-cube' }}"></i>
+            </div>
+
+            <div class="v-content text-center">
+                <div class="v-meta mb-3">
+                    <h5 class="fw-bold mb-1">{{ m_stat.display_name }}</h5>
+                    <span class="v-badge">ARCHIVED</span>
+                    <p class="small text-muted mt-2 mb-0">
+                        Archived on {{ m_stat.obj.updated_at|date:"M d, Y"|default:"Nov 15, 2023" }}
+                    </p>
+                </div>
+
+                <div class="v-stats mb-3">
+                    <div class="v-stat-item">
+                        <span class="v-stat-val">{{ m_stat.total }}</span>
+                        <span class="v-stat-lbl"><span class="lang-en">Total Tasks</span><span class="lang-ar">إجمالي المهام</span></span>
+                    </div>
+                    <div class="v-stat-item">
+                        <span class="v-stat-val">{{ m_stat.rate }}%</span>
+                        <span class="v-stat-lbl">Score</span>
+                    </div>
+                </div>
+
+                <div class="v-actions d-flex gap-2">
+                    <form action="{% url 'module-bulk-action' %}" method="POST" class="w-100 d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="module_slugs" value="{{ m_stat.name }}">
+                        <input type="hidden" name="action" value="unarchive">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold py-2">
+                            Restore
+                        </button>
+                        <button type="button" class="btn btn-outline-light text-muted border rounded-3 p-2 d-flex align-items-center justify-content-center" 
+                                style="width: 42px;" onclick="handleDelete('{{ m_stat.name }}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 py-5 text-center">
+            <div class="mb-3 text-muted" style="font-size: 4rem; opacity: 0.1;"><i class="fas fa-archive"></i></div>
+            <h4 class="text-muted fw-bold">The vault is currently empty</h4>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary rounded-pill px-4 mt-3">Back to Dashboard</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bulk Action Bar -->
+    <div class="v-bulk-bar" id="bulkBar">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-primary" id="selectCount">0</span> 
+            <span class="fw-semibold text-muted small">Modules Selected</span>
+        </div>
+        <div class="h-100 border-start mx-1" style="width:1px; background:#e2e8f0;"></div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold" onclick="handleBulk('unarchive')">
+                Restore Selected
+            </button>
+            <button class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-bold" onclick="handleBulk('delete')">
+                Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden Bulk Form -->
+    <form id="vaultBulkForm" method="POST" action="{% url 'module-bulk-action' %}" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="module_slugs" id="vaultSlugs">
+        <input type="hidden" name="action" id="vaultAction">
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const grid = document.getElementById('mainVaultGrid');
+    const bulkBar = document.getElementById('bulkBar');
+    const selectCount = document.getElementById('selectCount');
+    const selectAll = document.getElementById('selectAllModules');
+    const checks = document.querySelectorAll('.module-checkbox');
+    
+    // View Toggles
+    const gridBtn = document.getElementById('gridToggle');
+    const listBtn = document.getElementById('listToggle');
+    
+    gridBtn.onclick = () => {
+        grid.classList.remove('list-mode');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+    };
+    
+    listBtn.onclick = () => {
+        grid.classList.add('list-mode');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+    };
+
+    // Bulk Management
+    function syncBulk() {
+        const checked = [...checks].filter(c => c.checked);
+        selectCount.textContent = checked.length;
+        if(checked.length > 0) {
+            bulkBar.classList.add('active');
+        } else {
+            bulkBar.classList.remove('active');
+        }
+    }
+
+    checks.forEach(c => c.onchange = syncBulk);
+    
+    selectAll.onchange = function() {
+        checks.forEach(c => c.checked = this.checked);
+        syncBulk();
+    };
+
+    window.handleBulk = async function(action) {
+        const slugs = [...document.querySelectorAll('.module-checkbox:checked')].map(c => c.dataset.slug);
+        if(action === 'delete') {
+            if (!await amazingConfirm('Are you sure you want to permanently delete these modules?')) return;
+        }
+        
+        document.getElementById('vaultSlugs').value = slugs.join(',');
+        document.getElementById('vaultAction').value = action;
+        document.getElementById('vaultBulkForm').submit();
+    };
+
+    window.handleDelete = async function(slug) {
+        if(await amazingConfirm('Permanently delete this module?')) {
+            document.getElementById('vaultSlugs').value = slug;
+            document.getElementById('vaultAction').value = 'delete';
+            document.getElementById('vaultBulkForm').submit();
+        }
+    };
+});
+</script>
+{% endblock %}

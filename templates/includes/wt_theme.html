@@ -1,0 +1,47 @@
+{% load static %}{% comment %}
+  THEME LAYER entry point. The theme file carries fonts + tokens; Site Settings may override the brand
+  inputs per install. Legacy variable names are aliased so pages not yet rebuilt follow the theme too.
+{% endcomment %}<link href="{% static 'wt/theme-rowd.css' %}?v=2" rel="stylesheet">
+<style id="wt-theme-overrides">
+  :root {
+    --wt-brand: {{ wt_theme.brand|default:'#0033a0' }};
+    --wt-accent: {{ wt_theme.accent|default:'#19bedc' }};
+    --wt-on-brand: {{ wt_theme.on_brand|default:'#ffffff' }};
+    --wt-brand-rgb: {{ wt_theme.brand_rgb|default:'0, 51, 160' }};
+
+    /* legacy aliases */
+    --color-primary: var(--wt-brand);
+    --color-secondary: color-mix(in oklab, var(--wt-brand) 62%, #000);
+    --color-accent: var(--wt-accent);
+    --color-portal-bg: var(--wt-brand);
+    --primary-color: var(--wt-brand);
+    --banner-primary: var(--wt-brand);
+    --banner-primary-rgb: var(--wt-brand-rgb);
+    --radius-inputs: var(--wt-r-input);
+    --radius-cards: var(--wt-r-card);
+    --border-color: var(--wt-line);
+    --text-main: var(--wt-ink);
+    --text-muted: var(--wt-muted);
+    --font-main: var(--wt-font-body);
+
+    /* Page banner surface: the brand field + the three-module motif (theme-agnostic white ink).
+       A banner uploaded in Site Settings sits under a brand overlay so white text stays readable. */
+    --wt-hero-motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 300'%3E%3Cg fill='%23fff'%3E%3Crect x='0' y='28' width='330' height='70' rx='35' fill-opacity='.09'/%3E%3Crect x='34' y='114' width='330' height='70' rx='35' fill-opacity='.15'/%3E%3Crect x='170' y='200' width='250' height='70' rx='35' fill-opacity='.11'/%3E%3C/g%3E%3C/svg%3E");
+    --wt-hero-bg:
+      var(--wt-hero-motif) right -60px center / auto 128% no-repeat,
+      radial-gradient(70% 90% at 92% 10%, color-mix(in oklab, var(--wt-signal) 45%, transparent) 0%, transparent 65%),
+      {% if site_config.banner_image %}linear-gradient(120deg, color-mix(in oklab, var(--wt-brand) 92%, transparent), color-mix(in oklab, var(--wt-brand) 70%, #000 30%)),
+      url("{{ site_config.banner_image.url }}") center / cover no-repeat,{% endif %}
+      linear-gradient(125deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);
+    --system-banner-img: none;
+    --dashboard-banner-overlay-img: none;
+  }
+  html[dir="rtl"] {
+    --wt-hero-bg:
+      var(--wt-hero-motif) left -60px center / auto 128% no-repeat,
+      radial-gradient(70% 90% at 8% 10%, color-mix(in oklab, var(--wt-signal) 45%, transparent) 0%, transparent 65%),
+      {% if site_config.banner_image %}linear-gradient(240deg, color-mix(in oklab, var(--wt-brand) 92%, transparent), color-mix(in oklab, var(--wt-brand) 70%, #000 30%)),
+      url("{{ site_config.banner_image.url }}") center / cover no-repeat,{% endif %}
+      linear-gradient(235deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);
+  }
+</style>

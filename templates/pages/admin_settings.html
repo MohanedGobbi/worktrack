@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Configuration - WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-hero-card {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        color: #fff;
+        margin-bottom: 2rem;
+    }
+    
+    .settings-widget-container {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .settings-widget-header {
+        background: #f8fafc;
+        padding: 1.25rem 1.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .settings-table-widget {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .settings-table-widget th {
+        background: #f1f5f9;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #475569;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .settings-table-widget td {
+        padding: 1.5rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s;
+    }
+
+    .settings-table-widget tr:last-child td {
+        border-bottom: none;
+    }
+
+    .settings-table-widget tr:hover td {
+        background: #f8fafc;
+    }
+
+    .option-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .status-pill-active {
+        background: #fee2e2;
+        color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+        border: 1px solid #fecaca;
+    }
+
+    .status-pill-disabled {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .status-pill-active .status-dot {
+        background: #22c55e;
+        box-shadow: 0 0 8px #22c55e;
+    }
+
+    .status-pill-disabled .status-dot {
+        background: #94a3b8;
+    }
+
+    .custom-toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 32px;
+    }
+
+    .custom-toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #cbd5e1;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #2563eb;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(28px);
+    }
+
+    .badge-cat {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 8px;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- Hero Header -->
+    <div class="settings-hero-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill fw-bold text-uppercase" style="letter-spacing: 1px;">
+                        <i class="fas fa-sliders-h me-1"></i> Control Panel
+                    </span>
+                    <span class="text-white-50 small">System Engine: <strong>Active</strong></span>
+                </div>
+                <h2 class="fw-bold mb-1">
+                    <span class="lang-en">Global System Settings</span>
+                    <span class="lang-ar">إعدادات النظام العامة</span>
+                </h2>
+                <p class="text-white-50 mb-0 small">
+                    <span class="lang-en">Configure platform security and language switcher behavior.</span>
+                    <span class="lang-ar">تكوين أمان المنصة وسلوك مبدل اللغات.</span>
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    <span class="lang-en">Dashboard</span>
+                    <span class="lang-ar">لوحة التحكم</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form and Table Widget -->
+    <form method="post" id="globalSettingsForm">
+        {% csrf_token %}
+        
+        <div class="settings-widget-container mb-4">
+            <div class="settings-widget-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-table-cells text-primary fa-lg me-1"></i>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <span class="lang-en">Global Feature Configurations</span>
+                        <span class="lang-ar">جدول الإعدادات والتكوينات العامة</span>
+                    </h5>
+                </div>
+                <div class="text-muted small">
+                    <span class="lang-en">5 Parameters Available</span>
+                    <span class="lang-ar">5 خيارات متاحة</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table settings-table-widget">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">
+                                <span class="lang-en">Option & Description</span>
+                                <span class="lang-ar">الخيار والوصف</span>
+                            </th>
+                            <th style="width: 20%;">
+                                <span class="lang-en">Category</span>
+                                <span class="lang-ar">الفئة</span>
+                            </th>
+                            <th style="width: 15%;">
+                                <span class="lang-en">Live Status</span>
+                                <span class="lang-ar">الحالة الحالية</span>
+                            </th>
+                            <th style="width: 20%; text-align: center;">
+                                <span class="lang-en">Toggle Control</span>
+                                <span class="lang-ar">مفتاح التحكم</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Row 1: User Registration -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="option-icon-box bg-primary-subtle text-primary">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            <span class="lang-en">User Self-Registration</span>
+                                            <span class="lang-ar">التسجيل الذاتي للمستخدمين</span>
+                                        </h6>
+                                        <p class="text-muted small mb-0">
+                                            <span class="lang-en">Allow unauthenticated visitors to sign up for account access directly from the login page.</span>
+                                            <span class="lang-ar">السماح للزوار غير الموثقين بإنشاء حسابات جديدة مباشرة من صفحة تسجيل الدخول.</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-cat">
+                                    <i class="fas fa-user-shield me-1"></i>
+                                    <span class="lang-en">Access Control</span>
+                                    <span class="lang-ar">التحكم في الوصول</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill {% if settings.allow_registration %}status-pill-active{% else %}status-pill-disabled{% endif %}" id="pill-allow-reg">
+                                    <span class="status-dot"></span>
+                                    <span id="text-allow-reg">
+                                        {% if settings.allow_registration %}
+                                            <span class="lang-en">ENABLED</span><span class="lang-ar">مفعل</span>
+                                        {% else %}
+                                            <span class="lang-en">DISABLED</span><span class="lang-ar">معطل</span>
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <label class="custom-toggle-switch">
+                                    <input type="checkbox" id="allow_registration" name="allow_registration" value="on" {% if settings.allow_registration %}checked{% endif %} onchange="updatePillStatus(this, 'pill-allow-reg', 'text-allow-reg')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3: Force Language Reload -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="option-icon-box bg-red-subtle text-rose" style="background: #ffe4e6; color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            <span class="lang-en">Force Page Reload on Language Switch</span>
+                                            <span class="lang-ar">فرض إعادة تحميل الصفحة عند تغيير اللغة</span>
+                                        </h6>
+                                        <p class="text-muted small mb-0">
+                                            <span class="lang-en">When enabled, switching language triggers a full page reload (`location.reload()`) to guarantee fresh server-side rendering.</span>
+                                            <span class="lang-ar">عند التفعيل، يؤدي تغيير اللغة إلى إعادة تحميل كاملة للصفحة لضمان إعادة العرض النظيف من خادم النظام.</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge border badge-cat" style="background: #ffe4e6; color: color-mix(in oklab, var(--wt-brand) 62%, #000); border-color: var(--wt-brand-tint) !important;">
+                                    <i class="fas fa-globe me-1"></i>
+                                    <span class="lang-en">Localization</span>
+                                    <span class="lang-ar">تعدد اللغات</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill {% if settings.force_language_reload %}status-pill-active{% else %}status-pill-disabled{% endif %}" id="pill-force-reload">
+                                    <span class="status-dot"></span>
+                                    <span id="text-force-reload">
+                                        {% if settings.force_language_reload %}
+                                            <span class="lang-en">ENABLED</span><span class="lang-ar">مفعل</span>
+                                        {% else %}
+                                            <span class="lang-en">DISABLED</span><span class="lang-ar">معطل</span>
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <label class="custom-toggle-switch">
+                                    <input type="checkbox" id="force_language_reload" name="force_language_reload" value="on" {% if settings.force_language_reload %}checked{% endif %} onchange="updatePillStatus(this, 'pill-force-reload', 'text-force-reload')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </td>
+                        </tr>
+                        <!-- Row 4: Default System Language -->
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="option-icon-box bg-success-subtle text-success" style="background: var(--wt-ok-soft); color: var(--wt-ok);">
+                                        <i class="fas fa-language"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-1 text-dark">
+                                            <span class="lang-en">Default System Language</span>
+                                            <span class="lang-ar">لغة النظام الافتراضية</span>
+                                        </h6>
+                                        <p class="text-muted small mb-0">
+                                            <span class="lang-en">Choose which language the system starts with by default for all visitors and unauthenticated users.</span>
+                                            <span class="lang-ar">اختر اللغة الافتراضية التي تفتح بها المنصة وصفحة الهبوط والمحاكاة ثلاثية الأبعاد تلقائياً لجميع الزوار والمستخدمين.</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge border badge-cat" style="background: var(--wt-brand-soft); color: var(--wt-brand); border-color: var(--wt-brand-tint) !important;">
+                                    <i class="fas fa-globe-africa me-1"></i>
+                                    <span class="lang-en">System Default</span>
+                                    <span class="lang-ar">الافتراضي العام</span>
+                                </span>
+                            </td>
+                            <td>
+                                {% if settings.default_language == 'en' %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-check-circle me-1"></i> English (English)
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-check-circle me-1"></i> العربية (Arabic)
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <select name="default_language" id="default_language" class="form-select form-select-sm fw-bold border-2 mx-auto" style="max-width: 190px; border-radius: 10px; border-color: var(--wt-brand);">
+                                    <option value="ar" {% if settings.default_language == 'ar' or not settings.default_language %}selected{% endif %}>🇩🇿 العربية (Arabic)</option>
+                                    <option value="en" {% if settings.default_language == 'en' %}selected{% endif %}>🇬🇧 English (الإنجليزية)</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Action Bar -->
+            <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted small">
+                    <i class="fas fa-shield-alt text-primary me-1"></i>
+                    <span class="lang-en">Changes take effect immediately upon saving.</span>
+                    <span class="lang-ar">تطري التغييرات فور حفظ التكوين.</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill" onclick="location.reload()">
+                        <span class="lang-en">Reset</span><span class="lang-ar">إعادة ضبط</span>
+                    </button>
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                        <i class="fas fa-save me-2"></i>
+                        <span class="lang-en">Save Configuration</span>
+                        <span class="lang-ar">حفظ التغييرات</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+function updatePillStatus(checkbox, pillId, textId) {
+    const pill = document.getElementById(pillId);
+    const textSpan = document.getElementById(textId);
+    if (!pill || !textSpan) return;
+
+    const isAr = window.__isArabic;
+    if (checkbox.checked) {
+        pill.className = 'status-pill status-pill-active';
+        textSpan.innerHTML = isAr 
+            ? '<span class="lang-en" style="display:none;">ENABLED</span><span class="lang-ar" style="display:inline;">مفعل</span>' 
+            : '<span class="lang-en" style="display:inline;">ENABLED</span><span class="lang-ar" style="display:none;">مفعل</span>';
+    } else {
+        pill.className = 'status-pill status-pill-disabled';
+        textSpan.innerHTML = isAr 
+            ? '<span class="lang-en" style="display:none;">DISABLED</span><span class="lang-ar" style="display:inline;">معطل</span>' 
+            : '<span class="lang-en" style="display:inline;">DISABLED</span><span class="lang-ar" style="display:none;">معطل</span>';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,692 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+System Version Archive & Database Management - WorkTrack Pro
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .version-archive-card {
+        border-radius: var(--base-radius, 16px);
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-color, #e2e8f0);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .version-archive-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+    .metric-icon-box {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 1.25rem;
+    }
+    .table-modern th {
+        background: var(--bg-page, #f8fafc);
+        color: var(--text-muted, #64748b);
+        font-weight: 700;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+    .table-modern td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        font-size: 0.875rem;
+    }
+    .badge-safety {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    .badge-primary-soft {
+        background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+        color: var(--color-primary);
+        border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+    }
+    .nav-pills-custom .nav-link {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 0.65rem 1.4rem;
+        color: var(--text-muted, #64748b);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .nav-pills-custom .nav-link.active {
+        background: var(--color-primary) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary) 35%, transparent);
+    }
+    .btn-action-round {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.15s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-4">
+
+    <!-- Top Hero Banner & Actions -->
+    <div class="version-archive-hero mb-4 p-4 p-md-5 rounded-4 shadow-sm" style=" background: var(--wt-hero-bg) !important; border: 1px solid rgba(var(--wt-brand-rgb),0.25); color: white;">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge px-3 py-1.5 rounded-pill fw-bold text-xs" style="background: rgba(var(--wt-brand-rgb), 0.2); color: var(--wt-accent); border: 1px solid rgba(var(--wt-brand-rgb), 0.3);">
+                        <i class="fas fa-database me-1"></i>
+                        <span class="lang-en">System Database Engine</span>
+                        <span class="lang-ar">محرك قاعدة البيانات</span>
+                    </span>
+                    <span class="badge px-3 py-1.5 rounded-pill fw-bold text-xs" style="background: rgba(255, 255, 255, 0.15); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-check-circle me-1 text-success"></i>
+                        <span class="lang-en">Zero-Downtime Engine Active</span>
+                        <span class="lang-ar">نظام النسخ المباشر نشط</span>
+                    </span>
+                </div>
+                <h2 class="fw-black text-white mb-2" style="letter-spacing: -0.5px;">
+                    <span class="lang-en">Version Archive & Database Management</span>
+                    <span class="lang-ar">أرشيف الإصدارات وإدارة قاعدة بيانات النظام</span>
+                </h2>
+                <p class="text-white-50 small mb-0" style="max-width: 680px;">
+                    <span class="lang-en">Create on-demand SQLite system restore points, restore versions safely, download database files, and track task submission snapshots.</span>
+                    <span class="lang-ar">إنشاء نقاط استعادة لقاعدة البيانات، استعادة النسخ السابقة بأمان، تنزيل ملفات النظام، وتتبع لقطات المهام والتسليمات.</span>
+                </p>
+            </div>
+
+            <!-- Global Action Buttons -->
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <button type="button" class="btn btn-outline-light rounded-pill px-3 py-2 fw-bold text-xs shadow-xs" data-bs-toggle="modal" data-bs-target="#uploadBackupModal">
+                    <i class="fas fa-upload me-1 text-success"></i>
+                    <span class="lang-en">Import Backup</span>
+                    <span class="lang-ar">استيراد نسخة</span>
+                </button>
+                <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold text-xs shadow-sm" style="background: var(--color-primary, #10b981); border: none;" data-bs-toggle="modal" data-bs-target="#createBackupModal">
+                    <i class="fas fa-plus-circle me-1"></i>
+                    <span class="lang-en">Create New Backup</span>
+                    <span class="lang-ar">إنشاء نسخة احتياطية جديدة</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert / Messages Container -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show rounded-4 shadow-xs" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 4 Key Metric Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Live Database Size -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card version-archive-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-xs fw-bold text-uppercase">
+                        <span class="lang-en">Live Database Size</span>
+                        <span class="lang-ar">حجم قاعدة البيانات الحالية</span>
+                    </span>
+                    <div class="metric-icon-box bg-success-subtle text-success">
+                        <i class="fas fa-database"></i>
+                    </div>
+                </div>
+                <h4 class="fw-black mb-1 text-dark">{{ db_stats.size_human|default:"0 B" }}</h4>
+                <div class="text-xs text-muted">
+                    <span class="text-success fw-bold">{{ db_stats.tables_count }}</span>
+                    <span class="lang-en">Tables • Integrity:</span>
+                    <span class="lang-ar">جدول • السلامة:</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ db_stats.integrity }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Stored Backup Versions -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card version-archive-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-xs fw-bold text-uppercase">
+                        <span class="lang-en">Total Backups</span>
+                        <span class="lang-ar">إجمالي النسخ المحفوظة</span>
+                    </span>
+                    <div class="metric-icon-box bg-primary-subtle text-primary">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                </div>
+                <h4 class="fw-black mb-1 text-dark">{{ backups|length }}</h4>
+                <div class="text-xs text-muted">
+                    <span class="lang-en">Available restore points</span>
+                    <span class="lang-ar">نقاط استعادة جاهزة للنظام</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Last Backup Created -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card version-archive-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-xs fw-bold text-uppercase">
+                        <span class="lang-en">Last Backup Taken</span>
+                        <span class="lang-ar">آخر نسخة احتياطية</span>
+                    </span>
+                    <div class="metric-icon-box bg-warning-subtle text-warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <h6 class="fw-bold mb-1 text-dark text-truncate" style="font-size: 1.05rem;">
+                    {% if last_backup %}{{ last_backup.name }}{% else %}<span class="text-muted">No backups yet</span>{% endif %}
+                </h6>
+                <div class="text-xs text-muted">
+                    {% if last_backup %}
+                        {{ last_backup.created_at|slice:":19" }} • {{ last_backup.created_by }}
+                    {% else %}
+                        <span class="lang-en">Ready to take first snapshot</span>
+                        <span class="lang-ar">جاهز لإنشاء أول نسخة</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Zero Downtime Engine -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card version-archive-card h-100 p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted text-xs fw-bold text-uppercase">
+                        <span class="lang-en">Engine Status</span>
+                        <span class="lang-ar">حالة المحرك</span>
+                    </span>
+                    <div class="metric-icon-box bg-info-subtle text-info">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                </div>
+                <h4 class="fw-black mb-1 text-dark">
+                    <span class="text-success"><i class="fas fa-check-circle me-1"></i>Operational</span>
+                </h4>
+                <div class="text-xs text-muted">
+                    <span class="lang-en">Atomic hot-copy without locking</span>
+                    <span class="lang-ar">نسخ مباشر بدون انقطاع للخدمة</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs (System Database Backups vs Submission Snapshots) -->
+    <ul class="nav nav-pills nav-pills-custom gap-2 mb-4" id="versionArchiveTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'backups' %}active{% endif %}" id="backups-tab" data-bs-toggle="pill" data-bs-target="#backups-pane" type="button" role="tab">
+                <i class="fas fa-database me-2"></i>
+                <span class="lang-en">System Database Backups ({{ backups|length }})</span>
+                <span class="lang-ar">نسخ النظام وقواعد البيانات الاحتياطية ({{ backups|length }})</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'snapshots' %}active{% endif %}" id="snapshots-tab" data-bs-toggle="pill" data-bs-target="#snapshots-pane" type="button" role="tab">
+                <i class="fas fa-history me-2"></i>
+                <span class="lang-en">Task Submission Snapshots ({{ snapshots|length }})</span>
+                <span class="lang-ar">أرشيف لقطات المهام والتسليمات ({{ snapshots|length }})</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="versionArchiveTabsContent">
+
+        <!-- ================= TAB 1: SYSTEM DATABASE BACKUPS ================= -->
+        <div class="tab-pane fade {% if active_tab == 'backups' %}show active{% endif %}" id="backups-pane" role="tabpanel">
+            <div class="card version-archive-card overflow-hidden">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-server text-primary"></i>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <span class="lang-en">Available System Backups</span>
+                            <span class="lang-ar">النسخ الاحتياطية المتوفرة للنظام</span>
+                        </h6>
+                    </div>
+                    <div class="text-muted small">
+                        <span class="lang-en">Location: <code>backups/</code></span>
+                        <span class="lang-ar">المسار: <code>backups/</code></span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-modern mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 28%;">
+                                    <span class="lang-en">Version / Name</span>
+                                    <span class="lang-ar">اسم الإصدار / النسخة</span>
+                                </th>
+                                <th style="width: 24%;">
+                                    <span class="lang-en">Description & Notes</span>
+                                    <span class="lang-ar">الوصف والملاحظات</span>
+                                </th>
+                                <th style="width: 12%;">
+                                    <span class="lang-en">File Size</span>
+                                    <span class="lang-ar">حجم الملف</span>
+                                </th>
+                                <th style="width: 14%;">
+                                    <span class="lang-en">Database Contents</span>
+                                    <span class="lang-ar">محتوى القاعدة</span>
+                                </th>
+                                <th style="width: 12%;">
+                                    <span class="lang-en">Created At</span>
+                                    <span class="lang-ar">تاريخ الإنشاء</span>
+                                </th>
+                                <th style="width: 10%; text-align: center;">
+                                    <span class="lang-en">Actions</span>
+                                    <span class="lang-ar">الإجراءات</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if backups %}
+                                {% for b in backups %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="avatar-sm bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center shrink-0" style="width: 38px; height: 38px;">
+                                                <i class="fas fa-database"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ b.name }}</div>
+                                                <div class="text-xs text-muted font-monospace">{{ b.filename }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-muted small">
+                                            {{ b.description|default:"No description provided" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary-subtle text-secondary border px-2.5 py-1 rounded-pill fw-bold font-monospace">
+                                            {{ b.size_human }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="text-xs text-muted">
+                                            {% if b.tables_count %}
+                                                <div><i class="fas fa-table me-1 text-primary"></i> <b>{{ b.tables_count }}</b> Tables</div>
+                                                <div><i class="fas fa-users me-1 text-info"></i> {{ b.user_count }} Users • {{ b.task_count }} Tasks</div>
+                                            {% else %}
+                                                <span class="text-muted italic">SQLite 3 Snapshot</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-xs fw-bold text-dark">{{ b.created_at|slice:":10" }}</div>
+                                        <div class="text-xs text-muted">{{ b.created_at|slice:"11:16" }} • {{ b.created_by }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex align-items-center gap-1.5">
+                                            <!-- Download -->
+                                            <a href="?action=download&id={{ b.id }}" class="btn btn-action-round btn-light text-primary border" title="Download .sqlite3 database file">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+
+                                            <!-- Restore -->
+                                            <button type="button" class="btn btn-action-round btn-success-subtle text-success border border-success-subtle" title="Restore this database backup" onclick="openRestoreModal('{{ b.id }}', '{{ b.name|escapejs }}', '{{ b.created_at|slice:':16'|escapejs }}', '{{ b.size_human }}')">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+
+                                            <!-- Delete -->
+                                            <button type="button" class="btn btn-action-round btn-danger-subtle text-danger border border-danger-subtle" title="Delete backup" onclick="openDeleteModal('{{ b.id }}', '{{ b.name|escapejs }}')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="text-muted mb-2">
+                                            <i class="fas fa-archive fa-3x opacity-25"></i>
+                                        </div>
+                                        <h5 class="fw-bold">No backups saved yet</h5>
+                                        <p class="text-muted small mb-3">Click the "Create New Backup" button above to generate a full snapshot of the system database.</p>
+                                        <button type="button" class="btn btn-primary rounded-pill px-4 btn-sm" data-bs-toggle="modal" data-bs-target="#createBackupModal">
+                                            <i class="fas fa-plus-circle me-1"></i> Create First Backup
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: SUBMISSION VERSION SNAPSHOTS ================= -->
+        <div class="tab-pane fade {% if active_tab == 'snapshots' %}show active{% endif %}" id="snapshots-pane" role="tabpanel">
+            <!-- Search & Filters -->
+            <div class="card version-archive-card p-3 mb-4">
+                <form method="GET" class="row g-2 align-items-center">
+                    <input type="hidden" name="tab" value="snapshots">
+                    <div class="col-md-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by task, worker or notes..." value="{{ search }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="status" class="form-select bg-light border-0" onchange="this.form.submit()">
+                            <option value="">All Statuses</option>
+                            <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="submitted" {% if request.GET.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                            <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill"><span class="lang-en">Apply</span><span class="lang-ar">تطبيق</span></button>
+                    </div>
+                    {% if search or request.GET.status %}
+                    <div class="col-md-2">
+                        <a href="?tab=snapshots" class="btn btn-light w-100 rounded-pill text-muted">Clear</a>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Snapshots Grid -->
+            {% if snapshots %}
+            <div class="row g-3">
+                {% for s in snapshots %}
+                <div class="col-12 col-xl-6">
+                    <div class="card version-archive-card p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-sm bg-primary-soft rounded-circle d-flex align-items-center justify-content-center text-primary" style="width:36px; height:36px;">
+                                    <i class="fas fa-file-signature"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-truncate" style="max-width: 250px;">{{ s.submission.task.title }}</h6>
+                                    <div class="text-xs text-muted">{{ s.submission.worker.get_full_name }}</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge badge-primary-soft rounded-pill px-2">V{{ s.version_number }}</span>
+                                <div class="text-muted text-xs">{{ s.created_at|date:"M d, H:i" }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3 text-xs">
+                                    <div class="text-muted mb-0.5">Status</div>
+                                    <span class="badge rounded-pill {% if s.status == 'approved' %}bg-success{% elif s.status == 'rejected' %}bg-danger{% else %}bg-primary{% endif %}-soft {% if s.status == 'approved' %}text-success{% elif s.status == 'rejected' %}text-danger{% else %}text-primary{% endif %}">
+                                        {{ s.status|title }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3 text-xs">
+                                    <div class="text-muted mb-0.5">Progress</div>
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <div class="progress flex-grow-1" style="height: 4px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ s.progress|default:0 }}%;"></div>
+                                        </div>
+                                        <span class="fw-bold text-dark">{{ s.progress|default:0 }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if s.notes %}
+                        <div class="p-2 border rounded-3 bg-white mb-2 text-xs text-muted text-truncate">
+                            {{ s.notes }}
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
+                            <a href="{% url 'submission-versions' s.submission.task.id %}?worker_id={{ s.submission.worker.id }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 text-xs">
+                                <i class="fas fa-eye me-1"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card version-archive-card p-5 text-center">
+                <i class="fas fa-file-alt fa-3x text-muted opacity-25 mb-3"></i>
+                <h5 class="fw-bold">No historical submission snapshots found</h5>
+                <p class="text-muted small">Snapshots will automatically appear here when task submissions are updated.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= MODALS ================= -->
+
+<!-- 1. Create Backup Modal -->
+<div class="modal fade" id="createBackupModal" tabindex="-1" aria-labelledby="createBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <div class="modal-header border-bottom p-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-sm bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <h5 class="modal-title fw-black mb-0 text-dark" id="createBackupModalLabel">
+                            <span class="lang-en">Create New System Backup</span>
+                            <span class="lang-ar">إنشاء نسخة احتياطية جديدة للنظام</span>
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 space-y-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-xs text-dark">
+                            <span class="lang-en">Backup Version Name / Tag:</span>
+                            <span class="lang-ar">اسم / وسم نسخة النظام:</span>
+                        </label>
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. WorkTrack Milestone v2.5 Baseline" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-xs text-dark">
+                            <span class="lang-en">Description / Release Notes:</span>
+                            <span class="lang-ar">الوصف وملاحظات الإصدار:</span>
+                        </label>
+                        <textarea name="description" rows="3" class="form-control rounded-3" placeholder="Optional notes describing why this snapshot was taken..."></textarea>
+                    </div>
+                    <div class="p-3 bg-light rounded-3 text-xs text-muted border">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <b class="text-dark">Atomic Online Snapshot</b>
+                        </div>
+                        <div>The live SQLite database will be copied using zero-lock online backup. The platform remains fully operational without downtime.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 text-xs font-bold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 text-xs font-bold shadow-xs">
+                        <i class="fas fa-save me-1"></i> Create Snapshot Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Restore Backup Confirmation Modal -->
+<div class="modal fade" id="restoreBackupModal" tabindex="-1" aria-labelledby="restoreBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="restore">
+                <input type="hidden" name="backup_id" id="restore_target_id">
+                <div class="modal-header border-bottom p-4 bg-success-subtle text-success">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <h5 class="modal-title fw-black mb-0 text-success" id="restoreBackupModalLabel">
+                            <span class="lang-en">Confirm System Database Restore</span>
+                            <span class="lang-ar">تأكيد استعادة قاعدة بيانات النظام</span>
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-dark small mb-3">
+                        <span class="lang-en">Are you sure you want to restore the live system to the selected database snapshot?</span>
+                        <span class="lang-ar">هل أنت متأكد من رغبتك في استعادة النظام إلى لقطة قاعدة البيانات المحددة؟</span>
+                    </p>
+
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="text-xs text-muted mb-1">Target Backup Snapshot:</div>
+                        <h6 class="fw-black text-dark mb-1" id="restore_target_name">--</h6>
+                        <div class="text-xs text-muted" id="restore_target_info">--</div>
+                    </div>
+
+                    <div class="p-3 bg-success-subtle rounded-3 border border-success-subtle text-xs text-success-emphasis">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fas fa-info-circle text-success"></i>
+                            <b class="text-success"><span class="lang-en">Restore Notice:</span><span class="lang-ar">تنبيه الاستعادة:</span></b>
+                        </div>
+                        <div>
+                            <span class="lang-en">The live system database will be replaced with this selected snapshot. Active sessions and caches will be reloaded immediately.</span>
+                            <span class="lang-ar">سيتم استبدال قاعدة بيانات النظام الحالية بهذه النسخة المحددة بدقة، وتحديث الجلسات والتخزين المؤقت فوراً.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 text-xs font-bold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 text-xs font-bold shadow-xs">
+                        <i class="fas fa-check-circle me-1"></i> Yes, Restore Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Delete Backup Confirmation Modal -->
+<div class="modal fade" id="deleteBackupModal" tabindex="-1" aria-labelledby="deleteBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="backup_id" id="delete_target_id">
+                <div class="modal-header border-bottom p-4 bg-danger-subtle text-danger">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                            <i class="fas fa-trash-alt"></i>
+                        </div>
+                        <h5 class="modal-title fw-black mb-0 text-danger" id="deleteBackupModalLabel">
+                            <span class="lang-en">Delete Backup Version</span>
+                            <span class="lang-ar">حذف النسخة الاحتياطية</span>
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-dark small mb-3">
+                        <span class="lang-en">Are you sure you want to permanently delete this backup snapshot from storage?</span>
+                        <span class="lang-ar">هل أنت متأكد من رغبتك في حذف لقطة النسخ الاحتياطي هذه نهائياً من التخزين؟</span>
+                    </p>
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-black text-danger mb-0" id="delete_target_name">--</h6>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 text-xs font-bold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 text-xs font-bold shadow-xs">
+                        <i class="fas fa-trash-alt me-1"></i> Delete Backup
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Upload Backup Modal -->
+<div class="modal fade" id="uploadBackupModal" tabindex="-1" aria-labelledby="uploadBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="upload">
+                <div class="modal-header border-bottom p-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-sm bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <h5 class="modal-title fw-black mb-0 text-dark" id="uploadBackupModalLabel">
+                            <span class="lang-en">Import External SQLite Database</span>
+                            <span class="lang-ar">استيراد قاعدة بيانات SQLite خارجية</span>
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 space-y-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-xs text-dark">Select Database File (.sqlite3 / .db):</label>
+                        <input type="file" name="backup_file" accept=".sqlite3,.db" class="form-control rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-xs text-dark">Version Label (Optional):</label>
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. Imported Branch Database">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-xs text-dark">Notes / Description:</label>
+                        <textarea name="description" rows="2" class="form-control rounded-3" placeholder="Notes about this imported database..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4 text-xs font-bold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 text-xs font-bold shadow-xs">
+                        <i class="fas fa-upload me-1"></i> Import to Archive
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openRestoreModal(id, name, created, size) {
+    document.getElementById('restore_target_id').value = id;
+    document.getElementById('restore_target_name').textContent = name;
+    document.getElementById('restore_target_info').textContent = 'Created: ' + created + ' • Size: ' + size;
+    const modal = new bootstrap.Modal(document.getElementById('restoreBackupModal'));
+    modal.show();
+}
+
+function openDeleteModal(id, name) {
+    document.getElementById('delete_target_id').value = id;
+    document.getElementById('delete_target_name').textContent = name;
+    const modal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

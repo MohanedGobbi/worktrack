@@ -1,0 +1,29 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "montserrat",
+        "createdAt": "2026-11-06T22:02:20.997Z",
+        "reason": "Brand-pinned: ROWD brand guideline p.15 specifies Montserrat (body) and Montserrat Alternates (display); the user chose the ROWD brand system as the default theme on 2026-11-06"
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "templates/public/landing.html"
+        ],
+        "createdAt": "2026-11-06T22:02:21.223Z",
+        "reason": "False positive: detector cannot resolve Django {% static %} stylesheet links; rendered page measured h1 ~78px and h2 ~51px against 16px body"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "font awesome 6 free",
+        "createdAt": "2026-11-06T22:42:16.042Z",
+        "reason": "Icon font, not a typeface: Font Awesome is the project's icon system, used here only for the breadcrumb chevron glyph"
+      }
+    ]
+  }
+}

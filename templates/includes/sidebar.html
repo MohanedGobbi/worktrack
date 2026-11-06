@@ -1,0 +1,188 @@
+<style>
+  :root {
+    --sidebar-primary-val: var(--wt-brand);
+    --sidebar-btn-val: var(--wt-brand);
+  }
+
+  .modern-sidebar-nav {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .modern-nav-item {
+    margin-bottom: 0.5rem;
+  }
+  
+  .modern-category-title {
+    color: var(--wt-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 800;
+    margin: 1.5rem 0 0.5rem 0.5rem;
+    display: block;
+  }
+  
+  .modern-nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--wt-ink-2);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    font-weight: 600;
+    font-family: var(--font-main);
+    border: 1px solid transparent;
+    letter-spacing: 0.02em;
+  }
+  .modern-nav-link:hover,
+  .modern-nav-link.active {
+    background: linear-gradient(90deg, var(--wt-brand-soft), var(--wt-brand-soft));
+    border-color: color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);
+    color: var(--sidebar-primary-val) !important;
+    text-decoration: none;
+  }
+  
+  .modern-nav-link .icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    color: white;
+    font-size: 0.9rem;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .modern-nav-item:hover .icon-box {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);
+  }
+  
+  /* Quick Actions Buttons */
+  .quick-action-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .btn-create-module, .btn-create-task {
+    border: none;
+    color: #ffffff !important;
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    font-size: 0.85rem;
+  }
+  .btn-create-module *, .btn-create-task * {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+  
+  .btn-create-module {
+    background: var(--btn-bg, var(--sidebar-primary-val, var(--color-primary, #10b981))) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+  }
+  .btn-create-module:hover {
+    background: var(--btn-hover, color-mix(in srgb, var(--btn-bg, var(--color-primary, #10b981)) 85%, #000)) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  }
+  .btn-create-module:hover * {
+    color: #ffffff !important;
+  }
+  
+  .btn-create-task {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  }
+  .btn-create-task:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+  .btn-create-task:hover * {
+    color: #ffffff !important;
+  }
+  
+  .quick-action-btns i {
+    margin-right: 12px;
+    font-size: 1.1rem;
+  }
+
+  html[lang="ar"] .modern-nav-link .icon-box,
+  html[lang="ar"] .quick-action-btns i {
+    margin-right: 0;
+    margin-left: 12px;
+  }
+</style>
+
+<ul class="modern-sidebar-nav">
+  <!-- Core Layout -->
+  <li class="modern-nav-item mb-4 mt-2">
+    <a href="{% url 'global-map' %}" class="modern-nav-link" style="background: linear-gradient(145deg, color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent), var(--wt-brand-soft)); border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);">
+      <div class="icon-box" style="background: var(--sidebar-primary-val); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+        <i class="fas fa-map-marked-alt text-white" style="font-size:1.1rem;"></i>
+      </div>
+      <span style="color: var(--sidebar-primary-val); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.5px;">
+        <span class="lang-en">Global Map</span><span class="lang-ar">الخريطة العالمية</span>
+      </span>
+    </a>
+  </li>
+
+  <li class="modern-nav-item mt-3 mb-2">
+    <a href="{% url 'available-modules' %}" class="modern-nav-link" style="background: var(--wt-brand-soft); border: 1px dashed color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);">
+      <div class="icon-box" style="background: var(--sidebar-btn-val);">
+        <i class="fas fa-compass"></i>
+      </div>
+      <span style="color: var(--sidebar-primary-val); font-weight: 700;">
+        <span class="lang-en">Explore Modules</span><span class="lang-ar">تصفح الوحدات</span>
+      </span>
+    </a>
+  </li>
+
+  {% if user.role == 'super_admin' %}
+    <li class="modern-nav-item">
+      <span class="modern-category-title"><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></span>
+    </li>
+    <li class="modern-nav-item">
+      <a href="{% url 'user-management' %}" class="modern-nav-link">
+        <div class="icon-box" style="background: #4b5563;">
+          <i class="fas fa-users-cog"></i>
+        </div>
+        <span>
+          <span class="lang-en">User Registry</span><span class="lang-ar">سجل المستخدمين</span>
+        </span>
+      </a>
+    </li>
+  {% endif %}
+</ul>
+
+<div class="quick-action-btns">
+  {% if user.role in 'manager,super_admin' %}
+    <a href="{% url 'module-create' %}" class="btn-create-module">
+      <i class="fas fa-layer-group"></i> 
+      <span><span class="lang-en">New Module</span><span class="lang-ar">وحدة جديدة</span></span>
+    </a>
+  {% endif %}
+    <a href="#" onclick="quickAddTodo(); return false;" class="btn-create-task">
+      <i class="fas fa-check-square"></i> 
+      <span><span class="lang-en">New Task</span><span class="lang-ar">مهمة جديدة</span></span>
+    </a>
+</div>

@@ -1,0 +1,813 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ corr.title }} · Correspondence · Worktrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ─── NEW CLEAN UI STYLES ─── */
+
+/* ─── HERO ────────────────────────────────────────────────────────────── */
+.ch-hero {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 45%, #0d9488 100%);
+    border-radius: 24px; position: relative; overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 20px 60px rgba(30,58,138,0.25);
+}
+.ch-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+    background-size: 28px 28px; opacity: 0.5; pointer-events: none;
+}
+.ch-hero-orb1 { position:absolute; top:-60px; right:-40px; width:260px; height:260px;
+    border-radius:50%; background:rgba(255,255,255,0.07); pointer-events:none; }
+.ch-hero-orb2 { position:absolute; bottom:-80px; left:60px; width:200px; height:200px;
+    border-radius:50%; background:rgba(255,255,255,0.05); pointer-events:none; }
+.ch-hero-content { position:relative; z-index:2; padding:2.5rem 2.5rem 2rem; color:white; }
+.ch-breadcrumb { display:flex; align-items:center; gap:0.75rem; margin-bottom:1.5rem; }
+.ch-back-btn {
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);
+    display:flex; align-items:center; justify-content:center;
+    color:white; text-decoration:none; transition:all 0.2s;
+}
+.ch-back-btn:hover { background:rgba(255,255,255,0.28); color:white; }
+.ch-badge {
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);
+    border-radius:50px; padding:0.3rem 1rem;
+    font-size:0.73rem; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+}
+.ch-title-row { display:flex; align-items:flex-start; gap:1.25rem; margin-bottom:0.75rem; }
+.ch-type-icon {
+    width:60px; height:60px; border-radius:16px; flex-shrink:0;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);
+    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    backdrop-filter:blur(8px);
+}
+.ch-title { font-size:2rem; font-weight:800; letter-spacing:-0.5px;
+    text-shadow:0 2px 8px rgba(0,0,0,0.2); margin:0; line-height:1.2; }
+.ch-ref { font-size:0.85rem; opacity:0.75; margin-top:0.3rem; }
+.ch-meta-pills { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.25rem; }
+.ch-pill {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:0.3rem 0.9rem; border-radius:50px;
+    font-size:0.78rem; font-weight:700;
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);
+}
+.ch-actions { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:1.5rem; }
+.ch-action-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:0.55rem 1.4rem; border-radius:50px;
+    font-size:0.88rem; font-weight:700;
+    border:none; cursor:pointer; text-decoration:none; transition:all 0.2s;
+}
+.ch-action-btn.primary {
+    background:rgba(255,255,255,0.95); color:#4f46e5;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.ch-action-btn.primary:hover { background:white; transform:translateY(-2px); color:#3730a3; }
+.ch-action-btn.outline {
+    background:transparent; color:white; border:1px solid rgba(255,255,255,0.4);
+}
+.ch-action-btn.outline:hover { background:rgba(255,255,255,0.15); color:white; }
+.ch-action-btn.danger {
+    background:rgba(192, 40, 58,0.25); color:white; border:1px solid rgba(192, 40, 58,0.4);
+}
+.ch-action-btn.danger:hover { background:rgba(192, 40, 58,0.4); }
+
+.corr-main-ui {
+    background: white; border: 1px solid #e2e8f0; border-radius: 20px;
+    display: flex; height: calc(100vh - 120px); min-height: 900px; overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.05);
+}
+
+/* LEFT PANEL (Attachments) */
+.panel-left { width: 300px; flex-shrink: 0; border-right: 1px solid #e2e8f0; padding: 2rem; overflow-y: auto; background: white; transition: all 0.3s ease; }
+.panel-left.hidden { width: 0; padding: 0; border: none; overflow: hidden; }
+
+.panel-right { width: 360px; flex-shrink: 0; border-left: 1px solid #e2e8f0; padding: 2rem; overflow-y: auto; background: #fafafa; transition: all 0.3s ease; }
+.panel-right.hidden { width: 0; padding: 0; border: none; overflow: hidden; }
+
+.att-section-title { font-weight: 750; color: #0f172a; margin-bottom: 1.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+.att-sidebar-item {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+    border-radius: 8px; border: 1px solid transparent; cursor: pointer;
+    transition: all 0.2s; margin-bottom: 0.5rem; color: #475569; position: relative;
+    font-size: 0.85rem; font-weight: 500;
+}
+.att-sidebar-item:hover { background: #f8fafc; }
+.att-sidebar-item.active { background: #f5f3ff; border-color: #8b5cf6; color: #4338ca; font-weight: 600; }
+.att-sidebar-icon { font-size: 1.1rem; flex-shrink: 0; width: 20px; text-align: center; }
+
+/* MIDDLE PANEL (Viewer) */
+.panel-middle { flex-grow: 1; display: flex; flex-direction: column; background: #f1f5f9; overflow: hidden; position: relative; box-shadow: inset 0 0 40px rgba(0,0,0,0.02); }
+.viewer-body { flex-grow: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; align-items: center; background: #e2e8f0; }
+.viewer-header {
+    height: 64px; border-bottom: 1px solid #e2e8f0; background: white;
+    display: flex; align-items: center; justify-content: flex-end; padding: 0 2rem; flex-shrink: 0;
+}
+#pdfPagesContainer { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 1rem; }
+#pdfPagesContainer canvas { width: 100% !important; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+#imgViewer { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); display: none; }
+#officeViewer { width: 100%; height: 100%; border: none; display: none; flex-grow: 1; background: white; }
+/* ─── PREMIUM WIDGETS ─── */
+.right-card { 
+    background: white; border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 24px; 
+    padding: 0; display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.03); margin-bottom: 1.5rem;
+}
+.right-card-header { 
+    padding: 1.5rem; background: linear-gradient(to right, #ffffff, #fcfcfc); 
+    border-bottom: 1px solid #f8fafc; display: flex; justify-content: space-between; align-items: center; 
+}
+.right-card-title { font-weight: 850; color: #0f172a; margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; }
+.card-icon-box { 
+    width: 32px; height: 32px; border-radius: 10px; display: flex; 
+    align-items: center; justify-content: center; font-size: 0.9rem;
+}
+
+.right-card-body { padding: 1.5rem; }
+.meta-info-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px dashed #f1f5f9; }
+.meta-info-row:last-child { border-bottom: none; }
+.meta-info-label { color: #64748b; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 12px; }
+.meta-info-val { font-size: 0.8rem; font-weight: 800; color: #1e293b; }
+
+.assigned-row { 
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.75rem; border-radius: 16px; background: #fafafa; border: 1px solid transparent;
+    transition: all 0.2s; margin-bottom: 0.75rem;
+}
+.assigned-row:hover { background: #fdfdfd; border-color: #4f46e5; transform: scale(1.02); }
+
+.signature-stamp {
+    position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; 
+    background: var(--color-primary, #10b981); color: white; border: 2px solid white; 
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+    font-size: 0.6rem; z-index: 2; box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent);
+}
+
+.pagination-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 1rem; }
+.pag-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #64748b; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 0.8rem; }
+.pag-btn:hover:not(:disabled) { background: #4f46e5; color: white; border-color: #4f46e5; }
+.pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.pag-info { font-size: 0.75rem; font-weight: 700; color: #94a3b8; }
+
+.signature-btn {
+    width: 100%; height: 64px; border-radius: 16px; border: none;
+    background: linear-gradient(135deg, #4f46e5, #4338ca); color: white;
+    font-weight: 800; font-size: 1.2rem; display: flex; align-items: center;
+    justify-content: center; gap: 15px; box-shadow: 0 15px 35px rgba(79, 70, 229, 0.25);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer;
+}
+.signature-btn:hover { transform: translateY(-3px); box-shadow: 0 20px 45px rgba(79, 70, 229, 0.35); }
+
+.scroll-thin::-webkit-scrollbar { width: 4px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+@media print {
+    .ch-hero, .panel-left, .panel-middle, .right-card, .ch-actions, .viewer-header { display: none !important; }
+    #bottomAcknowledgeSection { display: block !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+    .status-grid-item { break-inside: avoid; }
+}
+
+
+
+
+/* ─── STATUS & PRIORITY CLASSES ─── */
+.meta-badge-box {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0.35rem 0.85rem; border-radius: 50px;
+    font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.meta-badge-box i { font-size: 0.4rem; }
+
+/* Status Dot for User Grid */
+.status-pip {
+    position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px;
+    border-radius: 50%; border: 2px solid white; transition: background 0.3s;
+}
+.status-pip.signed { background-color: #22c55e !important; }
+.status-pip.pending { background-color: #94a3b8 !important; }
+
+/* Priority Colors */
+.priority-high { background-color: #fee2e2; color: var(--wt-bad); }
+.priority-urgent { background-color: #fee2e2; color: var(--wt-bad); }
+.priority-normal { background-color: #fef3c7; color: #d97706; }
+.status-info { background-color: #e0f2fe; color: #0369a1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 1.5rem 2rem;">
+
+    <!-- ===== HERO ===== -->
+    <div class="ch-hero">
+        <div class="ch-hero-orb1"></div>
+        <div class="ch-hero-orb2"></div>
+        <div class="ch-hero-content d-flex justify-content-between align-items-center flex-wrap gap-4">
+            <div style="flex: 1; min-width: 300px;">
+            <div class="ch-breadcrumb">
+                <a href="{% url 'admin-correspondence' %}" class="ch-back-btn">
+                    <i class="fas fa-arrow-left" style="font-size:.8rem;"></i>
+                </a>
+                <span class="ch-badge"><i class="fas fa-shield-alt me-1"></i><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></span>
+                <span style="color:rgba(255,255,255,.45); font-size:.85rem;">/ Correspondence</span>
+            </div>
+
+            <div class="ch-title-row">
+                <div class="ch-type-icon">
+                    {% if corr.correspondence_type == 'circular' %}<i class="fas fa-circle-notch"></i>
+                    {% elif corr.correspondence_type == 'directive' %}<i class="fas fa-arrow-right"></i>
+                    {% elif corr.correspondence_type == 'memo' %}<i class="fas fa-sticky-note"></i>
+                    {% elif corr.correspondence_type == 'notice' %}<i class="fas fa-bell"></i>
+                    {% elif corr.correspondence_type == 'decision' %}<i class="fas fa-gavel"></i>
+                    {% else %}<i class="fas fa-envelope-open-text"></i>{% endif %}
+                </div>
+                <div>
+                    <h1 class="ch-title">{{ corr.title }}</h1>
+                    {% if corr.reference_number %}
+                        <div class="ch-ref"><i class="fas fa-hashtag me-1"></i>Ref: {{ corr.reference_number }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ch-meta-pills">
+                <span class="ch-pill"><i class="fas fa-tag"></i> {{ corr.get_correspondence_type_display }}</span>
+                <span class="ch-pill"><i class="fas fa-flag"></i> {{ corr.get_priority_display }}</span>
+                {% if corr.work_module %}
+                    <span class="ch-pill"><i class="fas fa-layer-group"></i> {{ corr.work_module.name }}</span>
+                {% endif %}
+                {% if corr.deadline %}
+                    <span class="ch-pill"><i class="fas fa-calendar"></i> Due {{ corr.deadline|date:"d M Y" }}</span>
+                {% endif %}
+                <span class="ch-pill">
+                    <i class="fas fa-circle" style="font-size:.5rem;"></i> {{ corr.get_status_display }}
+                </span>
+            </div>
+
+            <div class="ch-actions">
+                {% if can_acknowledge %}
+                    <button class="ch-action-btn primary" onclick="document.getElementById('ackForm').scrollIntoView({behavior:'smooth'})">
+                        <i class="fas fa-check-circle"></i> Acknowledge Document
+                    </button>
+                {% elif user_acknowledged %}
+                    <span class="ch-pill" style="background:rgba(var(--wt-brand-rgb),0.25); font-size:0.88rem; padding:0.55rem 1.2rem; font-weight:700;">
+                        <i class="fas fa-check-double"></i> You have acknowledged
+                    </span>
+                {% endif %}
+                {% if can_manage %}
+                    <a href="{% url 'correspondence-edit' corr.pk %}" class="ch-action-btn outline">
+                        <i class="fas fa-edit"></i><span class="lang-en">Edit</span><span class="lang-ar">تعديل</span></a>
+                    <form method="POST" action="{% url 'correspondence-delete' corr.pk %}" onsubmit="event.preventDefault(); amazingConfirm('Delete this correspondence?').then(c => { if(c) this.submit(); });" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="ch-action-btn danger"><i class="fas fa-trash-alt"></i><span class="lang-en">Delete</span><span class="lang-ar">حذف</span></button>
+                    </form>
+                {% endif %}
+                {% if corr.attachment %}
+                    <a href="{{ corr.attachment.url }}" id="topDownloadBtn" target="_blank" class="ch-action-btn outline">
+                        <i class="fas fa-download"></i><span class="lang-en">Download</span><span class="lang-ar">تنزيل</span></a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if corr.cover_image %}
+        <div class="ch-hero-cover-wrapper" style="padding-right: 2.5rem; flex-shrink: 0;">
+            <div class="ch-hero-cover-widget" style="width: 180px; height: 180px; border-radius: 24px; overflow: hidden; border: 4px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.3); background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; transform: rotate(3deg); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                <img src="{{ corr.cover_image.url }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Cover">
+                <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.2));"></div>
+            </div>
+        </div>
+        <style>
+            .ch-hero-cover-widget:hover { transform: rotate(0deg) scale(1.05); border-color: rgba(255,255,255,0.4); }
+        </style>
+        {% endif %}
+        </div>
+    </div>
+
+    <!-- MAIN UI CONTAINER -->
+    <div class="corr-main-ui" id="mainUiContainer">
+        
+        <!-- LEFT PANEL -->
+        <div class="panel-left" id="panelLeft">
+            <h6 class="att-section-title">Attachments</h6>
+            
+            <div id="attachmentList">
+                {% if corr.attachment %}
+                <div class="att-sidebar-item active" onclick="loadDoc('{% if corr.pdf_version %}{{ corr.pdf_version.url|escapejs }}{% endif %}', '{{ corr.attachment.url|escapejs }}', this)">
+                    <i class="{% if '.pdf' in corr.attachment.url|lower %}fas fa-file-pdf text-danger{% elif '.doc' in corr.attachment.url|lower %}fas fa-file-word text-primary{% elif '.xls' in corr.attachment.url|lower %}fas fa-file-excel text-success{% elif '.jpg' in corr.attachment.url|lower or '.jpeg' in corr.attachment.url|lower or '.png' in corr.attachment.url|lower or '.gif' in corr.attachment.url|lower or '.webp' in corr.attachment.url|lower or '.svg' in corr.attachment.url|lower %}fas fa-file-image text-warning{% else %}far fa-file-alt text-secondary{% endif %} att-sidebar-icon"></i>
+                    <span class="text-truncate">{{ corr.attachment.name|slice:'27:' }}</span>
+                </div>
+                {% endif %}
+                
+                {% for att in attachments %}
+                <div class="att-sidebar-item" onclick="loadDoc('{% if att.pdf_version %}{{ att.pdf_version.url|escapejs }}{% endif %}', '{{ att.file.url|escapejs }}', this)">
+                    <i class="{% if '.pdf' in att.file.url|lower %}fas fa-file-pdf text-danger{% elif '.doc' in att.file.url|lower %}fas fa-file-word text-primary{% elif '.xls' in att.file.url|lower %}fas fa-file-excel text-success{% elif '.jpg' in att.file.url|lower or '.jpeg' in att.file.url|lower or '.png' in att.file.url|lower or '.gif' in att.file.url|lower or '.webp' in att.file.url|lower or '.svg' in att.file.url|lower %}fas fa-file-image text-warning{% else %}far fa-file-alt text-secondary{% endif %} att-sidebar-icon"></i>
+                    <span class="text-truncate">{{ att.file.name|slice:'27:' }}</span>
+                </div>
+                {% endfor %}
+                
+                {% if not corr.attachment and not attachments %}
+                <div class="text-muted small">No attachments found.</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- MIDDLE PANEL -->
+        <div class="panel-middle">
+            <div class="viewer-header" style="justify-content: space-between;">
+                <div style="flex-grow: 1;">
+                    <a id="downloadDocBtn" href="#" target="_blank" class="btn-download-premium">
+                        <i class="fas fa-file-download"></i> Download Document
+                    </a>
+                </div>
+                <label class="d-flex align-items-center gap-3 cursor-pointer mb-0">
+                    <span style="font-weight: 700; font-size: 0.8rem; color: #64748b;">FOCUS MODE</span>
+                    <label class="switch mb-0">
+                        <input type="checkbox" id="focusModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                </label>
+            </div>
+            
+            <div class="viewer-body" id="pdfViewerContainer" style="position: relative;">
+                <!-- Loading Indicator -->
+                <div id="pdfLoadingIndicator" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; width: 100%; color: #94a3b8;">
+                    <i class="fas fa-circle-notch fa-spin fs-2 mb-3 text-indigo"></i>
+                    <p class="fw-bold mb-0">Loading Document...</p>
+                </div>
+
+                <!-- Error / Fallback Indicator -->
+                <div id="pdfErrorIndicator" style="display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; width: 100%; color: #94a3b8; padding: 4rem 0;">
+                    <i class="far fa-eye-slash fs-1 mb-3 text-secondary"></i>
+                    <p class="fw-bold text-dark" id="pdfErrorTitle">Preview not available</p>
+                    <p class="small mb-3" id="pdfErrorDesc">This document type cannot be viewed inline.</p>
+                    <a id="fallbackBtn" href="#" target="_blank" class="corr-btn corr-btn-primary px-4">Download Original File</a>
+                </div>
+
+                <!-- PDF Canvas Container -->
+                <div id="pdfPagesContainer"></div>
+
+                <!-- Image Viewer -->
+                <img id="imgViewer" src="" alt="Document Preview" style="max-width: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); display: none; margin: auto;">
+
+                <!-- Download Card for non-previewable files -->
+                <div id="downloadCard" style="display:none; flex-direction:column; align-items:center; justify-content:center; min-height:400px; width:100%; padding:3rem 1rem; text-align:center;">
+                    <!-- Animated background orb -->
+                    <div style="position:relative; margin-bottom:2rem;">
+                        <div style="width:120px; height:120px; border-radius:32px; display:flex; align-items:center; justify-content:center; font-size:3.5rem; background:linear-gradient(135deg,#eef2ff,#e0e7ff); box-shadow:0 12px 40px rgba(79,70,229,0.15); animation:floatAnim 3s ease-in-out infinite;" id="dlCardIcon"></div>
+                    </div>
+                    <h4 style="font-weight:800; color:#1e293b; margin-bottom:0.35rem;" id="dlCardTitle">Document</h4>
+                    <p style="color:#64748b; font-size:0.9rem; margin-bottom:2rem; font-weight:500;" id="dlCardDesc">This file cannot be previewed in the browser. Open it in its native application.</p>
+                    <a id="dlCardBtn" href="#" target="_blank"
+                       style="display:inline-flex; align-items:center; gap:12px; padding:1rem 2.5rem; border-radius:50px; background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%); color:white; font-weight:800; font-size:1.1rem; text-decoration:none; box-shadow:0 10px 30px rgba(79,70,229,0.4); transition:all 0.25s cubic-bezier(0.175,0.885,0.32,1.275); letter-spacing:0.3px;"
+                       onmouseover="this.style.transform='translateY(-4px) scale(1.03)'; this.style.boxShadow='0 20px 45px rgba(79,70,229,0.5)';"
+                       onmouseout="this.style.transform=''; this.style.boxShadow='0 10px 30px rgba(79,70,229,0.4)';">
+                        <span style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;"><i class="fas fa-download"></i></span>
+                        Download File
+                    </a>
+                    <p style="color:#94a3b8; font-size:0.72rem; margin-top:1.25rem; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">Click to open or save the original file</p>
+                </div>
+                <style>
+                    @keyframes floatAnim { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+                </style>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANEL -->
+        <div class="panel-right" id="panelRight">
+            
+            <!-- Document Info Widget -->
+            <div class="right-card">
+                <div class="right-card-header">
+                    <h6 class="right-card-title">Document Info</h6>
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;"><i class="fas fa-info-circle"></i></div>
+                </div>
+                
+                <div class="right-card-body">
+                    <div class="meta-info-row">
+                        <span class="meta-info-label"><i class="fas fa-fingerprint text-indigo"></i><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></span>
+                        <span class="meta-badge-box status-info"><i class="fas fa-circle"></i> {{ corr.get_status_display|default:'Active' }}</span>
+                    </div>
+                    
+                    <div class="meta-info-row">
+                        <span class="meta-info-label"><i class="fas fa-bolt text-warning"></i><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></span>
+                        {% if corr.priority == 'high' or corr.priority == 'urgent' %}
+                        <span class="meta-badge-box" style="background: #fee2e2; color: var(--wt-bad);">
+                        {% else %}
+                        <span class="meta-badge-box" style="background: #fef3c7; color: #d97706;">
+                        {% endif %}
+                            <i class="fas fa-circle" style="font-size: 0.4rem;"></i> {{ corr.get_priority_display|default:'Normal' }}
+                        </span>
+                    </div>
+
+                    <div class="meta-info-row">
+                        <span class="meta-info-label"><i class="fas fa-calendar-alt text-success"></i> Created</span>
+                        <span class="meta-info-val">{{ corr.created_at|date:"d M Y" }}</span>
+                    </div>
+                    
+                    <div class="meta-info-row">
+                        <span class="meta-info-label"><i class="fas fa-file-contract text-primary"></i> Type</span>
+                        <span class="meta-info-val">{{ corr.get_correspondence_type_display }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task Assignments Widget -->
+            <div class="right-card">
+                <div class="right-card-header">
+                    <h6 class="right-card-title">Team Progress</h6>
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #fff1f2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); display: flex; align-items: center; justify-content: center; font-size: 0.8rem;"><i class="fas fa-chart-pie"></i></div>
+                </div>
+                
+                <div class="right-card-body">
+                    <!-- Progress Chart -->
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3" style="background: #f8fafc; border-radius: 16px;">
+                        <div style="position: relative; width: 64px; height: 64px; flex-shrink: 0;">
+                            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                                <path stroke-dasharray="{{ ack_pct|default:'0' }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4f46e5" stroke-width="4" stroke-linecap="round" style="transition: stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1);" />
+                            </svg>
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 850; font-size: 0.95rem; color: #1e293b;">{{ ack_pct|default:'0' }}%</div>
+                        </div>
+                        <div>
+                            <div style="font-weight: 850; color: #1e293b; font-size: 1rem; line-height: 1.2;">{{ ack_pct|default:'0' }}% Signed</div>
+                            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 2px;">{{ ack_count }} of {{ total_assigned }} Members</div>
+                        </div>
+                    </div>
+
+                    <div id="assignedToList" style="padding-right: 0;">
+                        {% for u in corr.assigned_to.all %}
+                        <div class="assigned-row">
+                            <div style="position: relative; flex-shrink: 0;">
+                                {% if u.profile.avatar %}
+                                    <img src="{{ u.profile.avatar.url }}" style="width: 40px; height: 40px; border-radius: 12px; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #e0e7ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800;">{{ u.first_name|slice:':1' }}{{ u.last_name|slice:':1' }}</div>
+                                {% endif %}
+                                {% if u.pk in acked_user_ids %}
+                                    <div class="signature-stamp"><i class="fas fa-check"></i></div>
+                                {% endif %}
+                            </div>
+                            <div style="flex-grow: 1; min-width: 0;">
+                                <div style="font-size: 0.9rem; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.get_full_name|default:u.email }}</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">{% if u.pk in acked_user_ids %}Signed{% else %}Awaiting{% endif %}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="paginationAssigned" class="pagination-controls"></div>
+                </div> <!-- End body -->
+            </div> <!-- End Task Assignments Widget -->
+
+            <!-- Signed Members Widget -->
+            <div class="right-card">
+                <div class="right-card-header">
+                    <h6 class="right-card-title">Signed Members</h6>
+                    <div class="card-icon-box" style="background: #fff1f2; color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));"><i class="fas fa-check-double"></i></div>
+                </div>
+                <div class="right-card-body" style="max-height: 280px; overflow-y: auto;">
+                    <div id="teamAckList">
+                        {% for ack in ack_list %}
+                        <div class="assigned-row d-flex align-items-center gap-3">
+                            <div style="flex-shrink: 0;">
+                                {% if ack.user.profile.avatar %}
+                                    <img src="{{ ack.user.profile.avatar.url }}" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #fee2e2; color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800;">{{ ack.user.first_name|slice:':1' }}</div>
+                                {% endif %}
+                            </div>
+                            <div style="flex-grow: 1; min-width: 0;">
+                                <div style="font-size: 0.82rem; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ack.user.get_full_name }}</div>
+                                <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">{{ ack.acknowledged_at|date:"d M, H:i" }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted small">No signatures yet</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+        </div> <!-- End Panel Right -->
+    </div> <!-- End Main UI Grid -->
+
+    <div id="bottomAcknowledgeSection" style="margin-top: 2rem; margin-bottom: 3rem; width: 100%; max-width: 900px; margin-left: auto; margin-right: auto; display: none; text-align: center;">
+        <div style="background: white; padding: 2rem 1.5rem; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #1e3a8a, #0d9488);"></div>
+            
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                <div style="width: 52px; height: 52px; border-radius: 16px; background: #fff1f2; color: var(--color-primary, #10b981); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <h2 style="color: #0f172a; font-weight: 850; margin: 0; letter-spacing: -0.5px; font-size: 1.75rem;">Official Acknowledgement</h2>
+                <p style="color: #64748b; font-size: 0.95rem; max-width: 550px; line-height: 1.5; font-weight: 500;">By signing, you confirm your understanding of the directives as a legally binding record.</p>
+                
+                {% if can_manage %}
+                <button onclick="window.print()" class="ch-action-btn outline mt-1" style="border-color: #e2e8f0; color: #64748b; padding: 0.45rem 1.2rem; font-size: 0.8rem;">
+                    <i class="fas fa-print"></i> Print Signature Log (Admin)
+                </button>
+                {% endif %}
+            </div>
+
+            {% if can_manage %}
+            <!-- Detailed Grid Status (ADMIN ONLY) -->
+            <div style="text-align: left; margin-bottom: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 1.5rem;">
+                <div style="font-weight: 800; font-size: 0.75rem; color: #475569; margin: 0 0 1rem; text-transform: uppercase; letter-spacing: 1px;">Detailed Acknowledgement Matrix</div>
+                <div class="mb-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                    {% for u in corr.assigned_to.all %}
+                    <div class="status-grid-item" style="padding: 0.75rem; border-radius: 10px; background: #fafafa; border: 1px solid #f1f5f9;">
+                        <div style="position: relative;">
+                            {% if u.profile.avatar %}
+                                <img src="{{ u.profile.avatar.url }}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 42px; height: 42px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 850; color: #475569;">{{ u.first_name|slice:':1' }}{{ u.last_name|slice:':1' }}</div>
+                            {% endif %}
+                            <div class="status-pip {% if u.pk in acked_user_ids %}signed{% else %}pending{% endif %}"></div>
+                        </div>
+                        <div style="flex-grow: 1; overflow: hidden;">
+                            <div style="font-size: 0.9rem; font-weight: 850; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.get_full_name }}</div>
+                            {% if u.pk in acked_user_ids %}
+                                <div style="font-size: 0.7rem; color: var(--color-primary, #10b981); font-weight: 800; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                    <i class="fas fa-check-circle"></i> SIGNED
+                                </div>
+                            {% else %}
+                                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                    <i class="far fa-clock"></i> PENDING
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_acknowledge %}
+            <form id="ackForm" method="POST" action="{% url 'correspondence-acknowledge' corr.pk %}" style="max-width: 100%; width: 100%; margin: 0 auto; background: #f8fafc; padding: 1.5rem; border-radius: 16px; border: 1px solid #f1f5f9;">
+                {% csrf_token %}
+                <div style="margin-bottom: 1rem; text-align: left;">
+                    <div style="font-weight: 850; color: #1e293b; font-size: 1rem;">Confirm Your Signature</div>
+                </div>
+                <button type="submit" class="signature-btn" style="height: 54px; font-size: 1rem; border-radius: 12px;">
+                    <i class="fas fa-signature"></i> Confirm & Sign Now
+                </button>
+            </form>
+            {% elif user_acknowledged %}
+            <div style="background: #fff1f2; padding: 2rem; border-radius: 24px; border: 2px solid #fecaca; color: color-mix(in oklab, var(--wt-brand) 62%, #000); display: flex; flex-direction: column; align-items: center; gap: 1rem; max-width: 500px; margin: 0 auto;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: #22c55e; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.25);">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div style="text-align: center;">
+                    <h3 style="margin: 0; font-weight: 850; font-size: 1.3rem;">Signature Authenticated</h3>
+                    <p style="margin: 8px 0 0; font-size: 0.95rem; opacity: 0.9; font-weight: 600;">Your acknowledgement has been securely recorded.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div> <!-- End Inner Card -->
+    </div> <!-- End bottomAcknowledgeSection -->
+</div> <!-- End container-fluid -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/pdfjs/pdf.min.js' %}"></script>
+<script>
+    // Toggle Focus Mode
+    document.getElementById('focusModeToggle').addEventListener('change', function(e) {
+        const leftPanel = document.getElementById('panelLeft');
+        const rightPanel = document.getElementById('panelRight');
+        if (this.checked) {
+            leftPanel.classList.add('hidden');
+            rightPanel.classList.add('hidden');
+        } else {
+            leftPanel.classList.remove('hidden');
+            rightPanel.classList.remove('hidden');
+        }
+        // Force PDF rescale if possible, or wait for window resize
+        setTimeout(() => { if (pdfDoc) renderAllPages(); }, 350);
+    });
+
+    // PDF.js Setup
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "{% static 'vendor/pdfjs/pdf.worker.min.js' %}";
+
+    let pdfDoc = null,
+        pagesContainer = document.getElementById('pdfPagesContainer'),
+        loadingIndicator = document.getElementById('pdfLoadingIndicator'),
+        errorIndicator = document.getElementById('pdfErrorIndicator'),
+        imgViewer = document.getElementById('imgViewer'),
+        officeViewer = document.getElementById('officeViewer'),
+        fallbackBtn = document.getElementById('fallbackBtn');
+
+    /** Detect file category from URL extension */
+    function getFileType(url) {
+        if (!url) return 'unknown';
+        const ext = url.split('?')[0].split('.').pop().toLowerCase();
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'].includes(ext)) return 'image';
+        if (ext === 'pdf') return 'pdf';
+        if (['doc', 'docx'].includes(ext)) return 'word';
+        if (['xls', 'xlsx', 'ods'].includes(ext)) return 'excel';
+        if (['ppt', 'pptx'].includes(ext)) return 'ppt';
+        return 'other';
+    }
+
+    const downloadCard = document.getElementById('downloadCard');
+
+    function resetViewer() {
+        pagesContainer.innerHTML = '';
+        pdfDoc = null;
+        imgViewer.onload = null;
+        imgViewer.onerror = null;
+        imgViewer.style.display = 'none';
+        imgViewer.removeAttribute('src');
+        downloadCard.style.display = 'none';
+        errorIndicator.style.display = 'none';
+        loadingIndicator.style.display = 'flex';
+    }
+
+    function showError(title, desc, downloadUrl) {
+        loadingIndicator.style.display = 'none';
+        errorIndicator.style.display = 'flex';
+        document.getElementById('pdfErrorTitle').textContent = title;
+        document.getElementById('pdfErrorDesc').textContent = desc;
+        if (downloadUrl) {
+            fallbackBtn.style.display = 'inline-flex';
+            fallbackBtn.href = downloadUrl;
+        } else {
+            fallbackBtn.style.display = 'none';
+        }
+    }
+
+    function showDownloadCard(fileType, downloadUrl) {
+        const iconMap = {
+            word:  '<i class="fas fa-file-word"  style="color:#2b7cd3;"></i>',
+            excel: '<i class="fas fa-file-excel" style="color:#1d7044;"></i>',
+            ppt:   '<i class="fas fa-file-powerpoint" style="color:#c43e1c;"></i>',
+            other: '<i class="fas fa-file-alt"   style="color:#64748b;"></i>',
+        };
+        const labelMap = {
+            word:  'Word Document (.docx)',
+            excel: 'Excel Spreadsheet (.xlsx)',
+            ppt:   'PowerPoint Presentation (.pptx)',
+            other: 'File Attachment',
+        };
+        const downloadCard = document.getElementById('downloadCard');
+        document.getElementById('dlCardIcon').innerHTML  = iconMap[fileType]  || iconMap.other;
+        document.getElementById('dlCardTitle').textContent = labelMap[fileType] || 'Document';
+        document.getElementById('dlCardBtn').href = downloadUrl;
+        downloadCard.style.display = 'flex';
+    }
+
+    function loadDoc(pdfUrl, originalUrl, element) {
+        // Update active state in sidebar
+        if (element) {
+            document.querySelectorAll('.att-sidebar-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // Update download buttons
+        const topDownloadBtn = document.getElementById('topDownloadBtn');
+        if (topDownloadBtn) topDownloadBtn.href = originalUrl;
+        const viewerDownloadBtn = document.getElementById('downloadDocBtn');
+        if (viewerDownloadBtn) viewerDownloadBtn.href = originalUrl;
+
+        resetViewer();
+        document.getElementById('bottomAcknowledgeSection').style.display = 'block';
+
+        const fileType = getFileType(originalUrl);
+
+        // ── IMAGE ────────────────────────────────────────────────────────
+        if (fileType === 'image') {
+            // Show image immediately — hide loader right away, let onerror catch failures
+            loadingIndicator.style.display = 'none';
+            imgViewer.style.display = 'block';
+            imgViewer.onerror = () => {
+                imgViewer.style.display = 'none';
+                showError('Image could not be displayed', 'The file may be missing or inaccessible.', originalUrl);
+            };
+            imgViewer.src = originalUrl;
+            return;
+        }
+
+        // ── WORD / EXCEL / POWERPOINT / OTHER ─────────────────────────────
+        if (fileType !== 'pdf') {
+            loadingIndicator.style.display = 'none';
+            showDownloadCard(fileType, originalUrl);
+            return;
+        }
+
+        const urlToLoad = pdfUrl || originalUrl;
+
+        pdfjsLib.getDocument(urlToLoad).promise.then(doc => {
+            pdfDoc = doc;
+            loadingIndicator.style.display = 'none';
+            renderAllPages();
+        }).catch(err => {
+            console.error('PDF load error:', err);
+            showError('Preview not available', 'This document could not be rendered.', originalUrl);
+        });
+    }
+
+    function renderAllPages() {
+        if (!pdfDoc) return;
+        pagesContainer.innerHTML = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            renderPage(i);
+        }
+    }
+
+    function renderPage(num) {
+        if (!pdfDoc) return;
+        pdfDoc.getPage(num).then(page => {
+            const containerWidth = document.getElementById('pdfViewerContainer').clientWidth - 40;
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
+            // Calculate scale to fit width up to max of 1.5
+            const scale = Math.min(1.5, Math.max(0.5, containerWidth / unscaledViewport.width));
+            
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.createElement('canvas');
+            canvas.style = 'background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 100%; display: block; margin: 0 auto 1.5rem; border-radius: 4px;';
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            pagesContainer.appendChild(canvas);
+
+            const renderCtx = { canvasContext: canvas.getContext('2d'), viewport: viewport };
+            page.render(renderCtx);
+        });
+    }
+
+    // Handle Pagination
+    function setupPagination(containerId, paginationId, itemsPerPage) {
+        const container = document.getElementById(containerId);
+        const pagination = document.getElementById(paginationId);
+        const items = Array.from(container.children);
+        const pageCount = Math.ceil(items.length / itemsPerPage);
+        
+        if (pageCount <= 1) {
+            pagination.style.display = 'none';
+            return;
+        }
+
+        let currentPage = 1;
+
+        function showPage(page) {
+            items.forEach((item, index) => {
+                item.style.display = (index >= (page - 1) * itemsPerPage && index < page * itemsPerPage) ? 'flex' : 'none';
+            });
+            updateControls();
+        }
+
+        function updateControls() {
+            pagination.innerHTML = '';
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pag-btn';
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; showPage(currentPage); } };
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pag-btn';
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.disabled = currentPage === pageCount;
+            nextBtn.onclick = () => { if(currentPage < pageCount) { currentPage++; showPage(currentPage); } };
+            
+            const info = document.createElement('span');
+            info.className = 'pag-info';
+            info.textContent = `${currentPage} / ${pageCount}`;
+            
+            pagination.appendChild(prevBtn);
+            pagination.appendChild(info);
+            pagination.appendChild(nextBtn);
+        }
+
+        showPage(1);
+    }
+
+    // Auto-load first document on document.ready
+    document.addEventListener("DOMContentLoaded", () => {
+        const firstAtt = document.querySelector('.att-sidebar-item.active') || document.querySelector('.att-sidebar-item');
+        if (firstAtt) {
+            firstAtt.click(); // Trigger load
+        } else {
+            loadingIndicator.style.display = 'none';
+            errorIndicator.style.display = 'flex';
+            document.getElementById('pdfErrorTitle').textContent = 'No Document Found';
+            document.getElementById('pdfErrorDesc').textContent = 'Please upload a document to view it here.';
+            fallbackBtn.style.display = 'none';
+        }
+
+        // Initialize lists pagination
+        setupPagination('assignedToList', 'paginationAssigned', 7);
+    });
+
+    // Handle resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (pdfDoc) renderAllPages();
+        }, 300);
+    });
+</script>
+{% endblock %}

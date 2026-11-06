@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        /* ─── RESET & BASE ─── */
+        body { margin: 0; padding: 0; background-color: #0c111d; font-family: 'Outfit', 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #0c111d; padding: 40px 10px; }
+        .main { background-color: #101828; margin: 0 auto; width: 100%; max-width: 600px; border-radius: 32px; overflow: hidden; box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); }
+        
+        /* ─── HERO BANNER ─── */
+        .hero { position: relative; height: 320px; background-size: cover; background-position: center; width: 100%; border-bottom: 2px solid {{ primary_color|default:'#4f46e5' }}; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16, 24, 40, 0.1) 0%, rgba(16, 24, 40, 0.95) 100%); padding: 40px; display: flex; flex-direction: column; justify-content: flex-end; }
+        .badge { display: inline-block; padding: 6px 14px; background: {{ primary_color|default:'#4f46e5' }}; color: #ffffff; border-radius: 50px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        .title-h1 { font-size: 38px; font-weight: 900; margin: 0; letter-spacing: -1.5px; color: #ffffff; line-height: 1.05; text-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .date-badge { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600; margin-top: 15px; }
+
+        /* ─── CONTENT BLOCKS ─── */
+        .content { padding: 40px; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 24px; margin-bottom: 24px; }
+        .row-table { width: 100%; border-spacing: 0; }
+        .col-half { width: 48%; vertical-align: top; }
+        
+        .stat-label { color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; display: block; }
+        .stat-value { font-size: 20px; font-weight: 800; }
+        
+        /* ─── TIMER ─── */
+        .countdown-table { margin-top: 12px; }
+        .timer-slot { background: #1a2333; border-radius: 16px; padding: 15px; text-align: center; min-width: 65px; border: 1px solid rgba(255,255,255,0.05); }
+        .timer-digit { font-size: 26px; font-weight: 900; color: #38bdf8; display: block; }
+        .timer-unit { font-size: 9px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ─── PROGRESS ─── */
+        .prog-header { margin-bottom: 12px; }
+        .prog-pct { font-size: 22px; font-weight: 900; color: #60a5fa; }
+        .prog-track { width: 100%; height: 14px; background: rgba(255, 255, 255, 0.05); border-radius: 100px; border: 1px solid rgba(255,255,255,0.05); }
+        .prog-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #2563eb, #38bdf8); }
+        
+        /* ─── TEXT AREA ─── */
+        .message-body { font-size: 16px; color: #e2e8f0; line-height: 1.7; margin: 40px 0; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 32px; white-space: pre-wrap; font-weight: 450; }
+        
+        /* ─── ACTION BTN ─── */
+        .btn-container { text-align: center; padding: 10px 0 40px; }
+        .btn-premium { display: inline-block; background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); color: #1e293b !important; padding: 20px 56px; border-radius: 100px; text-decoration: none; font-weight: 850; font-size: 17px; box-shadow: 0 20px 50px -10px rgba(50, 50, 93, 0.35); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* ─── FOOTER ─── */
+        .footer { padding: 48px 40px; text-align: center; background-color: #0c111d; }
+        .footer-text { color: #475569; font-size: 12px; font-weight: 600; line-height: 1.6; margin: 0; }
+        .footer-link { color: {{ primary_color|default:'#4f46e5' }}; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <table class="main" cellpadding="0" cellspacing="0" border="0" align="center">
+            <!-- Hero Header -->
+            <tr>
+                <td>
+                    <div class="hero" style="background-image: url('{{ logo_url }}');">
+                        <div class="hero-overlay">
+                            <span class="badge">{{ notification_label }}</span>
+                            <h1 class="title-h1">{{ title }}</h1>
+                            <div class="date-badge">
+                                <span>📅 {{ date }}</span>
+                                <span style="opacity: 0.3; margin: 0 4px;">|</span>
+                                <span>{{ company_name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Main Content -->
+            <tr>
+                <td class="content">
+                    
+                    <!-- Stats Grid -->
+                    <table class="row-table" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="col-half">
+                                <div class="glass-card">
+                                    <span class="stat-label">Current Status</span>
+                                    <span class="stat-value" style="color: {% if status == 'Approved' or status == 'Completed' %}#10b981{% elif status == 'Pending' %}#3b82f6{% else %}#f59e0b{% endif %};">
+                                        {{ status }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td width="4%"></td>
+                            <td class="col-half">
+                                <div class="glass-card">
+                                    <span class="stat-label">Priority Level</span>
+                                    <span class="stat-value" style="color: {% if priority == 'High' or priority == 'Emergency' or priority == 'Critical' %}#ef4444{% elif priority == 'Medium' %}#f59e0b{% else %}#94a3b8{% endif %};">
+                                        {{ priority }}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- Deadline Widget -->
+                    <div class="glass-card">
+                        <span class="stat-label" style="color: #38bdf8; margin-bottom: 12px;">⏳ Time Sensitive Deadline</span>
+                        <table class="countdown-table" border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td><div class="timer-slot"><span class="timer-digit">{{ days }}</span><span class="timer-unit">Days</span></div></td>
+                                <td width="10"></td>
+                                <td style="font-size: 24px; font-weight: 900; color: #1e293b;">:</td>
+                                <td width="10"></td>
+                                <td><div class="timer-slot"><span class="timer-digit">{{ hours }}</span><span class="timer-unit">Hours</span></div></td>
+                                <td width="10"></td>
+                                <td style="font-size: 24px; font-weight: 900; color: #1e293b;">:</td>
+                                <td width="10"></td>
+                                <td><div class="timer-slot"><span class="timer-digit">{{ minutes }}</span><span class="timer-unit">Mins</span></div></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Progress Tracker -->
+                    <div class="glass-card" style="margin-bottom: 30px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" class="prog-header">
+                            <tr>
+                                <td><span class="stat-label" style="margin-bottom: 0;">Task Evolution</span></td>
+                                <td align="right"><span class="prog-pct">{{ progress }}%</span></td>
+                            </tr>
+                        </table>
+                        <div class="prog-track">
+                            <div class="prog-fill" style="width: {{ progress }}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Message Body -->
+                    <div class="message-body">
+{{ body|safe|default:"No additional message content provided." }}
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div class="btn-container">
+                        <a href="{{ action_url|default:'#' }}" class="btn-premium">
+                            View Deep Details Online
+                        </a>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+                <td class="footer">
+                    <p class="footer-text">
+                        © {{ date|slice:"-4:" }} {{ company_name }}. All rights reserved.<br>
+                        <span style="opacity: 0.6; font-size: 11px;">{{ footer_text|default:"Secure administrative notification for registered users." }}</span>
+                    </p>
+                    <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 20px;">
+                        <p class="footer-text" style="font-size: 10px; opacity: 0.5;">
+                            This is an automated operational directive. Please do not reply to this email. 
+                            <a href="#" class="footer-link">Privacy Policy</a> &bull; <a href="#" class="footer-link">Terms of Service</a>
+                        </p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

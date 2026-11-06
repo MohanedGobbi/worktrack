@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}500 - Server Error · WorkTrack Pro{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); min-height: 100vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center text-white">
+                <h1 style="font-size: 120px; font-weight: bold; margin: 0;">500</h1>
+                <h2 class="mb-3">Server Error</h2>
+                <p class="mb-4 lead">Something went wrong on our end. Please try again later.</p>
+                
+                <div class="btn-group" role="group">
+                    <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-home"></i> Go to Dashboard
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-arrow-left"></i> Go Back
+                    </a>
+                </div>
+
+                <div class="mt-5">
+                    <p class="text-white-50">
+                        Our team has been notified of the issue. 
+                        <a href="{% url 'submit-contact' %}" style="color: white; text-decoration: underline;">Report the issue</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+# Handoff: WorkTrack Pro UI rework
+
+Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and `DESIGN.md` (the design system).
+
+---
+
+## 1. What this project is
+
+**WorkTrack Pro** is a Django 5/6 + DRF task and workforce platform: modules → tasks → versioned submissions → manager review → automatic KPI score, plus messenger, correspondence, attendance and notifications. It is bilingual: Arabic first, English, with full RTL.
+
+- **It is a ROWD Tech product.** The default theme follows the ROWD brand guideline (`D:\rowd tech stuff\rowed brand guidline.pdf`).
+- **It is white-label.** Each customer install swaps the name, logo and colours. Only the "Built by ROWD" credit is fixed.
+- **Backend stays Django.** The front end uses server-rendered templates with no Node build (npm is broken on the dev machine and cPanel hosts have no Node). three.js, GSAP and Lenis load as static ES modules and scripts.
+
+## 2. Where the work stands
+
+| Area | Status |
+|---|---|
+| Theme system (tokens, fonts, Bootstrap re-skin, white-label inputs) | Done |
+| App shell (sidebar, top bar, phone bar and tab bar, toasts, search, confirm dialog, notes drawer) | Done |
+| Landing page `/` (3D stack + scroll story, sign-in built in) | Done, reviewed |
+| Sign-in, register, 4 password-reset pages, CSRF page | Done |
+| Manager/admin home `/dashboard/` ("Roadmap first") | Done, reviewed: **ship** |
+| Old green/crimson design, old banner images, old CSS files | Removed |
+| ~55 other pages | **Theme applied, but old layouts and inline styles remain** |
+
+### Next, in priority order
+1. **Set up git** (`git init` and commit). There is no version control yet; the original zip `../منصة ادارة المهام.zip` is the only backup.
+2. **Phase 1, daily work:**
+   - `worker_portal.html` (the worker home)
+   - tasks: `tasks_list`, `task_detail`, `task_form`, `task_kanban`, `task_calendar`
+   - submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`
+   - `module_dashboard`
+   - `messaging/messenger_page` (still loads the Tailwind script)
+   - `notifications`, `profile`, `worker_performance`
+3. **Phase 2, manager tools:**
+   - `manager_portal`, `manager_analytics`, `kpi_dashboard`
+   - modules: `module_form`, `available_modules`, `archived_modules`
+   - groups: `group_management`, `group_form`
+   - templates: `template_dashboard`, `template_form`, `template_builder`
+   - `todo_management`, `organizational_intelligence`, `roadmap`
+   - correspondence: `administrative_correspondence`, `correspondence_detail`, `correspondence_form`
+   - `global_map`, `version_data_archive`, `attendance/*`
+   - the dashboard's **module toolbar row and table view** (still legacy)
+4. **Phase 3, admin:**
+   - `admin_dashboard`, `admin_users`, `create_user`, `system_profiles`
+   - **`site_settings`**: rebuild around the new theme model (name, logo, brand, accent, on-brand); it still shows the old ~40-colour editor
+   - `translation_manager`, `host_management`, `audit_logs`, `offline_map_manager`, `contact_admin`
+   - `messaging/config`, `messaging/inspect_user`
+5. **Per page, as each one is done:** delete its legacy `<style>`/`extra_css` block and inline colours; use the `wt-*` primitives; check EN + AR, desktop + phone; get an independent review.
+
+### Open issues (not yet fixed)
+- **Translation table quality.** 3,185 of 3,198 `TranslationItem` rows are machine-generated (`key` starts with `auto.`), and many are wrong (for example "My Performance" → "لي", "Overdue Tasks" → "مهام"). Template-authored bilingual pairs are now protected (see §5), but single-language text still gets these rows. This needs a cleanup or regeneration decision from the owner.
+- **Signal Blue is not a brand input.** If a customer sets a non-blue brand colour, links, focus rings, the top 3D slab and the banner glow stay blue.
+- **Super Admin role badge is red** (on the admin pages).
+- **`templates/messaging/messenger.html`** is not referenced anywhere (probably dead).
+- **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you".
+- **Stale demo passwords.** The accounts in `docs/guides/USER_CREDENTIALS_REFERENCE.md` no longer match the database.
+
+## 3. Decisions already made (do not reopen without the owner)
+- The old CNDP crimson design, the green "editorial" spec and the old agent system prompt were deliberately deleted.
+- ROWD is the default theme. **The theme layer is swappable; the ROWD credit is fixed** (`templates/includes/rowd_credit.html`, shielded from translation with `translate="no"`).
+- Arabic font: **Thmanyah** (Sans for UI, Serif Display for public headlines), copied from the owner's نبض اليوم project. Latin: Montserrat Alternates (display), Montserrat (body), IBM Plex Mono (data only).
+- **3D only on public pages** (landing, sign-in, register, reset). Working screens stay calm and fast; dashboards get at most subtle touches (satin bar edges, fill animation).
+- react-three-fiber and Vanta were deliberately not used (they need React/Node or an old three.js).
+- Dashboard layout: the owner picked **"Roadmap first"** on the decision page.
+- On bilingual pairs, templates beat machine translations (§5).
+
+## 4. How to run and test
+
+```bash
+# from the project folder
+.venv/Scripts/python manage.py runserver 127.0.0.1:8000
+.venv/Scripts/python manage.py check
+```
+- **Python environment:** `.venv` uses Python 3.12 with `requirements.txt` installed (Django 6.0.10 resolved from `>=5.0`).
+- **Desktop app launcher:** `../.claude/launch.json` defines `worktrack` (auto-reload is on).
+- **Database:** SQLite `db.sqlite3`. It holds demo data plus `SiteConfiguration.theme_preset='rowd'`.
+- **Signing in for local testing:** the demo passwords are stale (§2). Create a session for an existing user in the shell and set it as the `sessionid` cookie in the browser. **Delete the session afterwards**, because it works as a real login.
+
+```python
+# manage.py shell
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
+from users.models import CustomUser
+u = CustomUser.objects.filter(role='super_admin', is_active=True).first()
+s = SessionStore(); s[SESSION_KEY] = str(u.pk)
+s[BACKEND_SESSION_KEY] = 'django.contrib.auth.backends.ModelBackend'
+s[HASH_SESSION_KEY] = u.get_session_auth_hash(); s.create(); print(s.session_key)
+# afterwards: Session.objects.filter(session_key=...).delete()
+```
+
+- **Smoke test** (renders key pages for every role plus the public flows). Run it with `manage.py shell -c "exec(open('smoke.py').read())"`:
+
+```python
+from django.test import Client
+from django.conf import settings
+from users.models import CustomUser
+settings.ALLOWED_HOSTS = ['*']
+paths = ['/dashboard/', '/tasks/', '/notifications/', '/profile/', '/messaging/', '/manager-portal/',
+         '/worker-portal/', '/modules/available/', '/templates/', '/attendance/', '/manager-analytics/',
+         '/worker-performance/', '/admin-dashboard/', '/messaging/config/']
+bad = []
+for role in ('super_admin', 'manager', 'worker'):
+    u = CustomUser.objects.filter(role=role, is_active=True).first()
+    c = Client(HTTP_HOST='127.0.0.1'); c.force_login(u)
+    for p in paths:
+        r = c.get(p, follow=True)
+        if r.status_code >= 500: bad.append((role, p, r.status_code))
+c = Client(HTTP_HOST='127.0.0.1')
+for p in ('/', '/login/', '/register/', '/password_reset/', '/password_reset/done/', '/reset/done/', '/reset/x/y/'):
+    if c.get(p).status_code >= 400: bad.append(('anon', p))
+print('PROBLEMS', bad)
+```
+
+## 5. How the new system works (map)
+
+### Theme layer (swap this to re-theme)
+- `static/wt/theme-rowd.css`: `@font-face` rules + tokens (`--wt-*`). Re-theme = copy it, then point the `<link>` in `templates/includes/wt_theme.html` at the copy.
+- `templates/includes/wt_theme.html`:
+  - injects the per-install brand inputs from Site Settings (`--wt-brand`, `--wt-accent`, `--wt-on-brand`, `--wt-brand-rgb`);
+  - defines legacy variable aliases (`--color-primary` and others) so old pages follow the theme;
+  - defines the page-banner surface `--wt-hero-bg`, which uses an uploaded Site Settings banner under a brand overlay if one exists.
+- `core/context_processors.py`:
+  - `_wt_theme`: brand inputs from the `rowd` preset, or the admin colours under the `custom` preset;
+  - `_logo_tone`: measures the uploaded logo's brightness so it gets a readable backdrop;
+  - `_wt_lang`: first-render language and direction, so pages don't flash LTR.
+- `core/models.py` + migration `0025_rowd_theme_preset`: `rowd` preset added and made the default.
+
+### Component layer
+- `static/wt/app.css`:
+  - derived tokens (`color-mix`) and the Bootstrap bridge;
+  - the shell, overlays and Bootstrap re-skin;
+  - shared primitives: `.wt-panel`, `.wt-panel-head`, `.wt-chip`, `.wt-count-pill`, `.wt-empty`, `.wt-page-head`, `.wt-num` (LTR-isolated numbers);
+  - home styles: `.wt-home*`, `.wt-road*`, `.wt-need*`, `.wt-today*`;
+  - module cards `.wt-mcard*` and the bulk bar `.wt-bulkbar`.
+- `templates/base.html`: the new shell. It keeps every legacy hook: `.neural-sidebar`, `toggleNeuralSidebar`, `openSearch`, `#notif-badge`, `#banner-messenger-badge`, `amazingConfirm`, `showToast`, `#moduleSidebar`, `#lang-switcher`, `.global-path-tracker`, `.dashboard-main-area`.
+
+### Public surfaces
+- Templates: `templates/public/` (`landing.html`, `auth_base.html`, `_head.html`, `_header.html`, `_signin_stack.html`) + `templates/auth/*` + `templates/403_csrf.html`.
+- Styles: `static/wt/public.css`.
+- `static/wt/js/stack-scene.js`: three.js orthographic scene in CSS pixels; 3D modules align to DOM slots `[data-slot]`; scroll choreography; reduced-motion and no-WebGL fallbacks.
+- `static/wt/js/public.js`: Lenis + GSAP intro, password reveal, submit loading state.
+- Home view `core/template_views.py::home`: landing for visitors (with live KPI weights); a POST still signs in.
+
+### Home (dashboard)
+- `templates/includes/wt_home_top.html` (greeting, roadmap, Needs you, Today) is included from `templates/pages/dashboard.html`.
+- Data: `core/template_views.py::_wt_home_context` (read-only).
+- Roadmap dates are real dates clipped to the current year; undated modules render as ghost rows.
+
+### Translation behaviour (changed)
+- `core/middleware/main.py::DynamicTranslationMiddleware`, for template `lang-en` + `lang-ar` pairs:
+  - matching uses the **English** side only;
+  - machine `auto.` rows are ignored;
+  - English casing from the template is kept when the DB differs only by case;
+  - elements with `translate="no"` are never rewritten.
+- `static/js/i18n.js`:
+  - the language switcher is now `.wt-lang` buttons;
+  - the Google Cairo font import is removed;
+  - it respects `translate="no"`;
+  - the DB map fetch (`/translations/api/map/`, never routed) is disabled.
+
+### Design-process artifacts
+- `.impeccable/surfaces/*.md`: direction contracts for the landing and the dashboard.
+- `.impeccable/review/`: review screenshots.
+- `.impeccable/mocks/decision/`: the dashboard layout sketches.
+
+## 6. Gotchas learned the hard way
+- **Escaping in scripted edits.** Python string escapes inside shell heredocs turned `\f`, `\b` and `\1` into control bytes twice. That broke `app.css` parsing (everything after the bad rule was ignored) and a middleware regex. Write edit scripts to a file and use `chr(92)` for backslashes, or use a file-editing tool. After any scripted edit, scan for bytes below 0x20.
+- **Template cache.** With `runserver --noreload`, Django caches templates, so edits don't show until a restart. The launcher now runs with auto-reload.
+- **Asset caching.** Bump the `?v=` cache-busters when editing CSS/JS: `app.css?v=14`, `public.css?v=7`, `i18n.js?v=3.2`, `stack-scene.js?v=2`.
+- **Old page scripts write inline styles.** For example, `dashboard.html` set margins on `.dashboard-main-area`. The shell's sidebar offset is therefore padding on `.wt-shell`, not a margin.
+- **Old page CSS uses `!important` widely.** Overrides need higher specificity (`.wt-app ...`) or a rebuilt block.
+- **`100vw` includes the scrollbar.** Use `%` widths, or RTL pages get sideways scroll.
+- **`repeat(12, 1fr)` grids overflow** when labels are wider than columns. Use `minmax(0, 1fr)`.
+- **Small browser pane.** The pane can be resized small by the user, which shrinks screenshots. For full-resolution phone captures, emulate 390×330 and stack strips (ffmpeg `vstack`).
+
+## 7. Process used (keep using it)
+The **impeccable** design skill drives the work:
+1. For big pages, offer 2–3 layout options on its decision page (`concept-seed --scope surface --mode operate`, then `serve-question`).
+2. Write the direction contract into `.impeccable/surfaces/`.
+3. Build.
+4. Verify EN/AR at 1440 and 390.
+5. Get an independent finish review (`impeccable-finish-reviewer` agent); fix until the verdict is **ship**.
+6. Keep `DESIGN.md` (and `.impeccable/design.json`) in sync.
+
+The owner's stated fail conditions: **too flashy at work, weak Arabic, slow on old PCs.**

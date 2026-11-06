@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .table-premium {
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    .table-premium tbody tr {
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        transition: all 0.2s ease;
+    }
+    .table-premium tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    .table-premium td {
+        padding: 1.25rem 1rem;
+        border: none !important;
+        vertical-align: middle;
+    }
+    .table-premium td:first-child { border-radius: 12px 0 0 12px; }
+    .table-premium td:last-child { border-radius: 0 12px 12px 0; }
+    
+    .group-icon-container {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Drag & Drop Styles */
+    .drag-handle {
+        cursor: grab;
+        color: #94a3b8;
+        font-size: 1.2rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .drag-handle:hover {
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.08);
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .sortable-ghost {
+        opacity: 0.3;
+    }
+    .sortable-ghost td {
+        border-top: 2px dashed #6366f1 !important;
+        border-bottom: 2px dashed #6366f1 !important;
+    }
+    .sortable-ghost td:first-child {
+        border-left: 2px dashed #6366f1 !important;
+    }
+    .sortable-ghost td:last-child {
+        border-right: 2px dashed #6366f1 !important;
+    }
+    .sortable-chosen {
+        box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15) !important;
+    }
+    .sortable-drag {
+        opacity: 0;
+    }
+    .order-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+        color: #2563eb;
+        font-weight: 900;
+        font-size: 0.85rem;
+        border: 1px solid #dbeafe;
+    }
+    .save-toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)), var(--color-primary, #10b981));
+        color: white;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        box-shadow: 0 8px 25px rgba(122, 12, 26, 0.3);
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+    }
+    .save-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1"><span class="lang-en">User & Work Groups Management</span><span class="lang-ar">إدارة مجموعات العمل والمستخدمين</span></h3>
+            <p class="text-muted mb-0"><span class="lang-en">Manage collaborative groups, member assignments, and workspace scoping.</span><span class="lang-ar">إدارة المجموعات، تعيين الأعضاء، وتحديد نطاق مساحات العمل.</span> <span class="text-primary fw-bold"><i class="fas fa-arrows-alt me-1"></i><span class="lang-en">Drag rows to reorder.</span><span class="lang-ar">اسحب لإعادة الترتيب.</span></span></p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="input-group rounded-pill overflow-hidden shadow-sm border bg-white" style="min-width: 240px;">
+                <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="groupFilterInput" class="form-control border-0 ps-1" placeholder="Search groups or members...">
+            </div>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-3"><span class="lang-en">Back to Dashboard</span><span class="lang-ar">العودة للوحة التحكم</span></a>
+            <a href="{% url 'group-create' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="fas fa-plus me-2"></i><span class="lang-en">Add New Group</span><span class="lang-ar">إضافة مجموعة جديدة</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="glass-card p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-premium" id="groupsTable">
+                <thead class="text-muted small text-uppercase">
+                    <tr>
+                        <th style="width: 3%"></th>
+                        <th style="width: 5%">Order</th>
+                        <th style="width: 22%">Group Info</th>
+                        <th style="width: 22%"><span class="lang-en">Members Assigned</span><span class="lang-ar">الأعضاء المعينون</span></th>
+                        <th style="width: 10%">Modules</th>
+                        <th style="width: 20%"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></th>
+                        <th style="width: 8%" class="text-center">Theme</th>
+                        <th style="width: 10%" class="text-end"><span class="lang-en">Actions</span><span class="lang-ar">الإجراءات</span></th>
+                    </tr>
+                </thead>
+                <tbody id="groupsTableBody">
+                    {% for group in groups %}
+                    <tr data-group-id="{{ group.id }}" class="group-row">
+                        <td class="ps-2">
+                            <div class="drag-handle" title="Drag to reorder">
+                                <i class="fas fa-grip-vertical"></i>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="order-badge group-order-num">{{ forloop.counter }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="group-icon-container me-3 shadow-sm js-apply-style" data-style-background-color="{{ group.bg_color }}" data-style-color="{{ group.color }}" style="border: 1px solid rgba(0, 0, 0, 0.05);">
+                                    <i class="fas {{ group.icon_class }} fa-lg"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark group-name-text">{{ group.name }}</div>
+                                    <div class="small text-muted font-monospace">{{ group.slug }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="group-members-cell">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-1">
+                                        <i class="fas fa-users me-1"></i>{{ group.members.count }} <span class="lang-en">Members</span><span class="lang-ar">عضو</span>
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center flex-wrap gap-1">
+                                    {% for m in group.members.all|slice:":4" %}
+                                    <span class="badge bg-light text-dark border rounded-pill" style="font-size: 0.72rem;" title="{{ m.get_full_name }} ({{ m.role }})">
+                                        {{ m.first_name|default:m.username|slice:":12" }}
+                                    </span>
+                                    {% empty %}
+                                    <span class="text-muted" style="font-size: 0.75rem;"><em>No users assigned yet</em></span>
+                                    {% endfor %}
+                                    {% if group.members.count > 4 %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-secondary rounded-pill" style="font-size: 0.7rem;">+{{ group.members.count|add:"-4" }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-2 py-1">
+                                <i class="fas fa-cubes me-1"></i>{{ group.modules.count }} <span class="lang-en">Mods</span><span class="lang-ar">وحدة</span>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="text-muted" style="max-height: 2.8em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;">
+                                {{ group.description|default:"<em>No description provided</em>"|safe }}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge rounded-pill js-apply-style" data-style-background-color="{{ group.color }}">Primary</span>
+                            {% if group.bg_color != '#ffffff' %}
+                            <span class="badge rounded-pill mt-1 js-apply-style" data-style-background-color="{{ group.bg_color }}" style="color: #333; border: 1px solid #ddd;">Panel</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-3">
+                            <div class="btn-group shadow-sm rounded-pill">
+                                {% if group.slug %}
+                                <a href="{% url 'group-edit' group.slug %}" class="btn btn-sm btn-light px-3" title="Edit Group & Members">
+                                    <i class="fas fa-user-edit text-primary"></i>
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-light px-3" data-bs-toggle="modal" data-bs-target="#deleteGroupModal{{ group.id }}" title="Delete Group">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted mb-3">
+                                <i class="fas fa-layer-group fa-3x" style="opacity: 0.2;"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">No Groups Found</h5>
+                            <p class="text-muted">Create a user group to scope managers, workers, and work modules.</p>
+                            <a href="{% url 'group-create' %}" class="btn btn-primary rounded-pill mt-2 px-4 shadow-sm">
+                                <i class="fas fa-plus me-2"></i>Create First Group
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Save Toast Notification -->
+<div class="save-toast" id="saveToast">
+    <i class="fas fa-check-circle me-2"></i>Order saved successfully!
+</div>
+
+{# Delete modals rendered OUTSIDE the table to avoid Bootstrap z-index / backdrop issues #}
+{% for group in groups %}
+<div class="modal fade" id="deleteGroupModal{{ group.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Delete Group
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="mb-1">Are you sure you want to delete the group <strong>"{{ group.name }}"</strong>?</p>
+                <p class="text-muted small mb-0">Modules currently in this group will not be deleted, but they will become ungrouped. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                    {% if group.slug %}
+                    <form action="{% url 'group-delete' group.slug %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Yes, Delete Group</button>
+                    </form>
+                    {% endif %}
+                </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script src="{% static 'vendor/sortablejs/sortable.min.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply dynamic inline styles
+        function applyDynamicStyles() {
+            document.querySelectorAll('.js-apply-style').forEach(el => {
+                const ds = el.dataset;
+                if (ds.styleBackground) el.style.background = ds.styleBackground;
+                if (ds.styleBackgroundColor) el.style.backgroundColor = ds.styleBackgroundColor;
+                if (ds.styleColor) el.style.color = ds.styleColor;
+            });
+        }
+        applyDynamicStyles();
+
+        // Drag & Drop reordering for groups
+        const tbody = document.getElementById('groupsTableBody');
+        if (tbody && typeof Sortable !== 'undefined') {
+            new Sortable(tbody, {
+                animation: 250,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function () {
+                    // Update visual order numbers
+                    const rows = tbody.querySelectorAll('tr[data-group-id]');
+                    const groupIds = [];
+                    rows.forEach((row, index) => {
+                        const orderBadge = row.querySelector('.group-order-num');
+                        if (orderBadge) orderBadge.textContent = index + 1;
+                        groupIds.push(row.getAttribute('data-group-id'));
+                    });
+
+                    // Send AJAX request to update the backend
+                    fetch('{% url "update-group-order" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ 'group_ids': groupIds })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            showSaveToast();
+                        } else {
+                            console.error('Failed to update group order');
+                        }
+                    })
+                    .catch(err => console.error('Error:', err));
+                }
+            });
+        }
+
+        // Live filter for group names and member names
+        const filterInput = document.getElementById('groupFilterInput');
+        if (filterInput) {
+            filterInput.addEventListener('input', function() {
+                const term = this.value.toLowerCase().trim();
+                const rows = document.querySelectorAll('#groupsTableBody tr.group-row');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (!term || text.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,1124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Translation Manager · WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== WORKTRACK PRO EMERALD SUPREME THEME ===== */
+    :root {
+        --wt-emerald-dark: var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        --wt-emerald-mid: #450a0a;
+        --wt-emerald-main: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        --wt-emerald-bright: var(--color-primary, #10b981);
+        --wt-emerald-light: #ffe4e6;
+        --wt-emerald-bg: #fff1f2;
+        --wt-card-border: rgba(var(--wt-brand-rgb), 0.18);
+        --wt-glow: color-mix(in srgb, var(--color-primary, #10b981) 28%, transparent);
+    }
+
+    /* Animated Hero Banner */
+    .wt-hero-supreme {
+        background: var(--wt-hero-bg) !important;
+        border-radius: 24px;
+        padding: 2.75rem 2.5rem;
+        color: #ffffff;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 50px -10px rgba(122, 12, 26, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        margin-bottom: 2rem;
+    }
+
+    .wt-hero-supreme::before {
+        content: '';
+        position: absolute;
+        top: -100px;
+        right: -80px;
+        width: 380px;
+        height: 380px;
+        background: radial-gradient(circle, color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent) 0%, rgba(122, 12, 26, 0.05) 60%, transparent 70%);
+        border-radius: 50%;
+        animation: pulseGlow 8s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+
+    .wt-hero-supreme::after {
+        content: '';
+        position: absolute;
+        bottom: -120px;
+        left: 20%;
+        width: 420px;
+        height: 420px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    @keyframes pulseGlow {
+        0% { transform: scale(1) translate(0, 0); opacity: 0.7; }
+        100% { transform: scale(1.15) translate(-20px, 15px); opacity: 1; }
+    }
+
+    .hero-badge-supreme {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        padding: 0.4rem 0.95rem;
+        border-radius: 999px;
+        margin-bottom: 0.85rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .live-dot-pulse {
+        width: 8px;
+        height: 8px;
+        background-color: var(--color-accent, #34d399);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--color-accent, #34d399);
+        animation: blinkPulse 1.8s infinite;
+    }
+
+    @keyframes blinkPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .wt-hero-supreme h1 {
+        font-size: 2.35rem;
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        margin-bottom: 0.45rem;
+        text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .wt-hero-supreme p {
+        font-size: 0.98rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 650px;
+        margin-bottom: 0;
+        line-height: 1.5;
+    }
+
+    .wt-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    .btn-hero-glass {
+        background: rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.82rem;
+        padding: 0.55rem 1.15rem;
+        border-radius: 12px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .btn-hero-glass:hover {
+        background: rgba(255, 255, 255, 0.28);
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.45);
+    }
+
+    .btn-hero-solid {
+        background: #ffffff;
+        color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+        font-weight: 800;
+        font-size: 0.84rem;
+        padding: 0.6rem 1.35rem;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-hero-solid:hover {
+        background: #fff1f2;
+        color: var(--color-portal-bg, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Grid Widgets & Completion Gauge */
+    .wt-widgets-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .wt-widget-card {
+        background: #ffffff;
+        border: 1px solid var(--wt-card-border);
+        border-radius: 18px;
+        padding: 1.35rem;
+        box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .wt-widget-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 35px var(--wt-glow);
+        border-color: rgba(192, 40, 58, 0.45);
+    }
+
+    .wt-widget-card .widget-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.85rem;
+    }
+
+    .wt-widget-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .icon-emerald { background: #fff1f2; color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); }
+    .icon-success { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
+    .icon-warning { background: #fef3c7; color: #d97706; }
+    .icon-danger  { background: #ffe4e6; color: #e11d48; }
+    .icon-cyan    { background: #e0f2fe; color: #0284c7; }
+
+    .wt-widget-card .metric-number {
+        font-size: 2.1rem;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -0.035em;
+        line-height: 1;
+        margin-bottom: 0.35rem;
+    }
+
+    .wt-widget-card .metric-label {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Filter & Controls Card Supreme */
+    .filter-card-supreme {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid var(--wt-card-border);
+        border-radius: 20px;
+        padding: 1.6rem 1.75rem;
+        box-shadow: 0 12px 32px -8px rgba(122, 12, 26, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .filter-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .filter-card-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-wrapper .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .search-wrapper input {
+        padding-left: 38px !important;
+        padding-right: 75px !important;
+        border-radius: 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.88rem;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+    }
+
+    .search-wrapper input:focus {
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--color-primary, #10b981) 22%, transparent);
+    }
+
+    .search-wrapper .search-badge-group {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .search-wrapper .clear-search-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        cursor: pointer;
+        display: none;
+        padding: 2px 6px;
+    }
+
+    .search-wrapper .clear-search-btn:hover {
+        color: #e11d48;
+    }
+
+    .kbd-badge {
+        font-family: monospace;
+        font-size: 0.68rem;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 2px 6px;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .form-select-supreme {
+        border-radius: 14px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.88rem;
+        background-color: #ffffff;
+        font-weight: 600;
+        color: #1e293b;
+        transition: all 0.2s ease;
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .form-select-supreme:focus {
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--color-primary, #10b981) 22%, transparent);
+    }
+
+    .btn-apply-gradient {
+        background: linear-gradient(135deg, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 0%, var(--color-primary, #10b981) 100%);
+        border: none;
+        color: #ffffff;
+        font-weight: 800;
+        border-radius: 14px;
+        padding: 0.6rem 1.25rem;
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-apply-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(192, 40, 58, 0.45);
+        color: #ffffff;
+    }
+
+    /* Table & Card */
+    .table-card-supreme {
+        background: #ffffff;
+        border: 1px solid var(--wt-card-border);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+        margin-bottom: 2.5rem;
+    }
+
+    .translation-table {
+        margin-bottom: 0;
+    }
+
+    .translation-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .translation-table td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .translation-table tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .translation-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .translation-table tr.updated-row {
+        background-color: #fff1f2 !important;
+        animation: highlightFlash 1.5s ease-out;
+    }
+
+    @keyframes highlightFlash {
+        0% { background-color: var(--wt-brand-tint); }
+        100% { background-color: #fff1f2; }
+    }
+
+    .input-bilingual-wrapper {
+        position: relative;
+    }
+
+    .input-lang-badge {
+        position: absolute;
+        top: 6px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.05em;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .badge-en { right: 8px; left: auto; background: #e0f2fe; color: #0284c7; }
+    .badge-ar { left: 8px; right: auto; background: #fef3c7; color: #b45309; }
+
+    .translation-table textarea {
+        min-height: 58px;
+        resize: vertical;
+        font-size: 0.88rem;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        padding: 0.55rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .translation-table textarea:focus {
+        border-color: var(--color-primary, #10b981);
+        box-shadow: 0 0 0 3px rgba(var(--wt-brand-rgb), 0.22);
+        background-color: #ffffff;
+    }
+
+    .key-copy-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        padding: 2px 6px;
+        border-radius: 6px;
+        transition: all 0.15s;
+    }
+
+    .key-copy-btn:hover {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    /* Elided Pagination Styling */
+    .supreme-pagination-bar {
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        padding: 1.15rem 1.5rem;
+    }
+
+    .pagination-supreme .page-item .page-link {
+        border: 1px solid #cbd5e1;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 10px;
+        margin: 0 3px;
+        transition: all 0.2s ease;
+    }
+
+    .pagination-supreme .page-item.active .page-link {
+        background: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        border-color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(122, 12, 26, 0.35);
+    }
+
+    .pagination-supreme .page-item .page-link:hover {
+        background: #fff1f2;
+        border-color: var(--color-primary, #10b981);
+        color: color-mix(in oklab, var(--wt-brand) 62%, #000);
+    }
+
+    .pagination-supreme .page-item.disabled .page-link {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+    }
+
+    /* ===== RTL ENHANCEMENTS ===== */
+    html[dir="rtl"] .search-wrapper .search-icon,
+    body.rtl-mode .search-wrapper .search-icon {
+        left: auto !important;
+        right: 14px !important;
+    }
+
+    html[dir="rtl"] .search-wrapper input,
+    body.rtl-mode .search-wrapper input {
+        padding-left: 85px !important;
+        padding-right: 40px !important;
+        text-align: right;
+    }
+
+    html[dir="rtl"] .search-wrapper .search-badge-group,
+    body.rtl-mode .search-wrapper .search-badge-group {
+        right: auto !important;
+        left: 10px !important;
+    }
+
+    html[dir="rtl"] .form-select-supreme,
+    body.rtl-mode .form-select-supreme {
+        background-position: left 0.75rem center !important;
+        padding-left: 2.25rem !important;
+        padding-right: 0.85rem !important;
+    }
+
+    html[dir="rtl"] .pagination-supreme .page-item .fa-chevron-left,
+    body.rtl-mode .pagination-supreme .page-item .fa-chevron-left {
+        transform: rotate(180deg);
+        margin-left: 0.35rem;
+        margin-right: 0;
+    }
+
+    html[dir="rtl"] .pagination-supreme .page-item .fa-chevron-right,
+    body.rtl-mode .pagination-supreme .page-item .fa-chevron-right {
+        transform: rotate(180deg);
+        margin-right: 0.35rem;
+        margin-left: 0;
+    }
+
+    html[dir="rtl"] .translation-table th,
+    body.rtl-mode .translation-table th {
+        text-align: right;
+    }
+    html[dir="rtl"] .translation-table th:last-child,
+    body.rtl-mode .translation-table th:last-child {
+        text-align: left;
+    }
+    html[dir="rtl"] .translation-table td:last-child,
+    body.rtl-mode .translation-table td:last-child {
+        text-align: left;
+    }
+
+    html[dir="rtl"] .translation-table th.ps-4,
+    body.rtl-mode .translation-table th.ps-4,
+    html[dir="rtl"] .translation-table td.ps-4,
+    body.rtl-mode .translation-table td.ps-4 {
+        padding-left: 1.25rem !important;
+        padding-right: 1.5rem !important;
+    }
+
+    html[dir="rtl"] .translation-table th.pe-4,
+    body.rtl-mode .translation-table th.pe-4,
+    html[dir="rtl"] .translation-table td.pe-4,
+    body.rtl-mode .translation-table td.pe-4 {
+        padding-right: 1.25rem !important;
+        padding-left: 1.5rem !important;
+    }
+
+    html[dir="rtl"] .badge-ar,
+    body.rtl-mode .badge-ar {
+        left: 8px !important;
+        right: auto !important;
+    }
+
+    html[dir="rtl"] .badge-en,
+    body.rtl-mode .badge-en {
+        right: 8px !important;
+        left: auto !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <!-- HERO BANNER -->
+    <div class="wt-hero-supreme">
+        <div class="row align-items-center">
+            <div class="col-lg-7 mb-3 mb-lg-0">
+                <div class="hero-badge-supreme">
+                    <span class="live-dot-pulse"></span> Dynamic i18n Localization Engine
+                </div>
+                <h1>Translation Hub</h1>
+                <p>Manage dictionary strings, override English & Arabic texts, and trigger live synchronization across your application UI in real-time.</p>
+            </div>
+            <div class="col-lg-5 text-lg-end">
+                <div class="wt-hero-actions justify-content-lg-end">
+                    <button id="cleanArabicBtn" class="btn btn-hero-glass" title="Audit and replace any remaining English words in Arabic translations">
+                        <i class="fas fa-language me-1"></i> تنقية التعريب
+                    </button>
+                    <button id="syncTemplatesBtn" class="btn btn-hero-glass">
+                        <i class="fas fa-sync-alt me-1"></i> Sync Templates
+                    </button>
+                    <button id="exportBtn" class="btn btn-hero-glass">
+                        <i class="fas fa-file-export me-1"></i> Export JSON
+                    </button>
+                    <button id="importBtn" class="btn btn-hero-glass">
+                        <i class="fas fa-file-import me-1"></i> Import
+                    </button>
+                    <button id="saveAllBtn" class="btn btn-hero-solid">
+                        <i class="fas fa-check-circle me-1"></i> Save All Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- METRICS GRID -->
+    <div class="wt-widgets-summary">
+        <div class="wt-widget-card">
+            <div class="widget-header">
+                <div class="wt-widget-icon icon-emerald">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <span class="badge bg-red-subtle text-rose fw-bold rounded-pill">Total</span>
+            </div>
+            <div class="metric-number">{{ total_count }}</div>
+            <div class="metric-label">Translation Keys</div>
+        </div>
+
+        <div class="wt-widget-card">
+            <div class="widget-header">
+                <div class="wt-widget-icon icon-success">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <span class="badge bg-success-subtle text-success fw-bold rounded-pill">{{ completion_percent }}% Complete</span>
+            </div>
+            <div class="metric-number text-success">{{ total_translated }}</div>
+            <div class="metric-label">Fully Synced</div>
+        </div>
+
+        <div class="wt-widget-card">
+            <div class="widget-header">
+                <div class="wt-widget-icon icon-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <span class="badge bg-warning-subtle text-warning fw-bold rounded-pill">Missing EN</span>
+            </div>
+            <div class="metric-number text-warning">{{ total_missing_en }}</div>
+            <div class="metric-label">Missing English</div>
+        </div>
+
+        <div class="wt-widget-card">
+            <div class="widget-header">
+                <div class="wt-widget-icon icon-danger">
+                    <i class="fas fa-globe-africa"></i>
+                </div>
+                <span class="badge bg-danger-subtle text-danger fw-bold rounded-pill">Missing AR</span>
+            </div>
+            <div class="metric-number text-danger">{{ total_missing_ar }}</div>
+            <div class="metric-label">Missing Arabic</div>
+        </div>
+
+        <div class="wt-widget-card">
+            <div class="widget-header">
+                <div class="wt-widget-icon icon-cyan">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <span class="badge bg-info-subtle text-info fw-bold rounded-pill">Scope</span>
+            </div>
+            <div class="metric-number text-info">{{ total_modules }}</div>
+            <div class="metric-label">Active Modules</div>
+        </div>
+    </div>
+
+    <!-- CONTROLS & FILTER CARD -->
+    <div class="filter-card-supreme">
+        <div class="filter-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="filter-card-title">
+                <i class="fas fa-sliders-h text-rose me-1"></i> <span class="lang-en">Search & Filter Dictionary</span><span class="lang-ar">البحث وتصفية القاموس</span>
+            </div>
+            {% if search_query or selected_module != 'all' or selected_page != 'all' or words_filter != 'all' %}
+            <a href="{% url 'translation-manager' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 font-monospace small text-decoration-none d-inline-flex align-items-center gap-1.5 shadow-sm">
+                <i class="fas fa-undo-alt"></i> <span><span class="lang-en">Reset Filters</span><span class="lang-ar">إعادة ضبط التصفية</span></span>
+            </a>
+            {% endif %}
+        </div>
+
+        <form id="filterForm" method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-bold small text-uppercase text-muted">
+                    Search Dictionary
+                </label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input id="searchInput" name="q" value="{{ search_query }}" class="form-control" placeholder="Search key, text, module...">
+                    <div class="search-badge-group">
+                        <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear Search">&times;</button>
+                        <span class="kbd-badge">Ctrl + K</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-bold small text-uppercase text-muted">
+                    <i class="fas fa-cubes me-1 text-rose"></i> Module
+                </label>
+                <select name="selected_module" class="form-select form-select-supreme">
+                    <option value="all">All Modules</option>
+                    {% for module in modules %}
+                    <option value="{{ module }}" {% if selected_module == module %}selected{% endif %}>{{ module|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-bold small text-uppercase text-muted">
+                    <i class="fas fa-file-alt me-1 text-rose"></i> Page
+                </label>
+                <select name="selected_page" class="form-select form-select-supreme">
+                    <option value="all">All Pages</option>
+                    {% for page in pages_list %}
+                    <option value="{{ page }}" {% if selected_page == page %}selected{% endif %}>{{ page|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-bold small text-uppercase text-muted">
+                    <i class="fas fa-tags me-1 text-rose"></i> Status
+                </label>
+                <select name="words_filter" class="form-select form-select-supreme">
+                    <option value="all" {% if words_filter == 'all' %}selected{% endif %}>All Entries</option>
+                    <option value="translated" {% if words_filter == 'translated' %}selected{% endif %}>Translated</option>
+                    <option value="missing_english" {% if words_filter == 'missing_english' %}selected{% endif %}>Missing EN</option>
+                    <option value="missing_arabic" {% if words_filter == 'missing_arabic' %}selected{% endif %}>Missing AR</option>
+                    <option value="empty" {% if words_filter == 'empty' %}selected{% endif %}>Incomplete</option>
+                </select>
+            </div>
+
+            <div class="col-6 col-md-1.5">
+                <label class="form-label fw-bold small text-uppercase text-muted">
+                    <i class="fas fa-list-ol me-1 text-rose"></i> Per Page
+                </label>
+                <select name="per_page" class="form-select form-select-supreme" onchange="this.form.submit()">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-1.5 text-end">
+                <button type="submit" class="btn btn-apply-gradient w-100">
+                    <i class="fas fa-filter me-1"></i> Apply
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- DATA TABLE & ELIDED PAGINATION -->
+    <div class="table-card-supreme">
+        <div class="table-responsive">
+            <table class="table translation-table align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 22%; min-width: 220px;">Translation Key</th>
+                        <th style="width: 32%;">English Text (LTR)</th>
+                        <th style="width: 32%;">Arabic Text (RTL)</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in words_page_obj %}
+                    <tr data-id="{{ item.id }}" class="translation-row">
+                        <td class="ps-4" style="width: 22%; min-width: 220px;">
+                            <div class="d-flex align-items-center gap-1.5 mb-1">
+                                <span class="fw-bold font-monospace text-dark" style="font-size:0.85rem; word-break: break-all;">{{ item.key }}</span>
+                                <button class="key-copy-btn" onclick="navigator.clipboard.writeText('{{ item.key }}'); showToast('Key copied to clipboard');" title="Copy Key">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="text-muted small text-truncate" style="max-width: 210px;" title="{{ item.source_path }}">{{ item.source_path }}</div>
+                        </td>
+                        <td style="width: 32%;">
+                            <div class="input-bilingual-wrapper">
+                                <span class="input-lang-badge badge-en">EN</span>
+                                <textarea class="form-control english-input w-100" dir="ltr">{{ item.english_text|default_if_none:'' }}</textarea>
+                            </div>
+                        </td>
+                        <td style="width: 32%;">
+                            <div class="input-bilingual-wrapper">
+                                <span class="input-lang-badge badge-ar">AR</span>
+                                <textarea class="form-control arabic-input w-100" dir="rtl">{{ item.arabic_text|default_if_none:'' }}</textarea>
+                            </div>
+                        </td>
+                        <td>
+                            {% if item.status == 'translated' %}
+                            <span class="badge bg-success-subtle text-success fw-bold rounded-pill px-2.5 py-1.5"><i class="fas fa-check-circle me-1"></i> Synced</span>
+                            {% elif item.status == 'missing_english' %}
+                            <span class="badge bg-warning-subtle text-warning fw-bold rounded-pill px-2.5 py-1.5"><i class="fas fa-exclamation-triangle me-1"></i> Missing EN</span>
+                            {% elif item.status == 'missing_arabic' %}
+                            <span class="badge bg-danger-subtle text-danger fw-bold rounded-pill px-2.5 py-1.5"><i class="fas fa-globe me-1"></i> Missing AR</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary fw-bold rounded-pill px-2.5 py-1.5"><i class="fas fa-minus-circle me-1"></i> Incomplete</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="small text-muted font-monospace">{{ item.updated_at|date:'M d, H:i' }}</span></td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-outline-success btn-sm row-save-btn fw-bold rounded-3">
+                                <i class="fas fa-save me-1"></i> Save
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="fas fa-search fa-2x mb-2 text-muted"></i>
+                            <div>No translation entries found matching the filter criteria.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ELIDED PAGINATION FOOTER -->
+        <div class="d-flex justify-content-between align-items-center supreme-pagination-bar flex-wrap gap-3">
+            <div class="text-muted small fw-semibold">
+                Showing <span class="text-dark fw-bold">{{ words_page_obj.start_index }}–{{ words_page_obj.end_index }}</span> of <span class="text-dark fw-bold">{{ words_page_obj.paginator.count }}</span> entries
+                {% if search_query or selected_module != 'all' or selected_page != 'all' or words_filter != 'all' %}
+                <span class="badge bg-red-subtle text-rose ms-2 fw-bold">Filtered</span>
+                {% endif %}
+            </div>
+
+            <nav>
+                <ul class="pagination pagination-supreme mb-0">
+                    {% if words_page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ search_query }}&selected_module={{ selected_module }}&selected_page={{ selected_page }}&words_filter={{ words_filter }}&words_sort={{ words_sort }}&per_page={{ per_page }}&words_page={{ words_page_obj.previous_page_number }}">
+                            <i class="fas fa-chevron-left me-1"></i> Prev
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left me-1"></i> Prev</span></li>
+                    {% endif %}
+
+                    {% for p in words_page_range %}
+                        {% if p == words_page_obj.paginator.ELLIPSIS or p == '...' %}
+                        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% elif words_page_obj.number == p %}
+                        <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?q={{ search_query }}&selected_module={{ selected_module }}&selected_page={{ selected_page }}&words_filter={{ words_filter }}&words_sort={{ words_sort }}&per_page={{ per_page }}&words_page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if words_page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ search_query }}&selected_module={{ selected_module }}&selected_page={{ selected_page }}&words_filter={{ words_filter }}&words_sort={{ words_sort }}&per_page={{ per_page }}&words_page={{ words_page_obj.next_page_number }}">
+                            Next <i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next <i class="fas fa-chevron-right ms-1"></i></span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- IMPORT MODAL -->
+    <div id="importModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header text-white" style="background: color-mix(in oklab, var(--wt-brand) 62%, #000); border-top-left-radius: 20px; border-top-right-radius: 20px;">
+                    <h5 class="modal-title fw-bold text-white"><i class="fas fa-file-import me-2"></i> Import Translations JSON</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small">Paste a JSON array of translation objects containing <code>key</code>, <code>english_text</code>, <code>arabic_text</code>, and optional <code>context</code>.</p>
+                    <textarea id="importPayload" class="form-control font-monospace small" rows="9"
+                        placeholder='[{"key":"auto.global.example","english_text":"Example","arabic_text":"مثال"}]'></textarea>
+                </div>
+                <div class="modal-footer bg-light" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;">
+                    <button type="button" class="btn btn-secondary btn-sm rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button id="confirmImportBtn" type="button" class="btn btn-success btn-sm rounded-3 fw-bold" style="background: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); border-color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000));">
+                        <i class="fas fa-check me-1"></i> Import Translations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const getCsrfToken = () => {
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        return cookie ? cookie.split('=')[1] : '{{ csrf_token }}';
+    };
+
+    const showToast = (message, success = true) => {
+        if (typeof window.amazingNotify === 'function') {
+            window.amazingNotify(success ? 'Translation Saved' : 'Error', message, success ? 'success' : 'error');
+        } else if (typeof window.showToast === 'function') {
+            window.showToast(message, success ? 'success' : 'error');
+        }
+    };
+
+    // Keyboard shortcut Ctrl + K for search
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.focus();
+        }
+    });
+
+    // Search clear button handler
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (searchInput && clearSearchBtn) {
+        const toggleClearBtn = () => {
+            clearSearchBtn.style.display = searchInput.value ? 'block' : 'none';
+        };
+        toggleClearBtn();
+        searchInput.addEventListener('input', toggleClearBtn);
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            toggleClearBtn();
+            document.getElementById('filterForm').submit();
+        });
+    }
+
+    // Row save handler
+    const rowSaveButtons = document.querySelectorAll('.row-save-btn');
+    rowSaveButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const row = button.closest('tr');
+            const id = row.dataset.id;
+            const english_text = row.querySelector('.english-input').value;
+            const arabic_text = row.querySelector('.arabic-input').value;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving';
+            try {
+                const response = await fetch('{% url "api-update-translation" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ id, english_text, arabic_text })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showToast('Translation saved & updated live across platform.');
+                    row.classList.add('updated-row');
+                    if (typeof window.loadDbTranslations === 'function') window.loadDbTranslations();
+                } else {
+                    showToast(data.message || 'Save failed.', false);
+                }
+            } catch (err) {
+                showToast('Save failed.', false);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-save me-1"></i> Save';
+            }
+        });
+    });
+
+    // Save all handler
+    document.getElementById('saveAllBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveAllBtn');
+        const rows = Array.from(document.querySelectorAll('.translation-row'));
+        const items = rows.map(row => ({
+            id: row.dataset.id,
+            english_text: row.querySelector('.english-input').value,
+            arabic_text: row.querySelector('.arabic-input').value,
+        }));
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving All...';
+        try {
+            const response = await fetch('{% url "api-bulk-update-translations" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ items })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast(`Saved ${data.updated} entries.`);
+                rows.forEach(row => row.classList.add('updated-row'));
+                if (typeof window.loadDbTranslations === 'function') window.loadDbTranslations();
+            } else {
+                showToast(data.message || 'Save all failed.', false);
+            }
+        } catch (err) {
+            showToast('Save all failed.', false);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Save All Changes';
+        }
+    });
+
+    // Clean Arabic handler
+    const cleanBtn = document.getElementById('cleanArabicBtn');
+    if (cleanBtn) {
+        cleanBtn.addEventListener('click', async () => {
+            cleanBtn.disabled = true;
+            cleanBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> تنقية...';
+            try {
+                const response = await fetch('{% url "api-manage-translations" %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                    body: JSON.stringify({ action: 'clean_arabic' })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showToast(data.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Cleaning failed.', false);
+                }
+            } catch (err) {
+                showToast('Cleaning failed.', false);
+            } finally {
+                cleanBtn.disabled = false;
+                cleanBtn.innerHTML = '<i class="fas fa-language me-1"></i> تنقية التعريب';
+            }
+        });
+    }
+
+    // Sync templates handler
+    document.getElementById('syncTemplatesBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('syncTemplatesBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Syncing...';
+        try {
+            const response = await fetch('{% url "api-manage-translations" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ action: 'merge' })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Sync failed.', false);
+            }
+        } catch (err) {
+            showToast('Sync failed.', false);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Sync Templates';
+        }
+    });
+
+    // Export handler
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+        try {
+            const response = await fetch('{% url "api-manage-translations" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ action: 'export' })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                const blob = new Blob([JSON.stringify(data.translations, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'translations_export.json';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showToast('Export ready.');
+            } else {
+                showToast(data.message || 'Export failed.', false);
+            }
+        } catch (err) {
+            showToast('Export failed.', false);
+        }
+    });
+
+    // Import modal handlers
+    document.getElementById('importBtn').addEventListener('click', () => {
+        const modal = new bootstrap.Modal(document.getElementById('importModal'));
+        modal.show();
+    });
+
+    document.getElementById('confirmImportBtn').addEventListener('click', async () => {
+        const payload = document.getElementById('importPayload').value;
+        let translations;
+        try {
+            translations = JSON.parse(payload);
+        } catch (err) {
+            showToast('Invalid JSON payload.', false);
+            return;
+        }
+
+        const btn = document.getElementById('confirmImportBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Importing...';
+        try {
+            const response = await fetch('{% url "api-manage-translations" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ action: 'import', translations })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showToast(`Imported ${data.created} created, ${data.updated} updated.`);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Import failed.', false);
+            }
+        } catch (err) {
+            showToast('Import failed.', false);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i> Import Translations';
+        }
+    });
+</script>
+{% endblock %}

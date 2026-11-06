@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Branding Configuration{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <a href="{% url 'notifications:email-list' %}" class="btn btn-light rounded-circle me-3 p-3 shadow-sm border">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-0">Identity & Branding</h2>
+                <p class="text-muted mb-0">Global look and feel for all system communications.</p>
+            </div>
+        </div>
+        
+        <div class="btn-group shadow-sm rounded-pill p-1 bg-white border">
+            <button type="button" class="btn btn-sm px-4 rounded-pill active" id="btn-list-view" onclick="setViewMode('list')">
+                <i class="fas fa-list me-2"></i>List View
+            </button>
+            <button type="button" class="btn btn-sm px-4 rounded-pill" id="btn-grid-view" onclick="setViewMode('grid')">
+                <i class="fas fa-th-large me-2"></i>Grid View
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Configuration Panel (Left) -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 p-4 pb-0">
+                    <h5 class="fw-bold mb-0">Branding Options</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="style-editor-form">
+                        {% csrf_token %}
+                        
+                        <div id="config-container" class="view-mode-list">
+                            <!-- Company Name -->
+                            <div class="config-item mb-4">
+                                <label class="form-label fw-bold text-uppercase small text-muted mb-2">Company/App Name</label>
+                                <input type="text" name="company_name" id="id_company_name" class="form-control form-control-lg rounded-3 border-light shadow-sm bg-light" value="{{ style.company_name }}" required>
+                            </div>
+                            
+                            <!-- Colors Group -->
+                            <div class="config-item mb-4 d-flex gap-4">
+                                <div class="flex-grow-1">
+                                    <label class="form-label fw-bold text-uppercase small text-muted mb-2">Primary Color</label>
+                                    <div class="d-flex gap-2">
+                                        <input type="color" class="form-control form-control-color border-0 p-0 rounded-circle overflow-hidden shadow-sm" style="width: 48px; height: 48px;" id="primary_color_picker" value="{{ style.primary_color }}">
+                                        <input type="text" name="primary_color" id="id_primary_color" class="form-control form-control-lg rounded-3 border-light shadow-sm bg-light" value="{{ style.primary_color }}" required>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label class="form-label fw-bold text-uppercase small text-muted mb-2">Secondary Color</label>
+                                    <div class="d-flex gap-2">
+                                        <input type="color" class="form-control form-control-color border-0 p-0 rounded-circle overflow-hidden shadow-sm" style="width: 48px; height: 48px;" id="secondary_color_picker" value="{{ style.secondary_color }}">
+                                        <input type="text" name="secondary_color" id="id_secondary_color" class="form-control form-control-lg rounded-3 border-light shadow-sm bg-light" value="{{ style.secondary_color }}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Logo URL -->
+                            <div class="config-item mb-4">
+                                <label class="form-label fw-bold text-uppercase small text-muted mb-2">Logo Image URL</label>
+                                <input type="url" name="logo_url" id="id_logo_url" class="form-control form-control-lg rounded-3 border-light shadow-sm bg-light" value="{{ style.logo_url|default:'' }}" placeholder="https://example.com/logo.png">
+                                <div class="form-text mt-2 small text-muted"><i class="fas fa-info-circle me-1"></i> Best with transparent PNG on dark/light backgrounds.</div>
+                            </div>
+
+                            <!-- Footer Text -->
+                            <div class="config-item mb-0">
+                                <label class="form-label fw-bold text-uppercase small text-muted mb-2">Email Footer Text</label>
+                                <textarea name="footer_text" id="id_footer_text" class="form-control rounded-3 border-light shadow-sm bg-light" rows="4">{{ style.footer_text }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-4 border-top d-flex justify-content-end gap-3">
+                            <a href="{% url 'notifications:email-list' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 shadow">
+                                <i class="fas fa-check-circle me-2"></i> Save Branding
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Branding Preview (Right) -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden h-100" style="background: #0f172a; min-height: 800px; position: sticky; top: 20px;">
+                <div class="card-header border-0 p-4 pb-0 d-flex justify-content-between align-items-center" style="background: rgba(255,255,255,0.03)">
+                    <h5 class="mb-0 text-white fw-bold"><i class="fas fa-magic me-3 text-primary"></i>Live Branding Preview</h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-2">
+                            Global Sync
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0 position-relative">
+                    <div id="preview-loader" class="position-absolute w-100 h-100 d-none align-items-center justify-content-center" style="z-index: 10; background: rgba(15, 23, 42, 0.8);">
+                        <div class="spinner-grow text-primary" role="status"></div>
+                    </div>
+                    {% if preview_template %}
+                    <div class="preview-frame-container" style="height: 100%; overflow: hidden;">
+                        <iframe id="email-preview-frame" src="{% url 'notifications:email-preview' preview_template.id %}" 
+                                style="width: 130%; height: 1000px; border: none; transform: scale(0.77); transform-origin: top left; background: white;"></iframe>
+                    </div>
+                    {% else %}
+                    <div class="d-flex h-100 align-items-center justify-content-center text-center p-5">
+                        <div>
+                            <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                            <p class="text-white mb-0">Create at least one template to see live branding preview.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const iframe = document.getElementById('email-preview-frame');
+    const loader = document.getElementById('preview-loader');
+    const configContainer = document.getElementById('config-container');
+    
+    // Inputs
+    const companyNameInput = document.getElementById('id_company_name');
+    const primaryPicker = document.getElementById('primary_color_picker');
+    const primaryHex = document.getElementById('id_primary_color');
+    const secondaryPicker = document.getElementById('secondary_color_picker');
+    const secondaryHex = document.getElementById('id_secondary_color');
+    const logoUrlInput = document.getElementById('id_logo_url');
+    const footerTextInput = document.getElementById('id_footer_text');
+
+    let debounceTimer;
+
+    function setViewMode(mode) {
+        document.getElementById('btn-list-view').classList.toggle('active', mode === 'list');
+        document.getElementById('btn-grid-view').classList.toggle('active', mode === 'grid');
+        configContainer.className = `view-mode-${mode}`;
+    }
+
+    function updatePreview() {
+        if (!iframe) return;
+        loader.classList.remove('d-none');
+        loader.classList.add('d-flex');
+
+        const formData = new FormData();
+        formData.append('company_name', companyNameInput.value);
+        formData.append('primary_color', primaryHex.value);
+        formData.append('secondary_color', secondaryHex.value);
+        formData.append('logo_url', logoUrlInput.value);
+        formData.append('footer_text', footerTextInput.value);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        {% if preview_template %}
+        fetch("{% url 'notifications:email-preview' preview_template.id %}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+            loader.classList.add('d-none');
+            loader.classList.remove('d-flex');
+        })
+        .catch(err => {
+            console.error('Preview error:', err);
+            loader.classList.add('d-none');
+        });
+        {% endif %}
+    }
+
+    // Color Pickers sync
+    primaryPicker.addEventListener('input', (e) => { primaryHex.value = e.target.value.toUpperCase(); updatePreview(); });
+    primaryHex.addEventListener('input', (e) => { primaryPicker.value = e.target.value; updatePreview(); });
+    secondaryPicker.addEventListener('input', (e) => { secondaryHex.value = e.target.value.toUpperCase(); updatePreview(); });
+    secondaryHex.addEventListener('input', (e) => { secondaryPicker.value = e.target.value; updatePreview(); });
+
+    [companyNameInput, logoUrlInput, footerTextInput].forEach(el => {
+        el.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updatePreview, 800);
+        });
+    });
+
+    window.addEventListener('load', updatePreview);
+</script>
+
+<style>
+    .view-mode-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+    
+    .view-mode-grid .config-item {
+        margin-bottom: 0 !important;
+    }
+    
+    .view-mode-grid .config-item:first-child,
+    .view-mode-grid .config-item:nth-child(3),
+    .view-mode-grid .config-item:last-child {
+        grid-column: span 2;
+    }
+
+    #email-preview-frame {
+        border-radius: 12px;
+        margin: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .form-control:focus {
+        background: white !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.1) !important;
+    }
+
+    .btn-group .btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 600;
+        color: #64748b;
+        border: none;
+    }
+    
+    .btn-group .btn.active {
+        background-color: #2563eb !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    .preview-frame-container {
+        scrollbar-width: none;
+    }
+    .preview-frame-container::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+{% endblock %}

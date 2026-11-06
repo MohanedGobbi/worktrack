@@ -1,0 +1,501 @@
+{% extends 'base.html' %}
+{% load core_tags %}
+
+{% block title %}Messenger Config - WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'vendor/tailwind/tailwind.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/fonts/manrope/manrope.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/fonts/material-symbols/material-symbols-outlined.css' %}">
+
+
+
+<style>
+  :root {
+    --glass-bg: rgba(255,255,255,0.7);
+    --glass-border: rgba(255,255,255,0.3);
+    --premium-shadow: 0 8px 32px 0 rgba(31,38,135,0.12);
+  }
+  body { background: #f0f4fa; font-family: 'Manrope', sans-serif; }
+
+  /* ── BANNER (HOMEPAGE GREEN OBSIDIAN STYLE) ── */
+  .config-banner {
+    background: var(--wt-hero-bg) !important;
+    position: relative; overflow: hidden; color: white;
+    padding: 3.5rem 0 3rem; margin-bottom: 2.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+    box-shadow: none !important;
+  }
+  .config-banner h1, .config-banner .text-shadow {
+    color: #ffffff !important;
+    text-shadow: none !important;
+  }
+  .config-banner::before {
+    display: none !important;
+  }
+  .config-banner::after {
+    display: none !important;
+  }
+  .config-banner .inner { position:relative; z-index:2; }
+
+  /* ── GLASS CARD ── */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--premium-shadow);
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-card { border-radius: 20px; overflow: hidden; position:relative; }
+  .stat-card .shimmer {
+    position:absolute; inset:0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events:none;
+  }
+
+  /* ── USER CARDS ── */
+  .user-grid-item { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+  .user-grid-item:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(19,127,236,0.15); }
+
+  /* ── SCROLLBAR ── */
+  .custom-scroll::-webkit-scrollbar { width: 4px; }
+  .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+  .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+  /* ── VIEW TOGGLE ── */
+  .view-grid .user-list-item  { display: none !important; }
+  .view-list .user-grid-item  { display: none !important; }
+  .users-container.view-list  { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* ── INPUT STYLE ── */
+  .premium-input {
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(4px);
+    border: 1.5px solid #e2e8f0; border-radius: 14px;
+    padding: 0.6rem 1rem; font-size: 0.875rem; outline: none;
+    transition: all 0.2s;
+  }
+  .premium-input:focus { border-color: #137fec; box-shadow: 0 0 0 3px rgba(19,127,236,0.12); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════ PREMIUM BANNER ═══════════════ -->
+<div class="config-banner w-full">
+  <div class="inner max-w-7xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div>
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-white/20 border border-white/20 rounded-full px-3 py-1.5 mb-3 backdrop-blur-sm">
+        <span class="material-symbols-outlined text-[14px]">admin_panel_settings</span> Control Panel
+      </span>
+      <h1 class="text-4xl font-black tracking-tight leading-tight text-shadow">
+        Messenger Config
+      </h1>
+      <p class="text-base text-white/80 mt-2 font-medium">Manage chat permissions and monitor messenger activity across your team.</p>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-2 px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-2xl border border-white/20 backdrop-blur-sm transition-all text-sm">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span><span class="lang-en">Dashboard</span><span class="lang-ar">لوحة التحكم</span></a>
+      <a href="{% url 'messaging:index' %}" class="flex items-center gap-2 px-5 py-2.5 bg-white text-primary font-black rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm">
+        <span class="material-symbols-outlined text-[18px]">chat</span> Open Messenger
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE BODY ═══════════════ -->
+<div class="max-w-7xl mx-auto px-6 lg:px-10 pb-12 space-y-8">
+
+  <!-- ── STAT CARDS ── -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    <!-- Total Users -->
+    <div class="stat-card p-6 text-white" style="background: linear-gradient(135deg, #1e40af, #3b82f6);">
+      <div class="shimmer"></div>
+      <div class="flex items-center justify-between mb-4 relative">
+        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">group</span>
+        </div>
+        <span class="text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full"><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></span>
+      </div>
+      <p class="text-5xl font-black leading-none relative">{{ stats.total_users }}</p>
+      <p class="text-sm text-white/70 font-bold mt-2 relative">Registered staff members</p>
+    </div>
+
+    <!-- Active Now -->
+    <div class="stat-card p-6 text-white" style="background: linear-gradient(135deg, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)), var(--color-primary, #10b981));">
+      <div class="shimmer"></div>
+      <div class="flex items-center justify-between mb-4 relative">
+        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">bolt</span>
+        </div>
+        <span class="text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Online</span>
+      </div>
+      <p class="text-5xl font-black leading-none relative">{{ stats.active_users }}</p>
+      <p class="text-sm text-white/70 font-bold mt-2 relative">Active right now</p>
+    </div>
+
+    <!-- Total Messages -->
+    <div class="stat-card p-6 text-white" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">
+      <div class="shimmer"></div>
+      <div class="flex items-center justify-between mb-4 relative">
+        <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">chat_bubble</span>
+        </div>
+        <span class="text-xs font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Messages</span>
+      </div>
+      <p class="text-5xl font-black leading-none relative">{{ stats.total_messages }}</p>
+      <p class="text-sm text-white/70 font-bold mt-2 relative">Total system messages</p>
+    </div>
+  </div>
+
+  <!-- ── CONTROL TOOLBAR ── -->
+  <div class="glass-card p-5 flex flex-col lg:flex-row items-center gap-5">
+    <!-- Search + View Toggle pill -->
+    <div class="flex items-center gap-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-1.5 flex-1 max-w-md">
+      <div class="relative flex-1">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]"><span class="lang-en">Search</span><span class="lang-ar">بحث</span></span>
+        <input type="text" id="user-global-search" class="w-full pl-10 pr-4 py-2 bg-transparent border-none text-sm font-bold outline-none text-slate-800 placeholder:text-slate-400" placeholder="Search users...">
+      </div>
+      <div class="flex gap-0.5 shrink-0 bg-slate-100 p-1 rounded-xl">
+        <button onclick="setView('grid')" id="btn-view-grid" class="p-2 rounded-lg bg-white text-slate-800 shadow-sm smooth-transition" title="Grid View">
+          <span class="material-symbols-outlined text-[20px]">grid_view</span>
+        </button>
+        <button onclick="setView('list')" id="btn-view-list" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 smooth-transition" title="List View">
+          <span class="material-symbols-outlined text-[20px]">view_list</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Spacer -->
+    <div class="hidden lg:block h-10 w-px bg-slate-200"></div>
+
+    <!-- Show per page -->
+    <div class="flex items-center gap-3 shrink-0">
+      <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Show per page</span>
+      <div class="relative">
+        <select id="items-per-page" class="appearance-none bg-white border border-slate-200 text-slate-800 text-xs font-black uppercase tracking-widest rounded-xl py-2.5 pl-4 pr-9 shadow-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none cursor-pointer transition-all hover:border-slate-300">
+          <option value="4" selected>4</option>
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16">16</option>
+          <option value="all">All</option>
+        </select>
+        <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">unfold_more</span>
+      </div>
+    </div>
+
+    <!-- Role Tabs -->
+    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl shrink-0 ml-auto" id="role-filters">
+      <button class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-800 text-white shadow-sm filter-btn smooth-transition" data-role="all">All</button>
+      <button class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 hover:bg-white/60 filter-btn smooth-transition" data-role="Super Admin">Admin</button>
+      <button class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 hover:bg-white/60 filter-btn smooth-transition" data-role="Manager">Manager</button>
+      <button class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-800 hover:bg-white/60 filter-btn smooth-transition" data-role="Worker">Worker</button>
+    </div>
+  </div>
+
+  <!-- ── USERS GRID ── -->
+  <div id="users-container" class="users-container view-grid grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for u in users %}
+    {% with user_perm=perm_map|get_item:u.id %}
+
+    <div class="user-wrapper" data-role="{{ u.get_role_display }}" data-name="{{ u.get_full_name|default:u.email|lower }}">
+
+      <!-- ── GRID CARD ── -->
+      <div class="user-grid-item glass-card flex flex-col overflow-hidden">
+        <!-- Colored header strip -->
+        <div class="h-16 bg-gradient-to-r from-primary to-secondary relative shrink-0">
+          <div class="absolute inset-0" style="background: url('data:image/svg+xml,...') "></div>
+        </div>
+        <!-- Avatar (overlapping) -->
+        <div class="-mt-8 flex flex-col items-center px-5 pb-5">
+          <div class="relative mb-3">
+            {% if u.profile and u.profile.avatar %}
+            <img src="{{ u.profile.avatar.url }}" class="w-16 h-16 rounded-2xl object-cover border-4 border-white shadow-lg">
+            {% else %}
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-xl border-4 border-white shadow-lg">
+              {{ u.first_name|first|upper|default:u.email|first|upper }}
+            </div>
+            {% endif %}
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white {% if u.last_activity %}bg-red-400{% else %}bg-slate-300{% endif %} shadow-sm"></div>
+          </div>
+          <h3 class="text-sm font-black text-slate-900 truncate w-full text-center">{{ u.get_full_name|default:u.email }}</h3>
+          <span class="mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
+            {% if u.get_role_display == 'Super Admin' %}bg-blue-100 text-blue-700
+            {% elif u.get_role_display == 'Manager' %}bg-violet-100 text-violet-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">
+            {{ u.get_role_display }}
+          </span>
+        </div>
+
+        <!-- Form body -->
+        <form class="permission-form px-4 pb-4 flex flex-col gap-3 flex-1" data-user-id="{{ u.id }}">
+          {% csrf_token %}
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+
+          <div class="flex items-center justify-between bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100">
+            <div>
+              <p class="text-xs font-black text-slate-700">Chat with Everyone</p>
+              <p class="text-[9px] text-slate-400 font-medium">Allow all contacts</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" class="sr-only peer toggle-all-btn">
+              <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+
+          <!-- Contacts toggle -->
+          <div class="specific-users-section">
+            <button type="button" class="toggle-contacts-btn w-full flex items-center justify-between text-[10px] font-black text-slate-400 hover:text-primary uppercase tracking-widest py-1 smooth-transition">
+              <span>Allowed Contacts</span>
+              <span class="material-symbols-outlined text-[15px] transition-transform">expand_more</span>
+            </button>
+            <div class="contacts-panel hidden mt-2 bg-white border border-slate-100 rounded-xl p-2 shadow-sm">
+              <input type="text" class="card-search w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 focus:ring-1 focus:ring-primary" placeholder="Search...">
+              <div class="user-select-list custom-scroll max-h-28 overflow-y-auto space-y-0.5">
+                {% for other_user in users %}
+                  {% if other_user.id != u.id %}
+                  <label class="contact-row flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer smooth-transition">
+                    <span class="contact-label text-xs text-slate-600 truncate pr-2">{{ other_user.get_full_name|default:other_user.email }}</span>
+                    <input type="checkbox" name="allowed_contacts" value="{{ other_user.id }}" class="target-checkbox rounded text-primary focus:ring-primary w-3.5 h-3.5 border-slate-300"
+                           {% if user_perm and other_user in user_perm.allowed_contacts.all %}checked{% endif %}>
+                  </label>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="save-btn mt-auto w-full py-2.5 bg-gradient-to-r from-slate-800 to-slate-700 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-md hover:shadow-lg hover:from-slate-700 hover:to-slate-600 transition-all flex items-center justify-center gap-1.5">
+            <span class="material-symbols-outlined text-[15px]"><span class="lang-en">Save</span><span class="lang-ar">حفظ</span></span><span class="lang-en">Save Changes</span><span class="lang-ar">حفظ التغييرات</span></button>
+        </form>
+      </div><!-- end grid card -->
+
+      <!-- ── LIST ITEM ── -->
+      <div class="user-list-item glass-card overflow-hidden flex flex-col lg:flex-row items-stretch smooth-transition hover:shadow-xl hover:border-primary/20">
+        <!-- Profile -->
+        <div class="p-5 lg:w-60 border-b lg:border-b-0 lg:border-r border-white/50 bg-gradient-to-br from-white/60 to-white/30 flex items-center gap-4 shrink-0">
+          {% if u.profile and u.profile.avatar %}
+          <img src="{{ u.profile.avatar.url }}" class="w-12 h-12 rounded-xl object-cover shadow border-2 border-white shrink-0">
+          {% else %}
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-base shadow border-2 border-white shrink-0">
+            {{ u.first_name|first|upper|default:u.email|first|upper }}
+          </div>
+          {% endif %}
+          <div class="min-w-0">
+            <h3 class="text-sm font-black text-slate-900 truncate">{{ u.get_full_name|default:u.email }}</h3>
+            <span class="inline-block mt-1 px-2 text-[8px] font-black uppercase tracking-widest rounded-full
+              {% if u.get_role_display == 'Super Admin' %}bg-blue-100 text-blue-700
+              {% elif u.get_role_display == 'Manager' %}bg-violet-100 text-violet-700
+              {% else %}bg-slate-100 text-slate-600{% endif %}">{{ u.get_role_display }}</span>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex-1 grid grid-cols-3 divide-x divide-white/50">
+          <div class="flex flex-col items-center justify-center p-5 gap-1 text-center">
+            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Chats</p>
+            <div class="flex items-center gap-1.5 mt-1">
+              <div class="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[14px] text-primary">group</span>
+              </div>
+              <span class="text-xl font-black text-slate-900">{{ u.allowed_count }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-center p-5 gap-1 text-center">
+            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sent</p>
+            <div class="flex items-center gap-1.5 mt-1">
+              <div class="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-[14px] text-red-700">send</span>
+              </div>
+              <span class="text-xl font-black text-slate-900">{{ u.msg_count }}</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-center justify-center p-5 gap-1 text-center">
+            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></p>
+            {% if u.last_activity %}
+            <span class="mt-1 flex items-center gap-1 text-xs font-black text-red-700">
+              <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span> Online
+            </span>
+            {% else %}
+            <span class="mt-1 flex items-center gap-1 text-xs font-black text-slate-400">
+              <span class="w-2 h-2 rounded-full bg-slate-300"></span> Offline
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="p-4 border-t lg:border-t-0 lg:border-l border-white/50 flex flex-col justify-center gap-2.5 shrink-0 bg-white/30">
+          <a href="{% url 'user-edit' u.id %}" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 hover:text-primary hover:border-primary smooth-transition shadow-sm">
+            <span class="material-symbols-outlined text-[16px]">manage_accounts</span><span class="lang-en">Edit</span><span class="lang-ar">تعديل</span></a>
+          <a href="{% url 'messaging:user-message-log' u.id %}" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-700 text-xs font-black text-white rounded-xl shadow-sm hover:shadow-md smooth-transition">
+            <span class="material-symbols-outlined text-[16px]">visibility</span> Audit Log
+          </a>
+        </div>
+      </div><!-- end list item -->
+
+    </div><!-- end user-wrapper -->
+
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  <!-- ── PAGINATION ── -->
+  <div id="pagination-controls" class="flex justify-center items-center gap-4">
+    <button id="prev-page" class="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold shadow-sm hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none smooth-transition flex items-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">chevron_left</span> Prev
+    </button>
+    <div class="px-5 py-2.5 glass-card">
+      <span id="page-info" class="text-sm font-extrabold text-slate-700 tracking-wide">Page 1 of 1</span>
+    </div>
+    <button id="next-page" class="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold shadow-sm hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none smooth-transition flex items-center gap-2"><span class="lang-en">Next</span><span class="lang-ar">التالي</span><span class="material-symbols-outlined text-[18px]">chevron_right</span>
+    </button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ── VIEW SWITCHER ──
+  function setView(v) {
+    const c = document.getElementById('users-container');
+    const btnG = document.getElementById('btn-view-grid');
+    const btnL = document.getElementById('btn-view-list');
+    if (v === 'grid') {
+      c.classList.replace('view-list','view-grid');
+      c.classList.add('grid','grid-cols-2','lg:grid-cols-3','xl:grid-cols-4','gap-6');
+      btnG.classList.add('bg-white','text-slate-800','shadow-sm');
+      btnG.classList.remove('text-slate-400');
+      btnL.classList.remove('bg-white','text-slate-800','shadow-sm');
+      btnL.classList.add('text-slate-400');
+    } else {
+      c.classList.replace('view-grid','view-list');
+      c.classList.remove('grid','grid-cols-2','lg:grid-cols-3','xl:grid-cols-4','gap-6');
+      btnL.classList.add('bg-white','text-slate-800','shadow-sm');
+      btnL.classList.remove('text-slate-400');
+      btnG.classList.remove('bg-white','text-slate-800','shadow-sm');
+      btnG.classList.add('text-slate-400');
+    }
+  }
+
+  // ── CONTACTS TOGGLE ──
+  document.querySelectorAll('.toggle-contacts-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const p = this.nextElementSibling;
+      const i = this.querySelector('.material-symbols-outlined');
+      p.classList.toggle('hidden');
+      i.style.transform = p.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    });
+  });
+
+  // ── TOGGLE ALL ──
+  document.querySelectorAll('.permission-form').forEach(form => {
+    const toggleBtn = form.querySelector('.toggle-all-btn');
+    const cbs = form.querySelectorAll('.target-checkbox');
+    const sec = form.querySelector('.specific-users-section');
+    const sync = () => {
+      const all = Array.from(cbs).every(c => c.checked);
+      toggleBtn.checked = all;
+      sec.style.opacity = all ? '0.5' : '1';
+      sec.style.pointerEvents = all ? 'none' : 'auto';
+    };
+    sync();
+    cbs.forEach(cb => cb.addEventListener('change', sync));
+    toggleBtn.addEventListener('change', function() {
+      cbs.forEach(cb => cb.checked = this.checked);
+      sync();
+    });
+  });
+
+  // ── PAGINATION & FILTER ──
+  const userCards = document.querySelectorAll('.user-wrapper');
+  let currentPage = 1;
+  let itemsPerPage = 4;
+  let filteredCards = Array.from(userCards);
+
+  function updatePagination() {
+    const total = Math.ceil(filteredCards.length / itemsPerPage) || 1;
+    currentPage = Math.max(1, Math.min(currentPage, total));
+    document.getElementById('page-info').textContent = `Page ${currentPage} of ${total}`;
+    document.getElementById('prev-page').disabled = currentPage === 1;
+    document.getElementById('next-page').disabled = currentPage === total;
+    const start = (currentPage - 1) * itemsPerPage;
+    userCards.forEach(c => c.style.display = 'none');
+    filteredCards.slice(start, start + itemsPerPage).forEach(c => c.style.display = '');
+  }
+
+  function filterCards() {
+    const role = document.querySelector('.filter-btn.bg-slate-800').dataset.role;
+    const q = document.getElementById('user-global-search').value.toLowerCase();
+    filteredCards = Array.from(userCards).filter(c =>
+      (role === 'all' || c.dataset.role === role) && c.dataset.name.includes(q)
+    );
+    currentPage = 1;
+    updatePagination();
+  }
+
+  document.getElementById('prev-page').addEventListener('click', () => { currentPage--; updatePagination(); });
+  document.getElementById('next-page').addEventListener('click', () => { currentPage++; updatePagination(); });
+  document.getElementById('items-per-page').addEventListener('change', function() {
+    itemsPerPage = this.value === 'all' ? 99999 : parseInt(this.value);
+    currentPage = 1;
+    updatePagination();
+  });
+  document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(x => {
+      x.classList.replace('bg-slate-800','bg-transparent');
+      x.classList.replace('text-white','text-slate-500');
+    });
+    this.classList.replace('bg-transparent','bg-slate-800');
+    this.classList.replace('text-slate-500','text-white');
+    filterCards();
+  }));
+  document.getElementById('user-global-search').addEventListener('input', filterCards);
+
+  // ── CARD SEARCH ──
+  document.querySelectorAll('.card-search').forEach(inp => {
+    inp.addEventListener('input', function() {
+      const t = this.value.toLowerCase();
+      this.closest('.contacts-panel').querySelectorAll('.contact-row').forEach(r => {
+        r.style.display = r.querySelector('.contact-label').innerText.toLowerCase().includes(t) ? '' : 'none';
+      });
+    });
+  });
+
+  // ── SAVE PERMISSIONS ──
+  document.querySelectorAll('.permission-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = this.querySelector('.save-btn');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined text-[15px] animate-spin">refresh</span> Saving...';
+      fetch("{% url 'messaging:update-permission' %}", {
+        method: 'POST', body: new FormData(this),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.status === 'success') {
+          btn.classList.add('from-red-600','to-red-500');
+          btn.classList.remove('from-slate-800','to-slate-700');
+          btn.innerHTML = '<span class="material-symbols-outlined text-[15px]">check_circle</span> Saved!';
+          setTimeout(() => {
+            btn.classList.remove('from-red-600','to-red-500');
+            btn.classList.add('from-slate-800','to-slate-700');
+            btn.innerHTML = orig;
+            btn.disabled = false;
+          }, 2000);
+        } else { alert('Error saving'); btn.disabled = false; btn.innerHTML = orig; }
+      })
+      .catch(() => { alert('Error'); btn.disabled = false; btn.innerHTML = orig; });
+    });
+  });
+
+  updatePagination();
+</script>
+{% endblock %}

@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Global Task Map - WorkTrack Pro{% endblock %}
+
+{% block extra_css %}
+<!-- Offline Leaflet CSS -->
+<link rel="stylesheet" href="{% static 'vendor/leaflet-offline/leaflet.css' %}">
+<style>
+    /* Full Map Container */
+    #global-map-container {
+        height: calc(100vh - 120px);
+        width: 100%;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        position: relative;
+        overflow: hidden;
+        margin-top: 10px;
+        z-index: 1;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    #map {
+        height: 100%;
+        width: 100%;
+        z-index: 1;
+        background-color: #0f172a;
+    }
+
+    /* Map Controls Panel */
+    .map-controls-panel {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        width: 320px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        color: #fff;
+    }
+
+    .map-controls-panel h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--color-primary, #10b981), #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .filter-group {
+        margin-bottom: 1rem;
+    }
+    .filter-group label {
+        display: block;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+    }
+    .filter-select {
+        width: 100%;
+        background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        border-radius: 8px;
+        padding: 0.6rem;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border 0.2s;
+    }
+    .filter-select:focus {
+        border-color: #3b82f6;
+    }
+
+    /* Legend */
+    .map-legend {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px dashed rgba(255,255,255,0.1);
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        color: #cbd5e1;
+    }
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 10px;
+        box-shadow: 0 0 8px currentColor;
+    }
+
+    /* Custom Map Markers */
+    .custom-leaflet-marker {
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.2);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .custom-leaflet-marker:hover {
+        transform: scale(1.3);
+        z-index: 1000 !important;
+    }
+    
+    .marker-pending { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .marker-progress { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .marker-completed { background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000))); }
+    .marker-overdue { background: linear-gradient(135deg, var(--wt-bad), var(--color-primary, #10b981)); }
+    .marker-default { background: linear-gradient(135deg, #64748b, #475569); }
+
+    /* Glassmorphic Popups */
+    .leaflet-popup-content-wrapper {
+        background: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px !important;
+        color: #f8fafc !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+        padding: 0 !important;
+        overflow: hidden;
+    }
+    .leaflet-popup-tip-container {
+        display: none !important; /* Hide the default tip for a cleaner floating card look */
+    }
+    .leaflet-popup-content {
+        margin: 0 !important;
+        width: 280px !important;
+    }
+    
+    .popup-header {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .popup-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin: 0;
+        color: #fff;
+    }
+    .popup-status {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        margin-top: 5px;
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.1);
+    }
+    .popup-body {
+        padding: 15px 20px;
+    }
+    .popup-desc {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 10px;
+    }
+    .popup-meta {
+        font-size: 0.8rem;
+        color: #cbd5e1;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+    }
+    .popup-meta i {
+        width: 20px;
+        color: #3b82f6;
+    }
+    .popup-action {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff !important;
+        text-decoration: none;
+        padding: 10px;
+        font-weight: 600;
+        margin-top: 15px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .popup-action:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        text-decoration: none;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-1" style="font-weight: 800; letter-spacing: -0.5px; display:flex; align-items:center;">
+            <i class="fas fa-globe-americas me-3" style="background: linear-gradient(135deg, var(--color-primary, #10b981), #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+            Global Task Map
+        </h2>
+        <p class="text-muted mb-0">Interactive geospatial view of all active assignments in the system.</p>
+    </div>
+</div>
+
+<div id="global-map-container">
+    <div id="map"></div>
+    
+    <div class="map-controls-panel">
+        <h3><i class="fas fa-filter me-2"></i>Map Filters</h3>
+        
+        <div class="filter-group">
+            <label><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></label>
+            <select id="filter-status" class="filter-select">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+            </select>
+        </div>
+        
+        <div class="map-legend">
+            <h4 style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 10px;">Legend</h4>
+            <div class="legend-item"><div class="legend-color marker-pending"></div> Pending</div>
+            <div class="legend-item"><div class="legend-color marker-progress"></div> In Progress</div>
+            <div class="legend-item"><div class="legend-color marker-completed"></div> Completed</div>
+            <div class="legend-item"><div class="legend-color marker-overdue"></div> Overdue</div>
+        </div>
+    </div>
+</div>
+
+<!-- Raw Task Data from Backend -->
+<script id="tasks-data-blob" type="application/json">
+{{ tasks_json|safe }}
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Offline Leaflet JS -->
+<script src="{% static 'vendor/leaflet-offline/leaflet.js' %}"></script>
+<script>
+    L.Icon.Default.imagePath = "{% static 'vendor/leaflet-offline/images/' %}";
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Initialize Map
+    // Start with a generic world center
+    const map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([20.0, 0.0], 2);
+    
+    // Add custom zoom control to bottom right so it doesn't overlap filters
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // 2. Add Base Layers
+    // Standard Light Style (CartoDB Light instead of OSM to avoid 403)
+    const standardLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; CartoDB'
+    });
+    
+    // Satellite Style (Local proxy with ESRI fallback)
+    const satelliteLayer = L.tileLayer('/map-tiles/satellite/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        errorTileUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 
+        attribution: 'Tiles &copy; Esri'
+    });
+    
+    // Dark Style
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; CartoDB'
+    });
+
+    // Default map style
+    standardLayer.addTo(map);
+
+    // Add UI Control to switch layers
+    const baseMaps = {
+        "Standard Map": standardLayer,
+        "Satellite View": satelliteLayer,
+        "Dark Map": darkLayer
+    };
+    
+    L.control.layers(baseMaps, null, { position: 'topleft' }).addTo(map);
+
+    // 3. Load Task Data
+    const rawData = document.getElementById('tasks-data-blob').textContent;
+    let tasks = [];
+    try {
+        tasks = JSON.parse(rawData.trim());
+        // Handle double-escaped JSON if python already json.dumps it
+        if (typeof tasks === 'string') {
+            tasks = JSON.parse(tasks);
+        }
+    } catch (e) {
+        console.error("Could not parse task JSON", e);
+    }
+    
+    let originalMarkers = [];
+    let currentLayerGroup = L.layerGroup().addTo(map);
+
+    function getMarkerClass(status) {
+        if (status === 'completed' || status === 'approved') return 'marker-completed';
+        if (status === 'in_progress' || status === 'submitted') return 'marker-progress';
+        if (status === 'overdue') return 'marker-overdue';
+        if (status === 'pending') return 'marker-pending';
+        return 'marker-default';
+    }
+
+    function getStatusColor(status) {
+        if (status === 'completed' || status === 'approved') return 'var(--color-primary, #10b981)';
+        if (status === 'in_progress' || status === 'submitted') return '#3b82f6';
+        if (status === 'overdue') return '#ef4444';
+        if (status === 'pending') return '#f59e0b';
+        return '#64748b';
+    }
+
+    function renderMarkers(tasksToRender) {
+        currentLayerGroup.clearLayers();
+        let bounds = [];
+        
+        tasksToRender.forEach(task => {
+            const markerClass = getMarkerClass(task.status);
+            
+            // Create a custom modern DivIcon
+            const iconHtml = `<div class="custom-leaflet-marker ${markerClass}" style="width:20px; height:20px;"></div>`;
+            const customIcon = L.divIcon({
+                className: '',
+                html: iconHtml,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            
+            const marker = L.marker([task.lat, task.lng], { icon: customIcon });
+            bounds.push([task.lat, task.lng]);
+            
+            // Build Glassmorphic Popup HTML
+            const popupContent = `
+                <div class="popup-header">
+                    <h4 class="popup-title">${task.title}</h4>
+                    <span class="popup-status" style="color:${getStatusColor(task.status)}; border: 1px solid ${getStatusColor(task.status)}55;">
+                        ${task.status_display}
+                    </span>
+                </div>
+                <div class="popup-body">
+                    <div class="popup-desc">${task.description}</div>
+                    
+                    <div class="popup-meta">
+                        <i class="fas fa-user-circle"></i> <span>${task.assigned_users}</span>
+                    </div>
+                    ${task.deadline ? `
+                    <div class="popup-meta mt-1">
+                        <i class="fas fa-calendar-alt"></i> <span>${task.deadline}</span>
+                    </div>` : ''}
+                    
+                    <a href="${task.url}" class="popup-action">
+                        <i class="fas fa-external-link-alt me-2"></i> View Task Area
+                    </a>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent, { maxWidth: 300, minWidth: 280 });
+            currentLayerGroup.addLayer(marker);
+            originalMarkers.push({ task: task, marker: marker });
+        });
+        
+        // Auto-fit bounds if we have points
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        }
+    }
+
+    // Initial render
+    renderMarkers(tasks);
+
+    // Filter Logic
+    document.getElementById('filter-status').addEventListener('change', function(e) {
+        const val = e.target.value;
+        if (val === 'all') {
+            renderMarkers(tasks);
+        } else {
+            const filtered = tasks.filter(t => t.status === val);
+            renderMarkers(filtered);
+        }
+    });
+});
+</script>
+{% endblock %}

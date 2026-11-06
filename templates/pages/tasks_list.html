@@ -1,0 +1,867 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Tasks - WorkTrack Pro{% endblock %}
+
+{% block content %}
+<!-- ===== ELEGANT MINIMAL GREEN HERO BANNER ===== -->
+<div class="hero-command-banner mb-4">
+    <div class="position-relative" style="z-index: 2;">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <h1 class="matrix-title m-0 fw-bold text-white" style="font-size: clamp(1.6rem, 2.8vw, 2.3rem); letter-spacing: -0.02em; line-height: 1.2;">
+                    <span class="lang-en">Tasks Management</span>
+                    <span class="lang-ar">إدارة وتتبع المهام</span>
+                </h1>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                {% if user.role != 'worker' %}
+                <a href="{% url 'task-create' %}{% if module %}?module={{ module }}{% endif %}" class="btn px-3.5 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2" style="background: var(--color-primary, #10b981); color: white; border: none; font-size: 0.85rem; box-shadow: 0 4px 14px rgba(var(--wt-brand-rgb),0.35);">
+                    <i class="fas fa-plus"></i>
+                    <span class="lang-en">New Task</span><span class="lang-ar">مهمة جديدة</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'task-kanban' %}" class="btn px-3 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-1.5" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); color: white; backdrop-filter: blur(8px); font-size: 0.85rem;">
+                    <i class="fas fa-columns text-info"></i>
+                    <span class="lang-en">Kanban</span><span class="lang-ar">كانبان</span>
+                </a>
+                <a href="{% url 'task-calendar' %}" class="btn px-3 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-1.5" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); color: white; backdrop-filter: blur(8px); font-size: 0.85rem;">
+                    <i class="fas fa-calendar-alt text-warning"></i>
+                    <span class="lang-en">Calendar</span><span class="lang-ar">التقويم</span>
+                </a>
+                <a href="{% url 'export-tasks-csv' %}?{{ request.GET.urlencode }}" class="btn px-3 py-2 rounded-pill fw-bold text-white d-inline-flex align-items-center gap-1.5" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); font-size: 0.85rem;">
+                    <i class="fas fa-download"></i> CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- ===== PRACTICAL TELEMETRY CARDS ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card p-3 h-100 bg-white border rounded-3 shadow-sm d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-bold"><span class="lang-en">Total Tasks</span><span class="lang-ar">إجمالي المهام</span></span>
+                    <div class="p-2 rounded-2" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-tasks"></i></div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">{{ tasks_count }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card p-3 h-100 bg-white border rounded-3 shadow-sm d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-bold"><span class="lang-en">Page Density</span><span class="lang-ar">المهام في الصفحة</span></span>
+                    <div class="p-2 rounded-2" style="background:rgba(59,130,246,0.1); color:#3b82f6;"><i class="fas fa-layer-group"></i></div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">{{ per_page }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card p-3 h-100 bg-white border rounded-3 shadow-sm d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-bold"><span class="lang-en">Last Synced</span><span class="lang-ar">آخر تحديث</span></span>
+                    <div class="p-2 rounded-2" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fas fa-clock"></i></div>
+                </div>
+                <div class="fs-4 fw-bold text-dark">{% now "H:i" %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card p-3 h-100 bg-white border rounded-3 shadow-sm d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-bold"><span class="lang-en">System Status</span><span class="lang-ar">حالة النظام</span></span>
+                    <div class="p-2 rounded-2" style="background:rgba(34,197,94,0.1); color:#16a34a;"><i class="fas fa-check-circle"></i></div>
+                </div>
+                <div class="fs-4 fw-bold text-success"><span class="lang-en">Active</span><span class="lang-ar">نشط</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== INTUITIVE SEARCH & FILTERS ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="p-3 p-md-4 rounded-4 shadow-sm bg-white border">
+                <form method="get" action="{% url 'task-list' %}" class="row g-3 align-items-end">
+                    {% if module %}
+                    <input type="hidden" name="module" value="{{ module }}">
+                    {% endif %}
+                    
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small fw-bold text-muted mb-1"><span class="lang-en">Search Tasks</span><span class="lang-ar">بحث بالمهام</span></label>
+                        <div class="position-relative">
+                            <i class="fas fa-search position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); font-size:0.85rem;"></i>
+                            <input type="text" name="search" placeholder="Search by title, description..." value="{{ search|default:'' }}" autocomplete="off" class="form-control rounded-pill ps-4" style="font-size:0.9rem;">
+                        </div>
+                    </div>
+                    
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></label>
+                        <select class="form-select rounded-pill" name="status" style="font-size:0.85rem;">
+                            <option value=""><span class="lang-en">All Statuses</span><span class="lang-ar">جميع الحالات</span></option>
+                            <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></label>
+                        <select class="form-select rounded-pill" name="priority" style="font-size:0.85rem;">
+                            <option value="">All Priorities</option>
+                            <option value="low" {% if priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if priority == 'high' %}selected{% endif %}>High / Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-bold text-muted mb-1"><span class="lang-en">Items Per Page</span><span class="lang-ar">العدد</span></label>
+                        <select class="form-select rounded-pill" name="per_page" style="font-size:0.85rem;">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10 items</option>
+                            <option value="25" {% if per_page == 25 %}selected{% endif %}>25 items</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50 items</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100 items</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6 col-md-2">
+                        <button type="submit" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-1.5" style="font-size:0.9rem;">
+                            <i class="fas fa-filter"></i>
+                            <span class="lang-en">Filter</span><span class="lang-ar">تطبيق</span>
+                        </button>
+                    </div>
+                    
+                    <div class="col-12 mt-3 pt-2 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'task-list' %}{% if module %}?module={{ module }}{% endif %}" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-muted">
+                                <i class="fas fa-undo-alt me-1"></i><span class="lang-en">Reset</span><span class="lang-ar">إعادة ضبط</span>
+                            </a>
+                            <div class="layout-switch-panel p-1 rounded-pill d-flex gap-1 shadow-sm bg-light border">
+                                <button type="button" class="btn btn-sm px-3 rounded-pill task-layout-btn active fw-bold" data-layout="list">
+                                    <i class="fas fa-bars me-1"></i>List
+                                </button>
+                                <button type="button" class="btn btn-sm px-3 rounded-pill task-layout-btn fw-bold" data-layout="grid">
+                                    <i class="fas fa-th me-1"></i>Grid
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-none">
+                    <span><i class="fas fa-list"></i> Task List <span class="badge bg-primary ms-2">{{ tasks_count }} Tasks</span></span>
+                </div>
+                <div class="card-body">
+                    {% if tasks %}
+                        <div class="tasks-container tasks-list-view" id="tasksContainer">
+                            {% for task in tasks %}
+                                {% with m_color=task.work_module.color|default:'#0f172a' m_rgb=task.work_module.color_rgb|default:'15, 23, 42' progress=task.progress|default:0 %}
+                                    <!-- LIST ITEM VIEW -->
+                                    <a href="{{ task.detail_url }}" class="tw-list-item tasks-list-item" style="--tw-m-color: {{ m_color }}; --pie-percent: {{ progress }}%;">
+                                        <div class="tw-list-accent-line"></div>
+                                        <div class="tw-list-img-wrap">
+                                            {% if task.cover_image %}
+                                                <img src="{{ task.cover_image.url }}" class="tw-list-img" alt="Task Image">
+                                            {% elif task.work_module and task.work_module.banner_image %}
+                                                <img src="{{ task.work_module.banner_image.url }}" class="tw-list-img" alt="Module Banner">
+                                            {% else %}
+                                                <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: {{ m_color }}; opacity: 0.2;">
+                                                    <i class="fas fa-cube fs-4" style="color: {{ m_color }};"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="tw-list-body">
+                                            <div class="tw-list-col-info">
+                                                <p class="tw-list-eyebrow">{{ task.work_module.name|default:"General Module"|truncatechars:20 }}</p>
+                                                <h3 class="tw-list-title" title="{{ task.title }}">{{ task.title|truncatechars:35 }}</h3>
+                                                <p class="tw-list-status-text"><span class="tw-list-dot"></span> {{ task.status|title }}</p>
+                                            </div>
+                                            <div class="tw-list-col-progress">
+                                                <div class="tw-list-progress-lbl">
+                                                    <p class="tw-list-eyebrow" style="margin:0;">Deployment Elapsed</p>
+                                                    <span class="tw-list-progress-dates">{{ task.start_date|default:task.created_at|date:"M d" }} - {% if task.deadline %}{{ task.deadline|date:"M d" }}{% else %}ASAP{% endif %}</span>
+                                                </div>
+                                                <div class="tw-list-progress-bg">
+                                                    <div class="tw-list-progress-fill" style="width: {{ progress }}%;"></div>
+                                                </div>
+                                            </div>
+                                            <div class="tw-list-col-priority">
+                                                <p class="tw-list-eyebrow" style="margin-bottom:0.5rem; align-self:flex-start;"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></p>
+                                                {% if task.priority == 'critical' or task.priority == 'high' %}
+                                                    <span class="tw-list-priority-badge tw-priority-high"><span class="tw-list-dot" style="background-color: var(--bs-danger);"></span> {{ task.priority|title }}</span>
+                                                {% elif task.priority == 'low' %}
+                                                    <span class="tw-list-priority-badge tw-priority-low"><span class="tw-list-dot" style="background-color: var(--bs-secondary);"></span> Low</span>
+                                                {% else %}
+                                                    <span class="tw-list-priority-badge tw-priority-med"><span class="tw-list-dot" style="background-color: var(--bs-warning);"></span> {{ task.priority|default:"Medium"|title }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="tw-list-col-pie">
+                                                <div class="tw-list-pie">
+                                                    <div class="tw-list-pie-inner">
+                                                        <span class="tw-list-pie-val">{{ progress }}%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="tw-list-pie-txt">
+                                                    <p class="lbl">Overall</p>
+                                                    <p class="val">Progress</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tw-list-action d-flex align-items-center gap-2">
+                                            <button type="button" class="btn btn-sm {% if task.status == 'completed' %}btn-success text-white{% else %}btn-outline-success{% endif %} rounded-pill px-3 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 shadow-sm quick-complete-btn" onclick="event.preventDefault(); event.stopPropagation(); quickCompleteTask({{ task.id }}, this)" title="Toggle Task Completion" style="font-size: 0.75rem; transition: all 0.2s;">
+                                                <i class="fas {% if task.status == 'completed' %}fa-check-double{% else %}fa-check{% endif %}"></i>
+                                                <span>{% if task.status == 'completed' %}<span class="lang-en">Done</span><span class="lang-ar">مكتمل</span>{% else %}<span class="lang-en">Mark Complete</span><span class="lang-ar">اكتمال</span>{% endif %}</span>
+                                            </button>
+                                            <button class="tw-list-btn">Execute <i class="fas fa-arrow-right ms-2"></i></button>
+                                        </div>
+                                    </a>
+
+                                    <!-- GRID CARD VIEW -->
+                                    <div class="tasks-grid-item" style="border:none; background:transparent;">
+                                        <a href="{{ task.detail_url }}" class="tw-task-widget w-100 text-decoration-none" style="--tw-m-color: {{ m_color }}; --pie-percent: {{ progress }}%;">
+                                            <div class="tw-task-img-container">
+                                                {% if task.cover_image %}
+                                                    <img src="{{ task.cover_image.url }}" class="tw-task-img" alt="Cover Image">
+                                                {% elif task.work_module and task.work_module.banner_image %}
+                                                    <img src="{{ task.work_module.banner_image.url }}" class="tw-task-img" alt="Banner Image">
+                                                {% else %}
+                                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: {{ m_color }}; opacity: 0.1;">
+                                                        <i class="fas fa-cube fs-1" style="color: {{ m_color }};"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div style="position: absolute; top: 1rem; right: 1rem;">
+                                                    {% if task.priority == 'high' or task.priority == 'critical' %}
+                                                        <span class="tw-task-priority tw-priority-high shadow-sm d-flex align-items-center gap-1"><i class="fas fa-bolt"></i> {{ task.priority|title }}</span>
+                                                    {% elif task.priority == 'low' %}
+                                                        <span class="tw-task-priority tw-priority-low shadow-sm d-flex align-items-center gap-1"><i class="fas fa-minus"></i> Low</span>
+                                                    {% else %}
+                                                        <span class="tw-task-priority tw-priority-med shadow-sm d-flex align-items-center gap-1"><i class="fas fa-bars"></i> Med</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="tw-task-body">
+                                                <div class="tw-task-header">
+                                                    <h4 class="tw-task-title">{{ task.title|truncatechars:45 }}</h4>
+                                                </div>
+                                                <div class="tw-task-meta">
+                                                    <div class="tw-task-dates">
+                                                        <span class="tw-task-created">{{ task.created_at|date:"M d, Y" }}</span>
+                                                        <span class="tw-task-due">Due {% if task.deadline %}{{ task.deadline|date:"M d" }}{% else %}ASAP{% endif %}</span>
+                                                    </div>
+                                                    <div class="tw-task-progress-block">
+                                                        <div class="tw-task-progress-labels">
+                                                            <span class="tw-progress-lbl">Status: {{ task.get_status_display|title }}</span>
+                                                            <span class="tw-progress-val">{{ progress }}%</span>
+                                                        </div>
+                                                        <div class="tw-progress-bg">
+                                                            <div class="tw-progress-fill" style="width: {{ progress }}%;"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2 mt-2">
+                                                    <button type="button" class="btn btn-sm {% if task.status == 'completed' %}btn-success text-white{% else %}btn-outline-success{% endif %} rounded-pill px-3 py-1.5 fw-bold flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1.5 quick-complete-btn" onclick="event.preventDefault(); event.stopPropagation(); quickCompleteTask({{ task.id }}, this)" title="Mark Task Complete" style="font-size: 0.78rem;">
+                                                        <i class="fas {% if task.status == 'completed' %}fa-check-double{% else %}fa-check{% endif %}"></i>
+                                                        <span>{% if task.status == 'completed' %}<span class="lang-en">Completed</span><span class="lang-ar">تم الإنجاز</span>{% else %}<span class="lang-en">Mark Complete</span><span class="lang-ar">اكتمال</span>{% endif %}</span>
+                                                    </button>
+                                                    <div class="tw-task-btn m-0" style="padding: 0.4rem 0.8rem;"><i class="fas fa-arrow-right"></i></div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Amazing Pagination Control Module -->
+                        {% if tasks.has_other_pages %}
+                        <div class="wp-pagination-module d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="phase-indicator-btn">
+                                    <span class="opacity-50 me-2">NODES:</span> {{ tasks.start_index }}-{{ tasks.end_index }} 
+                                    <span class="mx-2">/</span> {{ tasks_count }}
+                                </div>
+                                <div class="total-pages-btn text-uppercase">
+                                    CORE PAGE: {{ tasks.number }} OF {{ tasks.paginator.num_pages }}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2">
+                                {% if tasks.has_previous %}
+                                    <a class="page-btn-premium" href="?page={{ tasks.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if module %}&module={{ module }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                {% endif %}
+
+                                {% for i in tasks.paginator.page_range %}
+                                    {% if tasks.number == i %}
+                                        <a class="page-btn-premium active">{{ i }}</a>
+                                    {% elif i > tasks.number|add:'-3' and i < tasks.number|add:'3' %}
+                                        <a class="page-btn-premium" href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if module %}&module={{ module }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">{{ i }}</a>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if tasks.has_next %}
+                                    <a class="page-btn-premium" href="?page={{ tasks.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if module %}&module={{ module }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No tasks found. Create one to get started!</p>
+                            <a href="{% url 'task-create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i><span class="lang-en">Create Task</span><span class="lang-ar">إنشاء مهمة</span></a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
+<style>
+/* ===== PREMIUM MINIMAL GREEN HERO BANNER ===== */
+.hero-command-banner {
+    background: var(--wt-hero-bg) !important;
+    border-radius: 20px;
+    padding: 2.25rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
+    box-shadow: 0 10px 30px rgba(var(--wt-brand-rgb), 0.25) !important;
+    color: #ffffff !important;
+}
+
+.temporal-pulse-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    background: var(--color-primary, #10b981);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--color-primary, #10b981);
+    animation: pulseTactical 1.5s infinite alternate;
+    margin-right: 12px;
+}
+@keyframes pulseTactical { from { box-shadow: 0 0 5px var(--color-primary, #10b981); transform: scale(1); } to { box-shadow: 0 0 25px var(--color-accent, #34d399); transform: scale(1.3); background: var(--color-accent, #34d399);} }
+
+.tactical-label {
+    font-family: var(--wt-font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--color-primary, #10b981);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.matrix-title {
+    font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #ffffff !important;
+}
+
+/* ===== PREMIUM COMMAND AESTHETICS ===== */
+
+.tasks-hero-premium .hero-deployment-base {
+    min-height: 280px;
+}
+.deployment-overlay {
+    background: none !important;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+.matrix-title-glow {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 900;
+    color: #fff;
+    text-transform: uppercase;
+    line-height: 0.9;
+    letter-spacing: -2px;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 20px color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent);
+}
+.matrix-subtitle-light {
+    font-family: var(--wt-font-mono);
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.5px;
+    max-width: 600px;
+}
+.deployment-orb {
+    width: 54px; height: 54px;
+    background: color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--color-primary, #10b981);
+    font-size: 1.5rem;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary, #10b981) 22%, transparent);
+}
+
+.tactical-btn-emerald {
+    background: var(--color-primary, #10b981);
+    color: #000 !important;
+    font-weight: 900 !important;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    border: none;
+    box-shadow: 0 10px 25px color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.tactical-btn-emerald:hover { transform: translateY(-4px) rotate(-1deg); box-shadow: 0 15px 35px rgba(192, 40, 58, 0.6); filter: brightness(1.1); }
+
+.tactical-btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff !important;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    transition: all 0.3s;
+}
+.tactical-btn-glass:hover { background: rgba(255, 255, 255, 0.1); border-color: #fff; }
+
+.telemetry-display-panel {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+.text-red-glow {
+    color: var(--color-primary, #10b981);
+    text-shadow: 0 0 15px rgba(var(--wt-brand-rgb), 0.5);
+}
+
+/* ── COMMAND DECK STYLES ── */
+.command-deck-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.03) !important;
+}
+.tactical-form-label {
+    font-family: var(--wt-font-mono);
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.6rem;
+}
+.tactical-input {
+    border-radius: 12px;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
+    background: #fcfcfc !important;
+    transition: all 0.2s;
+}
+.tactical-input:focus {
+    border-color: var(--color-primary, #10b981) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent) !important;
+}
+.btn-emerald-execute {
+    background: #0f172a;
+    color: #fff !important;
+    padding: 0.8rem 1.2rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    transition: all 0.3s;
+}
+.btn-emerald-execute:hover { background: var(--color-primary, #10b981); box-shadow: 0 8px 20px rgba(192, 40, 58,0.3); transform: translateY(-2px); }
+
+.btn-export-excel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: #64748b !important;
+    font-weight: 800;
+    font-size: 0.75rem;
+    border-radius: 10px;
+    padding: 0.6rem 1.25rem;
+    transition: all 0.2s;
+}
+.btn-export-excel:hover { background: #f8fafc; color: #0f172a !important; border-color: #cbd5e1; }
+
+/* ── LUMINA KINETIC MODULE REDESIGN (WHITE STYLE) ── */
+:root {
+    --l-surface: #ffffff;
+    --l-border: #e2e8f0;
+    --l-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+    --l-shadow-md: 0 10px 30px rgba(0, 0, 0, 0.04);
+    --l-text-main: #1e293b;
+    --l-text-muted: #64748b;
+}
+
+.mod-card-lumina {
+    background: var(--l-surface);
+    border: 2px solid var(--mod-color, #e2e8f0);
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    display: flex;
+    flex-direction: column;
+    color: var(--l-text-main);
+    box-shadow: var(--l-shadow-sm);
+    height: 100%;
+    text-decoration: none !important;
+}
+.mod-card-lumina:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(var(--mod-rgb), 0.1);
+    border-color: var(--mod-color, var(--color-primary, #10b981));
+    border-width: 3px;
+}
+
+.l-accent-bar {
+    height: 6px;
+    width: 100%;
+    background: var(--mod-color);
+    box-shadow: 0 2px 10px rgba(var(--mod-rgb), 0.3);
+    z-index: 10;
+}
+
+.l-card-header { position: relative; height: 160px; overflow: hidden; margin: 0.75rem; border-radius: 18px; background: #f8fafc; }
+.l-header-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+.mod-card-lumina:hover .l-header-img { transform: scale(1.05); }
+
+.l-card-body { padding: 0.5rem 1.5rem 1.5rem 1.5rem; flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+.l-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.l-card-title { font-size: 1.25rem; font-weight: 800; margin: 0; color: var(--l-text-main); letter-spacing: -0.5px; line-height: 1.2; }
+
+.l-ring-wrap {
+    position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.svg-ring-light { width: 56px; height: 56px; transform: rotate(-90deg); }
+.svg-ring-bg-light { fill: none; stroke: #f1f5f9; stroke-width: 5; }
+.svg-ring-progress-light {
+    fill: none; stroke: var(--mod-color, var(--color-primary, #10b981)); stroke-width: 5; stroke-linecap: round;
+    stroke-dasharray: 157.08; stroke-dashoffset: calc(157.08 - (157.08 * var(--p-val)) / 100);
+    transition: stroke-dashoffset 1s ease-out;
+}
+.l-ring-text { position: absolute; font-size: 0.7rem; font-weight: 800; color: var(--l-text-main); }
+
+.mod-description-text { font-size: 0.85rem; color: var(--l-text-muted); line-height: 1.5; margin-bottom: 0; }
+
+.l-telemetry { display: flex; gap: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; margin-top: auto; }
+.l-stat-item { display: flex; flex-direction: column; }
+.l-stat-val { font-weight: 800; color: var(--l-text-main); font-size: 1rem; }
+.l-stat-lbl { font-size: 0.65rem; color: var(--l-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.l-btn {
+    width: 100%; padding: 0.9rem; border: none; border-radius: 16px;
+    background: var(--mod-color, var(--color-primary, #10b981));
+    color: #ffffff; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(var(--mod-rgb), 0.2);
+    margin-top: 1rem; text-decoration: none !important;
+}
+.l-btn:hover { filter: brightness(1.1); box-shadow: 0 6px 16px rgba(var(--mod-rgb), 0.3); transform: translateY(-1px); color: #fff !important; }
+
+/* ===== NEW TASK WIDGET (FROM WORKER PORTAL) ===== */
+.tw-task-widget { position: relative; background-color: #ffffff; border-radius: 1.5rem; overflow: hidden; display: flex; flex-direction: column; height: 100%; border: 2px solid var(--tw-m-color); box-shadow: 0 10px 30px rgba(0,0,0,0.04); transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+.tw-task-widget:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-width: 3px; }
+.tw-task-img-container { height: 140px; overflow: hidden; margin: 0.75rem; border-radius: 18px; background: #f8fafc; position: relative; }
+.tw-task-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; display: block; }
+.tw-task-body { padding: 1.5rem; display: flex; flex-direction: column; flex-grow: 1; }
+.tw-task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.tw-task-title { font-weight: 700; font-size: 1.125rem; line-height: 1.25; margin: 0; color: #171c1f; }
+.tw-task-priority { font-family: var(--wt-font-body); font-size: 10px; font-weight: 700; padding: 0.125rem 0.5rem; border-radius: 9999px; text-transform: uppercase; }  
+.tw-priority-high { background-color: #ffdad6; color: #93000a; } 
+.tw-priority-med { background-color: #eaeef2; color: #424754; } 
+.tw-priority-low { background-color: #6cf8bb; color: #00714d; }
+.tw-task-meta { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+.tw-task-dates { display: flex; justify-content: space-between; font-family: var(--wt-font-body); font-size: 0.75rem; }
+.tw-task-created { color: #727785; }
+.tw-task-due { color: #0058be; font-weight: 700; }
+.tw-task-progress-block { display: flex; flex-direction: column; }
+.tw-task-progress-labels { display: flex; justify-content: space-between; font-family: var(--wt-font-body); font-size: 11px; margin-bottom: 0.25rem; }
+.tw-progress-lbl { color: #424754; font-weight: 500; }
+.tw-progress-val { color: #0058be; font-weight: 700; }
+.tw-progress-bg { height: 0.5rem; width: 100%; background-color: #dfe3e7; border-radius: 9999px; }
+.tw-progress-fill { height: 100%; border-radius: 9999px; background-color: var(--tw-m-color, #0058be); }
+.tw-task-pie-block { display: flex; align-items: center; gap: 1rem; }
+.tw-pie-chart { width: 3rem; height: 3rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; background: conic-gradient(var(--tw-m-color, #006c49) 0% var(--pie-percent, 0%), #dfe3e7 var(--pie-percent, 0%) 100%); border-radius: 50%; }
+.tw-pie-inner { position: absolute; inset: 0.25rem; background-color: #ffffff; border-radius: 50%; }
+.tw-pie-val { font-size: 10px; font-weight: 900; z-index: 10; color: #171c1f; }
+.tw-pie-labels { font-family: var(--wt-font-body); line-height: 1.25; }
+.tw-pie-lbl-top { font-size: 10px; text-transform: uppercase; color: #727785; letter-spacing: 0.05em; margin: 0; }
+.tw-pie-lbl-bot { font-size: 0.75rem; font-weight: 700; color: #171c1f; margin: 0; }
+.tw-task-btn { margin-top: auto; width: 100%; padding: 0.75rem 0; border-radius: 0.75rem; background-color: #e4e9ed; color: #0058be; font-weight: 700; font-size: 0.875rem; text-align: center; transition: all 0.3s; border: none; text-decoration: none; display: block; }
+.tw-task-btn:hover { background-color: #0058be; color: #ffffff; }
+
+/* ===== NEW LIST WIDGET ===== */
+.tw-list-item { position: relative; background-color: #ffffff; border-radius: 1.25rem; box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: all 0.3s ease; overflow: hidden; display: flex; align-items: center; padding: 1rem 1.5rem; min-height: 100px; margin-bottom: 1rem; text-decoration: none; color: inherit; border: 2px solid var(--tw-m-color); }
+.tw-list-item:hover { transform: translateX(8px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+.tw-list-accent-line { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background-color: var(--tw-m-color); }
+.tw-list-img-wrap { width: 80px; height: 80px; border-radius: 14px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
+.tw-list-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s; display: block; }
+.tw-list-item:hover .tw-list-img { transform: scale(1.1); }
+.tw-list-body { flex: 1; padding: 0 2rem; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 1.5rem; align-items: center; }
+.tw-list-col-info { grid-column: span 3 / span 3; }
+.tw-list-col-progress { grid-column: span 3 / span 3; }
+.tw-list-col-priority { grid-column: span 2 / span 2; display: flex; flex-direction: column; align-items: flex-start; }
+.tw-list-col-pie { grid-column: span 4 / span 4; display: flex; align-items: center; gap: 1rem; border-left: 1px solid #f1f5f9; padding-left: 1.5rem; }
+.tw-list-eyebrow { font-family: var(--wt-font-body); font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem; }
+.tw-list-title { font-weight: 700; font-size: 1.25rem; color: #171c1f; line-height: 1.25; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tw-list-status-text { font-size: 11px; font-weight: 700; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: -0.025em; display: flex; align-items: center; gap: 0.25rem; color: var(--tw-m-color); }
+.tw-list-dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background-color: var(--tw-m-color); }
+.tw-list-progress-lbl { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem; }
+.tw-list-progress-dates { font-size: 11px; font-weight: 700; color: #171c1f; }
+.tw-list-progress-bg { width: 100%; background-color: #f1f5f9; height: 0.625rem; border-radius: 9999px; overflow: hidden; }
+.tw-list-progress-fill { background-color: var(--tw-m-color); height: 100%; border-radius: 9999px; box-shadow: 0 0 8px var(--tw-m-color); }
+.tw-list-priority-badge { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 1rem; border-radius: 9999px; font-size: 10px; font-weight: 900; text-transform: uppercase; align-self: flex-start; }
+.tw-list-pie { width: 3.5rem; height: 3.5rem; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--tw-m-color, #006c49) 0% var(--pie-percent, 0%), #dfe3e7 var(--pie-percent, 0%) 100%); border-radius: 50%; }
+.tw-list-pie-inner { position: absolute; inset: 0.375rem; background-color: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); }
+.tw-list-pie-val { font-size: 10px; font-weight: 900; color: var(--tw-m-color); }
+.tw-list-pie-txt p.lbl { font-family: var(--wt-font-body); font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.tw-list-pie-txt p.val { font-weight: 700; font-size: 0.875rem; color: #171c1f; margin: 0; }
+.tw-list-action { flex-shrink: 0; padding-left: 1rem; border-left: 1px solid #f8fafc; height: 6rem; display: flex; align-items: center; }
+.tw-list-btn { background-color: var(--tw-m-color); color: #ffffff; height: 3rem; width: 8rem; border-radius: 9999px; font-weight: 700; font-size: 0.875rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transition: transform 0.3s, background-color 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; cursor: pointer; text-decoration: none; }
+.tw-list-btn:hover { transform: scale(1.05); color: #ffffff; text-decoration: none; background-color: var(--tw-m-color); filter: brightness(1.1); }
+@media (max-width: 991px) {
+    .tw-list-item { flex-direction: column; height: auto; align-items: stretch; padding: 1rem; }
+    .tw-list-img-wrap { width: 100%; height: 12rem; margin-left: 0; margin-bottom: 1rem; }
+    .tw-list-body { flex: 1; padding: 0; grid-template-columns: 1fr; gap: 1rem; }
+    .tw-list-col-info, .tw-list-col-progress, .tw-list-col-priority, .tw-list-col-pie { grid-column: span 1 / span 1; border-left: none; padding-left: 0; align-items: flex-start; }
+    .tw-list-action { border-left: none; border-top: 1px solid #f8fafc; padding-left: 0; padding-top: 1rem; height: auto; justify-content: flex-end; }
+}
+
+/* Layout Display Toggles */
+.tasks-list-view .tasks-grid-item { display: none !important; }
+.tasks-list-view .tasks-list-item { display: flex !important; }
+
+.tasks-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+.tasks-grid-view .tasks-list-item { display: none !important; }
+.tasks-grid-view .tasks-grid-item { display: block !important; }
+
+/* ── LUMINA KINETIC TELEMETRY (For Stats Block) ── */
+.telemetry-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.telemetry-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--accent-color, var(--color-primary, #10b981));
+}
+.telemetry-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+}
+.telemetry-val {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+    color: #1f2937;
+}
+.telemetry-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+/* ── TACTICAL NAVIGATOR (PAGINATION) ── */
+.wp-pagination-module { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+.page-btn-premium { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #64748b; text-decoration: none; transition: 0.3s; }
+.page-btn-premium:hover { background: #0f172a; color: #fff; border-color: #0f172a; transform: translateY(-3px); }
+.page-btn-premium.active { background: var(--color-primary, #10b981); color: #fff; border-color: var(--color-primary, #10b981); box-shadow: 0 10px 20px rgba(var(--wt-brand-rgb),0.3); }
+
+/* Live Pulsator */
+.stat-dot-live { width: 8px; height: 8px; background: var(--color-primary, #10b981); border-radius: 50%; position: relative; }
+.stat-dot-live::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--color-primary, #10b981); animation: pingLive 2s infinite; }
+@keyframes pingLive { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+
+/* Kinetic Particles Wrapper */
+#deploymentParticles .particle {
+    position: absolute; width: 3px; height: 3px; background: var(--color-primary, #10b981); border-radius: 50%; opacity: 0;
+    filter: blur(1px); animation: driftParticle 8s infinite ease-in-out;
+}
+@keyframes driftParticle {
+    0% { transform: translateY(0) rotate(0); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ── HOLOGRAPHIC & TEMPORAL PARTICLES ──
+    const container = document.getElementById('temporalParticles') || document.getElementById('deploymentParticles');
+    if(container) {
+        for (let i = 0; i < 35; i++) {
+            const star = document.createElement('div');
+            star.style.position = 'absolute';
+            star.style.width = '2px';
+            star.style.height = '2px';
+            star.style.background = 'var(--color-primary, #10b981)';
+            star.style.borderRadius = '50%';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.boxShadow = '0 0 10px var(--color-primary, #10b981)';
+            star.style.opacity = Math.random() * 0.5;
+            star.animate([
+                { opacity: 0.1, transform: 'scale(1)' },
+                { opacity: 0.8, transform: 'scale(1.3)' },
+                { opacity: 0.1, transform: 'scale(1)' }
+            ], { duration: 3000 + Math.random() * 3000, iterations: Infinity });
+            container.appendChild(star);
+        }
+    }
+
+    // ── LAYOUT TOGGLES ──
+    const tasksContainer = document.getElementById('tasksContainer');
+    const layoutBtns = document.querySelectorAll('.task-layout-btn');
+    const savedLayout = localStorage.getItem('taskLayoutPref') || 'list';
+    
+    applyLayout(savedLayout);
+    
+    layoutBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const layout = this.getAttribute('data-layout');
+            applyLayout(layout);
+            localStorage.setItem('taskLayoutPref', layout);
+        });
+    });
+    
+    function applyLayout(layout) {
+        layoutBtns.forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`.task-layout-btn[data-layout="${layout}"]`);
+        if(activeBtn) activeBtn.classList.add('active');
+        if (!tasksContainer) return; // empty list: no container is rendered
+
+        if (layout === 'grid') {
+            tasksContainer.classList.remove('tasks-list-view');
+            tasksContainer.classList.add('tasks-grid-view');
+        } else {
+            tasksContainer.classList.remove('tasks-grid-view');
+            tasksContainer.classList.add('tasks-list-view');
+        }
+    }
+});
+
+async function quickCompleteTask(taskId, btn) {
+    if (!taskId) return;
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm text-danger" role="status"></span>`;
+    btn.disabled = true;
+
+    try {
+        const response = await fetch(`/tasks/${taskId}/quick-complete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            const isCompleted = (data.task_status === 'completed' || data.is_completed);
+            if (isCompleted) {
+                btn.className = btn.className.replace('btn-outline-success', 'btn-success text-white');
+                btn.innerHTML = `<i class="fas fa-check-double"></i> <span><span class="lang-en">Completed</span><span class="lang-ar">تم الإنجاز</span></span>`;
+            } else {
+                btn.className = btn.className.replace('btn-success text-white', 'btn-outline-success');
+                btn.innerHTML = `<i class="fas fa-check"></i> <span><span class="lang-en">Mark Complete</span><span class="lang-ar">اكتمال</span></span>`;
+            }
+
+            // Dynamically update card telemetry on page
+            const card = btn.closest('.tasks-grid-item, .tw-list-item-wrapper, a.tw-task-widget');
+            if (card) {
+                const statusLbl = card.querySelector('.tw-progress-lbl');
+                if (statusLbl) statusLbl.innerText = isCompleted ? 'Status: Completed' : 'Status: In Progress';
+                const progressVal = card.querySelector('.tw-progress-val, .tw-list-pie-val');
+                if (progressVal) progressVal.innerText = isCompleted ? '100%' : '0%';
+                const progressFill = card.querySelector('.tw-progress-fill');
+                if (progressFill) progressFill.style.width = isCompleted ? '100%' : '0%';
+            }
+
+            // System toast notification
+            const toastMsg = isCompleted ? 'Task marked as completed!' : 'Task reopened / marked as in progress';
+            if (window.showToast) {
+                window.showToast(data.message || toastMsg, 'success', 2500);
+            } else if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || toastMsg,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            }
+        } else {
+            btn.innerHTML = oldHtml;
+            if (window.showToast) {
+                window.showToast(data.message || 'Could not update task status', 'error');
+            } else if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', data.message || 'Could not update task status', 'error');
+            }
+        }
+    } catch (err) {
+        btn.innerHTML = oldHtml;
+        if (window.showToast) {
+            window.showToast('Network error updating task status', 'error');
+        } else if (typeof Swal !== 'undefined') {
+            Swal.fire('Error', 'Network error updating task status', 'error');
+        }
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deleteTask(taskId) {
+    const confirmed = await amazingConfirm({
+        title: 'Terminate Deployment?',
+        text: 'This action will permanently delete this operational node and all associated telemetry.',
+        confirmButtonText: 'Yes, Terminate Node'
+    });
+
+    if (confirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tasks/${taskId}/delete/`;
+        form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
