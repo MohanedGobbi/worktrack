@@ -47,7 +47,8 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
    - **`site_settings`**: rebuild around the new theme model (name, logo, brand, accent, on-brand); it still shows the old ~40-colour editor
    - `translation_manager`, `host_management`, `audit_logs`, `offline_map_manager`, `contact_admin`
    - `messaging/config`, `messaging/inspect_user`
-5. **Per page, as each one is done:** delete its legacy `<style>`/`extra_css` block and inline colours; use the `wt-*` primitives; check EN + AR, desktop + phone; get an independent review.
+5. **Customization (see 2b):** build the glossary, editable landing copy, Site Settings rebuild and a new-institution seed command; then the Ghardaia version.
+6. **Per page, as each one is done:** delete its legacy `<style>`/`extra_css` block and inline colours; use the `wt-*` primitives; check EN + AR, desktop + phone; get an independent review.
 
 ### Open issues (not yet fixed)
 - **Translation table quality.** 3,185 of 3,198 `TranslationItem` rows are machine-generated (`key` starts with `auto.`), and many are wrong (for example "My Performance" → "لي", "Overdue Tasks" → "مهام"). Template-authored bilingual pairs are now protected (see §5), but single-language text still gets these rows. This needs a cleanup or regeneration decision from the owner.
@@ -56,6 +57,21 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 - **`templates/messaging/messenger.html`** is not referenced anywhere (probably dead).
 - **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you".
 - **Stale demo passwords.** The accounts in `docs/guides/USER_CREDENTIALS_REFERENCE.md` no longer match the database.
+
+## 2b. Customization requirement (applies to ALL remaining work)
+
+After the base platform is finished, the owner will supply details for a **University of Ghardaia version**, and later versions for **other institutions**. So every page built from now on must be customizable by configuration, not by editing templates.
+
+Rules for every page and component:
+1. **No institution-specific text, logo, colour, font, image or URL hard-coded in templates, CSS or JS.** Name, logo, colours, language defaults, contact details, footer text and landing copy come from Site Settings / `SiteConfiguration` or a theme file.
+2. **Labels and vocabulary are swappable.** Institutions use different words (module / course / project, worker / employee / staff, manager / head of department). Route such terms through one glossary (to be created: a per-install terminology table read by templates) instead of writing them inline.
+3. **Roles, departments and sidebar items are data**, not code (already partly true: `SidebarVisibilityRule`, `SystemProfile`, `Department`). Keep it that way.
+4. **Landing and sign-in copy is editable** from Site Settings (headline, tagline, feature points), with Arabic and English fields.
+5. **Theme = one file + 3 settings.** Rebrand by logo + name + brand/accent colours; a deeper restyle by a new `theme-<name>.css`. Do not add per-customer overrides to `app.css`.
+6. **Per-install content lives outside the repo** (uploads, `.env`, Site Settings rows), so one codebase serves every institution.
+7. **Check each finished page** with a second test theme (different brand colour, logo and name) before calling it done.
+
+Planned work for this: (a) a terminology/glossary table and template tag; (b) editable landing/sign-in copy and contact/footer fields in Site Settings; (c) rebuilt Site Settings around the new theme model; (d) derive Signal Blue from the brand colour; (e) an install checklist and a "new institution" seed command (name, logo, colours, default language, roles, departments); (f) a University of Ghardaia theme and content pass once the owner provides the details.
 
 ## 3. Decisions already made (do not reopen without the owner)
 - The old CNDP crimson design, the green "editorial" spec and the old agent system prompt were deliberately deleted.
