@@ -1,0 +1,13 @@
+{% comment %}One selectable person in the task form's people picker. Usage: {% include 'includes/wt_person_option.html' with u=user fav=False %}{% endcomment %}{% with is_fav=fav %}<li class="user-option-item" role="checkbox" aria-checked="false" tabindex="0" data-user-id="{{ u.id }}" data-user-name="{{ u.get_full_name|default:u.username|default:u.email }}" data-user-email="{{ u.email|lower }}">
+    <span class="wt-avatar" aria-hidden="true">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>
+    <span class="user-info-block wt-side-main">
+        <b class="user-name" dir="auto">{{ u.get_full_name|default:u.username|default:u.email }}</b>
+        <small class="user-email">{{ u.email }} · {% if u.role == 'super_admin' %}<span class="lang-en">Admin</span><span class="lang-ar">مسؤول</span>{% elif u.role == 'manager' %}<span class="lang-en">Manager</span><span class="lang-ar">مدير</span>{% else %}<span class="lang-en">Staff</span><span class="lang-ar">موظف</span>{% endif %}</small>
+    </span>
+    {% if is_fav or u in request.user.favorite_users.all %}
+    <button type="button" class="favorite-toggle-btn is-on" aria-pressed="true" onclick="toggleFavorite(event, '{{ u.id }}', this)" title="{% if wt_lang == 'ar' %}إزالة من المفضلين{% else %}Remove from favourites{% endif %}" aria-label="{% if wt_lang == 'ar' %}مفضل{% else %}Favourite{% endif %}"><i class="fas fa-star"></i></button>
+    {% else %}
+    <button type="button" class="favorite-toggle-btn" aria-pressed="false" onclick="toggleFavorite(event, '{{ u.id }}', this)" title="{% if wt_lang == 'ar' %}إضافة إلى المفضلين{% else %}Add to favourites{% endif %}" aria-label="{% if wt_lang == 'ar' %}مفضل{% else %}Favourite{% endif %}"><i class="far fa-star"></i></button>
+    {% endif %}
+    <span class="user-selection-checkbox" aria-hidden="true"><i class="fas fa-check"></i></span>
+</li>{% endwith %}

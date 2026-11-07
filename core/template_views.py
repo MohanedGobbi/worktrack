@@ -3776,7 +3776,7 @@ def task_create(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user),
                 'initial_module': work_module,
@@ -3790,7 +3790,7 @@ def task_create(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user),
                 'initial_module': work_module,
@@ -3802,7 +3802,7 @@ def task_create(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user)
             })
@@ -3886,7 +3886,7 @@ def task_create(request):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user),
                 'initial_module': work_module,
@@ -4011,7 +4011,30 @@ def task_create(request):
         'recurrence_choices': Task.RECURRENCE_CHOICES,
     }
     
-    return render(request, 'pages/task_form.html', context)
+    return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), **context})
+
+
+def _wt_task_form_choices():
+    """Bilingual choice lists the task form template renders (values are the model's stored values)."""
+    return {
+        'wt_status_options': [
+            ('pending', 'Not started', 'لم تبدأ'), ('in_progress', 'In progress', 'قيد التنفيذ'),
+            ('submitted', 'Submitted', 'تم التسليم'), ('rejected', 'Sent back', 'أُعيدت للتعديل'),
+            ('approved', 'Approved', 'معتمدة'), ('completed', 'Completed', 'مكتملة'), ('overdue', 'Overdue', 'متأخرة'),
+        ],
+        'wt_priority_options': [('low', 'Low', 'منخفضة'), ('medium', 'Medium', 'متوسطة'), ('high', 'High', 'عالية'), ('critical', 'Critical', 'حرجة')],
+        'wt_corr_types': [('circular', 'Circular', 'تعميم'), ('directive', 'Directive', 'توجيه'), ('memo', 'Memo', 'مذكرة'), ('notice', 'Notice', 'إشعار'), ('decision', 'Decision', 'قرار')],
+        'wt_field_types': [
+            ('text', 'Short text', 'نص قصير'), ('textarea', 'Long text', 'نص طويل'), ('number', 'Number', 'رقم'),
+            ('select', 'Drop-down list', 'قائمة منسدلة'), ('radio', 'One choice', 'اختيار واحد'),
+            ('checkbox_group', 'Several choices', 'عدة اختيارات'), ('checkbox', 'Yes / no', 'نعم / لا'),
+            ('date', 'Date', 'تاريخ'), ('file', 'File upload', 'رفع ملف'), ('section', 'New section (page break)', 'قسم جديد (فاصل صفحة)'),
+        ],
+        'wt_units': [('minutes', 'Minutes', 'دقائق'), ('hours', 'Hours', 'ساعات'), ('days', 'Days', 'أيام'), ('weeks', 'Weeks', 'أسابيع'), ('months', 'Months', 'أشهر'), ('years', 'Years', 'سنوات')],
+        'wt_people_panes': [('favorites', 'favorites-list', ''), ('workers', 'workers-list', 'worker'), ('managers', 'managers-list', 'manager'), ('admins', 'admins-list', 'super_admin')],
+        'recurrence_choices': Task.RECURRENCE_CHOICES,
+        'initial_type': 'standard',
+    }
 
 
 @login_required(login_url='login')
@@ -4082,7 +4105,7 @@ def task_edit(request, task_id):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'task': task,
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user),
@@ -4143,7 +4166,7 @@ def task_edit(request, task_id):
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'error', 'message': error_msg}, status=400)
             messages.error(request, error_msg)
-            return render(request, 'pages/task_form.html', {
+            return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), 
                 'task': task,
                 'users': request.user.get_teammates(),
                 'modules': WorkModule.get_visible_modules(request.user),
@@ -4206,9 +4229,10 @@ def task_edit(request, task_id):
         'task': task,
         'users': request.user.get_teammates(),
         'modules': WorkModule.get_visible_modules(request.user),
+        'recurrence_choices': Task.RECURRENCE_CHOICES,
     }
-    
-    return render(request, 'pages/task_form.html', context)
+
+    return render(request, 'pages/task_form.html', {**_wt_task_form_choices(), **context})
 
 
 @login_required(login_url='login')

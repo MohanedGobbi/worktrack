@@ -1,1855 +1,542 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if task %}{% if task.task_type == 'correspondence' %}Edit Correspondence{% else %}Edit Task{% endif %}{% else %}{% if initial_type == 'correspondence' %}Create Correspondence{% else %}Create New Task{% endif %}{% endif %} - WorkTrack Pro{% endblock %}
+{% block title %}{% with corr=task.task_type|default:initial_type %}{% if wt_lang == 'ar' %}{% if task %}تعديل{% else %}{% if corr == 'correspondence' %}مراسلة جديدة{% else %}مهمة جديدة{% endif %}{% endif %} · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}{% if task %}Edit {% if corr == 'correspondence' %}correspondence{% else %}task{% endif %}{% else %}{% if corr == 'correspondence' %}New correspondence{% else %}New task{% endif %}{% endif %} · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endwith %}{% endblock %}
 
 {% block extra_css %}
-<!-- Material Symbols & Fonts -->
-<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/fonts/material_symbols.css' %}" rel="stylesheet" />
-<!-- Emerald Green Design System -->
-<link rel="stylesheet" href="{% static 'css/task-green-detail.css' %}?v=2" />
-<style>
-    /* Task Form Emerald Styling */
-    .task-form-wrap {
-        max-width: 1140px;
-        margin: 0 auto;
-    }
-
-    /* Form Container */
-    .form-container {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: var(--radius-cards);
-        box-shadow: var(--shadow);
-        padding: 2.25rem;
-    }
-
-    .form-section {
-        margin-bottom: 2.25rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .form-section:last-child {
-        border-bottom: none;
-    }
-
-    .form-section-title {
-        font-size: 1.15rem;
-        font-weight: 800;
-        color: var(--ink);
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .form-section-title i,
-    .form-section-title .material-symbols-outlined {
-        color: var(--g);
-        font-size: 22px;
-    }
-
-    /* Form Labels */
-    .form-label {
-        font-weight: 700;
-        color: var(--ink);
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.88rem;
-    }
-
-    .form-label .required {
-        color: var(--warn);
-        font-weight: 800;
-    }
-
-    /* Form Controls */
-    .form-control,
-    .form-select {
-        width: 100%;
-        border: 1.5px solid var(--line);
-        border-radius: var(--radius-inputs);
-        padding: 10px 14px;
-        transition: all 0.2s ease;
-        font-size: 0.92rem;
-        color: var(--ink);
-        background: var(--surface);
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--g);
-        box-shadow: 0 0 0 3px rgba(var(--wt-brand-rgb), 0.18);
-        outline: none;
-        background: var(--surface);
-    }
-
-    /* User Assignment Widget */
-    .user-assignment-widget {
-        background: var(--bg);
-        border: 1.5px solid var(--line);
-        border-radius: var(--radius-inputs);
-        padding: 1.25rem;
-        min-height: 90px;
-    }
-
-    .assigned-users-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.65rem;
-        margin-bottom: 0.85rem;
-    }
-
-    .user-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0.4rem 0.9rem;
-        background: linear-gradient(135deg, var(--g2), var(--deep));
-        color: white;
-        border-radius: var(--radius-chips);
-        font-size: 0.85rem;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(var(--wt-brand-rgb), 0.25);
-    }
-
-    .user-chip-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.25);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 0.75rem;
-    }
-
-    .user-chip-remove {
-        cursor: pointer;
-        opacity: 0.8;
-        transition: opacity 0.2s;
-        margin-inline-start: 4px;
-    }
-
-    .user-chip-remove:hover {
-        opacity: 1;
-    }
-
-    .choices__inner {
-        background-color: var(--surface) !important;
-        border: 1.5px solid var(--line) !important;
-        border-radius: var(--radius-inputs) !important;
-        padding: 0.6rem 0.85rem !important;
-        color: var(--ink) !important;
-    }
-
-    .choices__inner:focus-within {
-        border-color: var(--g) !important;
-        box-shadow: 0 0 0 3px rgba(var(--wt-brand-rgb), 0.18) !important;
-    }
-
-    .choices__list--multiple .choices__item {
-        background: var(--mint) !important;
-        border: 1px solid var(--g) !important;
-        color: var(--g2) !important;
-        font-weight: 700 !important;
-        border-radius: 99px !important;
-        padding: 3px 10px !important;
-    }
-
-    /* Enhanced User Selection Display */
-    .user-options-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.65rem;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .user-option-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 0.85rem 1.1rem;
-        background: var(--bg);
-        border: 1.5px solid var(--line);
-        border-radius: var(--radius-inputs);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .user-option-item:hover {
-        background: var(--mint);
-        border-color: var(--g);
-        transform: translateY(-1px);
-    }
-
-    .user-option-item.selected {
-        background: var(--mint);
-        border-color: var(--g);
-        box-shadow: 0 4px 14px rgba(var(--wt-brand-rgb), 0.18);
-    }
-
-    .user-avatar-large {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--g), var(--deep));
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 0.95rem;
-        flex-shrink: 0;
-    }
-
-    .user-info-block {
-        flex: 1;
-    }
-
-    .user-name {
-        font-weight: 700;
-        color: var(--ink);
-        margin: 0;
-        font-size: 0.92rem;
-    }
-
-    .user-email {
-        font-size: 0.78rem;
-        color: var(--mute);
-        margin: 0.15rem 0 0 0;
-    }
-
-    .user-selection-checkbox {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-        border: 2px solid var(--line);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        background: var(--surface);
-        transition: all 0.2s;
-    }
-
-    .user-option-item.selected .user-selection-checkbox {
-        background: var(--g);
-        border-color: var(--g);
-        color: white;
-    }
-
-    /* Pagination Styles */
-    .pagination-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-top: 1px solid var(--line);
-        background: var(--bg);
-        border-radius: 0 0 var(--radius-inputs) var(--radius-inputs);
-    }
-
-    .pagination-info {
-        color: var(--mute);
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .pagination-btn {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        border: 1.5px solid var(--line);
-        background: var(--surface);
-        color: var(--ink);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 700;
-    }
-
-    .pagination-btn:hover:not(:disabled) {
-        background: var(--mint);
-        border-color: var(--g);
-        color: var(--g2);
-    }
-
-    .pagination-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
-
-    .pagination-btn.active {
-        background: var(--g);
-        color: white;
-        border-color: var(--g);
-    }
-
-    /* File Upload */
-    .file-upload-container {
-        background: rgba(var(--wt-brand-rgb), 0.03);
-        border: 2px dashed var(--line);
-        border-radius: 16px;
-        padding: 2.5rem 1.5rem;
-        text-align: center;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .file-upload-container:hover,
-    .file-upload-container.drag-over {
-        background: rgba(var(--wt-brand-rgb), 0.08);
-        border-color: var(--g);
-        transform: translateY(-1px);
-    }
-
-    .file-upload-icon {
-        font-size: 2.5rem;
-        color: var(--g);
-        margin-bottom: 0.75rem;
-    }
-
-    .file-upload-text {
-        color: var(--ink);
-        font-weight: 800;
-        margin-bottom: 0.35rem;
-        font-size: 1.05rem;
-    }
-
-    .file-upload-hint {
-        color: var(--mute);
-        font-size: 0.82rem;
-    }
-
-    #task_files {
-        display: none;
-    }
-
-    /* Files Table */
-    .files-panel {
-        background: var(--surface);
-        border-radius: var(--radius-inputs);
-        border: 1px solid var(--line);
-        overflow: hidden;
-    }
-
-    .files-panel thead {
-        background: var(--bg);
-    }
-
-    .files-panel th {
-        font-weight: 800;
-        color: var(--mute);
-        padding: 10px 14px;
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .files-panel td {
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--line);
-        vertical-align: middle;
-        color: var(--ink);
-    }
-
-    .file-status-badge {
-        display: inline-block;
-        padding: 0.35rem 0.75rem;
-        border-radius: 99px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .file-status-ready {
-        background: var(--mint);
-        color: var(--g2);
-    }
-
-    .file-progress {
-        height: 6px;
-        background: var(--line);
-        border-radius: 99px;
-        overflow: hidden;
-    }
-
-    .file-progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, var(--g), var(--g2));
-        border-radius: 99px;
-        transition: width 0.3s ease;
-    }
-
-    .btn-remove-file {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        border: 1px solid rgba(225, 29, 72, 0.2);
-        background: rgba(225, 29, 72, 0.08);
-        color: var(--warn);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-remove-file:hover {
-        background: var(--warn);
-        color: white;
-    }
-
-    .files-counter {
-        display: inline-block;
-        background: var(--mint);
-        color: var(--g2);
-        border: 1px solid var(--g);
-        padding: 0.35rem 0.85rem;
-        border-radius: 99px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        margin-top: 0.5rem;
-    }
-
-    /* Buttons */
-    .btn-primary-custom {
-        background: linear-gradient(135deg, var(--g), var(--g2));
-        border: none;
-        color: white;
-        padding: 0.75rem 2rem;
-        border-radius: var(--radius-buttons);
-        font-weight: 700;
-        font-size: 0.95rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 14px rgba(var(--wt-brand-rgb), 0.3);
-    }
-
-    .btn-primary-custom:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(var(--wt-brand-rgb), 0.4);
-        color: white;
-    }
-
-    /* Error Messages */
-    .invalid-feedback {
-        color: var(--warn);
-        font-size: 0.82rem;
-        margin-top: 0.4rem;
-        display: block;
-        font-weight: 600;
-    }
-
-    /* Form Builder Styles */
-    .field-card {
-        background: var(--bg);
-        border: 1.5px solid var(--line);
-        border-radius: var(--radius-cards);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        position: relative;
-        transition: all 0.2s ease;
-    }
-
-    .field-card:hover {
-        border-color: var(--g);
-        box-shadow: 0 4px 15px rgba(var(--wt-brand-rgb), 0.1);
-    }
-
-    .field-card .remove-field {
-        position: absolute;
-        top: 12px;
-        inset-inline-end: 12px;
-        color: var(--warn);
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    }
-
-    .field-card .remove-field:hover {
-        opacity: 1;
-    }
-
-    .field-handle {
-        cursor: move;
-        color: var(--mute);
-        margin-inline-end: 10px;
-    }
-
-    .add-field-btn {
-        background: var(--surface);
-        border: 2px dashed var(--g);
-        color: var(--g2);
-        width: 100%;
-        padding: 1rem;
-        border-radius: var(--radius-cards);
-        font-weight: 800;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        cursor: pointer;
-    }
-
-    .add-field-btn:hover {
-        background: var(--mint);
-        transform: translateY(-1px);
-    }
-
-    /* Success Banner */
-    .success-banner {
-        display: none;
-        background: linear-gradient(135deg, var(--g), var(--g2));
-        color: white;
-        padding: 1.25rem 1.5rem;
-        border-radius: var(--radius-inputs);
-        margin-bottom: 1.5rem;
-        box-shadow: 0 6px 18px rgba(var(--wt-brand-rgb), 0.3);
-    }
-
-    /* Recurrence UI Styles */
-    .tab-btn {
-        color: var(--mute);
-        font-weight: 700;
-    }
-
-    input[type="radio"]:checked + .tab-btn {
-        background: var(--surface);
-        color: var(--g2);
-        box-shadow: var(--shadow);
-    }
-
-    .preset-chip {
-        border-color: var(--line);
-        background: var(--surface);
-        color: var(--mute);
-        font-weight: 700;
-        border-radius: 99px;
-        padding: 6px 14px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    input[type="radio"]:checked + .preset-chip {
-        background: var(--mint);
-        color: var(--g2);
-        border-color: var(--g);
-    }
-
-    .preset-chip:hover:not(input:checked + .preset-chip) {
-        background: var(--bg);
-        border-color: var(--line);
-    }
-</style>
+<link rel="stylesheet" href="{% static 'vendor/leaflet-offline/leaflet.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="task-detail-page">
-    <div class="task-wrap">
-        <div class="task-form-wrap">
+{% comment %}
+  Task create / edit. One column of sections with a sticky save bar. Field names, ids and the AJAX save are what
+  core.template_views.task_create / task_edit expect; keep them.
+{% endcomment %}
+{% with is_corr=task.task_type|default:initial_type %}
+<div class="wt-home wt-tf">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1>
+                {% if task %}<span class="lang-en">Edit {% if is_corr == 'correspondence' %}correspondence{% else %}task{% endif %}</span><span class="lang-ar">تعديل {% if is_corr == 'correspondence' %}المراسلة{% else %}المهمة{% endif %}</span>
+                {% elif is_corr == 'correspondence' %}<span class="lang-en">New correspondence</span><span class="lang-ar">مراسلة جديدة</span>
+                {% else %}<span class="lang-en">New task</span><span class="lang-ar">مهمة جديدة</span>{% endif %}
+            </h1>
+            <p>{% if task %}<b dir="auto">{{ task.title }}</b>{% else %}<span class="lang-en">Fields marked * are required.</span><span class="lang-ar">الحقول المعلّمة بـ * مطلوبة.</span>{% endif %}</p>
+        </div>
+    </header>
 
-            <!-- Emerald Hero Banner -->
-            <div class="tg-hero">
-                <div class="tg-hero-top">
-                    <a href="{% if initial_type == 'correspondence' or task and task.task_type == 'correspondence' %}/correspondence/{% else %}{% url 'task-list' %}{% endif %}" class="tg-crumb">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
-                        <span class="lang-en">{% if initial_type == 'correspondence' or task and task.task_type == 'correspondence' %}Back to Correspondence{% else %}Back to Tasks{% endif %}</span>
-                        <span class="lang-ar">العودة</span>
-                    </a>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <span class="tg-chip tg-chip-muted" style="background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2);">
-                            <span class="material-symbols-outlined" style="font-size: 15px;">{% if initial_type == 'correspondence' or task and task.task_type == 'correspondence' %}mail{% else %}task_alt{% endif %}</span>
-                            {% if task %}{{ task.get_status_display }}{% else %}Draft Stage{% endif %}
-                        </span>
-                    </div>
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger" role="alert">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+
+    <form id="task-form" class="wt-tf-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="task_type" value="{% if is_corr == 'correspondence' %}correspondence{% else %}standard{% endif %}">
+
+        {# ── Basics ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-basics">
+            <div class="wt-panel-head"><h2 id="tf-basics"><span class="lang-en">Basics</span><span class="lang-ar">الأساسيات</span></h2></div>
+            <div class="wt-tf-body">
+                <div class="wt-tf-field">
+                    <label for="id_title" class="form-label"><span class="lang-en">Title</span><span class="lang-ar">العنوان</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                    <input type="text" class="form-control{% if form.title.errors %} is-invalid{% endif %}" name="title" id="id_title" value="{{ task.title|default:'' }}" required dir="auto">
+                    {% if form.title.errors %}<div class="invalid-feedback">{{ form.title.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="wt-tf-field">
+                    <label for="id_description" class="form-label"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></label>
+                    <textarea class="form-control" name="description" id="id_description" rows="5" dir="auto">{{ task.description|default:'' }}</textarea>
                 </div>
 
-                <h1 class="tg-hero-title" style="color: #ffffff !important; margin-top: 1rem;">
-                    {% if task %}
-                        {% if task.task_type == 'correspondence' %}Edit Correspondence: {{ task.title }}{% else %}Edit Task: {{ task.title }}{% endif %}
-                    {% else %}
-                        {% if initial_type == 'correspondence' %}Issue New Correspondence{% else %}Create New Assignment{% endif %}
-                    {% endif %}
-                </h1>
-                <p class="tg-hero-subtitle">
-                    {% if task %}
-                        <span class="lang-en">Modify task parameters, assignees, deadlines, and tracking requirements.</span>
-                        <span class="lang-ar">تعديل تفاصيل المهمة والمكلفين والمواعيد والمتطلبات.</span>
-                    {% else %}
-                        <span class="lang-en">Set up a new task or official directive, define requirements, and assign team members to begin tracking.</span>
-                        <span class="lang-ar">إنشاء مهمة جديدة وتحديد المتطلبات وتعيين فرق العمل.</span>
-                    {% endif %}
-                </p>
-            </div>
-    <div class="row">
-        <div class="col-12">
-            <div class="form-container">
-                <!-- Success Banner - Hidden by default -->
-                <div class="success-banner" id="success-banner">
-                    {% if initial_type == 'correspondence' and not task or task and task.task_type == 'correspondence' %}
-                    <strong>✓ Correspondence issued successfully!</strong> Redirecting...
-                    {% else %}
-                    <strong>✓ Task saved successfully!</strong> Redirecting...
-                    {% endif %}
-                </div>
-
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i> <strong>Error!</strong>
-                        {% for error in form.non_field_errors %}
-                            <div>{{ error }}</div>
-                        {% endfor %}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                {% if is_corr == 'correspondence' %}
+                <div class="wt-tf-grid" id="correspondence-fields">
+                    <div class="wt-tf-field">
+                        <label for="correspondence_type" class="form-label"><span class="lang-en">Correspondence type</span><span class="lang-ar">نوع المراسلة</span></label>
+                        <select class="form-select" name="correspondence_type" id="correspondence_type">
+                            <option value="">{% if wt_lang == 'ar' %}اختر النوع{% else %}Choose a type{% endif %}</option>
+                            {% for v, en, ar in wt_corr_types %}<option value="{{ v }}"{% if task.correspondence_type == v %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+                        </select>
                     </div>
+                    <div class="wt-tf-field">
+                        <label for="reference_number" class="form-label"><span class="lang-en">Reference number</span><span class="lang-ar">الرقم المرجعي</span></label>
+                        <input type="text" class="form-control wt-tf-ltr" name="reference_number" id="reference_number" value="{{ task.reference_number|default:'' }}" placeholder="REF/2026/001">
+                    </div>
+                </div>
                 {% endif %}
 
-                <form id="task-form" method="post" enctype="multipart/form-data" novalidate>
-                    {% csrf_token %}
-
-                    <!-- Basic Information Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-info-circle"></i> Basic Information
-                        </div>
-
-                        <!-- Title -->
-                        <div class="mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">
-                                <i class="fas fa-heading"></i> Title
-                                <span class="required">*</span>
-                            </label>
-                            <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
-                                   name="title" id="{{ form.title.id_for_label }}" 
-                                   value="{{ task.title|default:'' }}" placeholder="Enter task title" required>
-                            {% if form.title.errors %}
-                                <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Description -->
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">
-                                <i class="fas fa-align-left"></i> Description
-                            </label>
-                            <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
-                                      name="description" id="{{ form.description.id_for_label }}" 
-                                      rows="4" placeholder="Detailed task description">{{ task.description|default:'' }}</textarea>
-                            {% if form.description.errors %}
-                                <div class="invalid-feedback">{{ form.description.errors.0 }}</div>
-                            {% endif %}
-                        </div>
+                <div class="wt-tf-grid">
+                    <div class="wt-tf-field">
+                        <label for="module" class="form-label"><span class="lang-en">Module</span><span class="lang-ar">الوحدة</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                        <select class="form-select" name="module" id="module" required>
+                            <option value="">{% if wt_lang == 'ar' %}اختر وحدة{% else %}Choose a module{% endif %}</option>
+                            {% for mod in modules %}<option value="{{ mod.slug }}"{% if task.work_module.slug == mod.slug or initial_module.slug == mod.slug %} selected{% endif %}>{{ mod.name }}</option>{% endfor %}
+                        </select>
                     </div>
-
-                    <!-- ===== TASK TYPE SECTION ===== -->
-                    {% if initial_type == 'correspondence' or task.task_type == 'correspondence' %}
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-tag" style="color: #6366f1;"></i> Correspondence Type
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><i class="fas fa-layer-group"></i> Correspondence Settings</label>
-                            <input type="hidden" name="task_type" id="type_correspondence_id" value="correspondence">
-                            <div class="p-3 rounded-3 border-2 d-flex align-items-center gap-3 transition" style="border: 2px solid #6366f1; background: #eef2ff;">
-                                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #4f46e5); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <i class="fas fa-envelope-open-text text-white"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-dark">Administrative Correspondence</div>
-                                    <div class="small text-muted">Circulars, directives, memos — requires acknowledgement</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Correspondence Details -->
-                        <div id="correspondence-fields">
-                            <div class="p-4 rounded-4 border border-2 mt-3" style="border-color: #6366f1 !important; background: #f5f3ff;">
-                                <div class="d-flex align-items-center mb-3">
-                                    <i class="fas fa-stamp me-2" style="color: #6366f1;"></i>
-                                    <span class="fw-bold" style="color: #4338ca;">Correspondence Details</span>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="correspondence_type" class="form-label">
-                                            <i class="fas fa-scroll"></i> Correspondence Category
-                                        </label>
-                                        <select class="form-select" name="correspondence_type" id="correspondence_type">
-                                            <option value="">-- Select Type --</option>
-                                            <option value="circular" {% if task and task.correspondence_type == 'circular' %}selected{% endif %}>📢 Circular</option>
-                                            <option value="directive" {% if task and task.correspondence_type == 'directive' %}selected{% endif %}>📌 Directive</option>
-                                            <option value="memo" {% if task and task.correspondence_type == 'memo' %}selected{% endif %}>📝 Memo</option>
-                                            <option value="notice" {% if task and task.correspondence_type == 'notice' %}selected{% endif %}>🔔 Notice</option>
-                                            <option value="decision" {% if task and task.correspondence_type == 'decision' %}selected{% endif %}>⚖️ Decision</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="reference_number" class="form-label">
-                                            <i class="fas fa-hashtag"></i> Reference Number
-                                        </label>
-                                        <input type="text" class="form-control" name="reference_number" id="reference_number"
-                                               value="{{ task.reference_number|default:'' }}"
-                                               placeholder="e.g. REF/2026/001">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="wt-tf-field">
+                        <label for="id_priority" class="form-label"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                        <select class="form-select" name="priority" id="id_priority" required>
+                            {% for v, en, ar in wt_priority_options %}<option value="{{ v }}"{% if task.priority == v or not task and v == 'medium' %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+                        </select>
                     </div>
-                    {% else %}
-                        <input type="hidden" name="task_type" value="standard">
-                    {% endif %}
-
-                    <!-- Task Status Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-tasks"></i> Status & Priority
-                        </div>
-
-                        <div class="row">
-                            <!-- Status -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.status.id_for_label }}" class="form-label">
-                                        <i class="fas fa-chart-circle"></i> Status
-                                        <span class="required">*</span>
-                                    </label>
-                                    <select class="form-select {% if form.status.errors %}is-invalid{% endif %}" 
-                                            name="status" id="{{ form.status.id_for_label }}" required>
-                                        <option value="">-- Select Status --</option>
-                                        <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
-                                        <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                                        <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
-                                    </select>
-                                    {% if form.status.errors %}
-                                        <div class="invalid-feedback">{{ form.status.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Priority -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.priority.id_for_label }}" class="form-label">
-                                        <i class="fas fa-level-up-alt"></i> Priority
-                                        <span class="required">*</span>
-                                    </label>
-                                    <select class="form-select {% if form.priority.errors %}is-invalid{% endif %}" 
-                                            name="priority" id="{{ form.priority.id_for_label }}" required>
-                                        <option value="">-- Select Priority --</option>
-                                        <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Low</option>
-                                        <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Medium</option>
-                                        <option value="high" {% if task.priority == 'high' %}selected{% endif %}>High</option>
-                                    </select>
-                                    {% if form.priority.errors %}
-                                        <div class="invalid-feedback">{{ form.priority.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <!-- Category -->
-                            <!-- Module -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="module" class="form-label">
-                                        <i class="fas fa-layer-group"></i> Department Unit / Module
-                                        <span class="required">*</span>
-                                    </label>
-                                    <select class="form-select" name="module" id="module" required>
-                                        <option value="">-- Select Module --</option>
-                                        {% for mod in modules %}
-                                            <option value="{{ mod.slug }}" 
-                                                {% if task.work_module.slug == mod.slug or initial_module.slug == mod.slug %}selected{% endif %}>
-                                                {{ mod.name }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Progress -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.progress.id_for_label }}" class="form-label">
-                                        <i class="fas fa-percent"></i> Progress: <span id="progress-value" style="color: #667eea; font-weight: 700;">{{ task.progress|default:0 }}%</span>
-                                    </label>
-                                    <input type="range" class="form-range" name="progress" 
-                                           id="{{ form.progress.id_for_label }}" 
-                                           min="0" max="100" step="5" 
-                                           value="{{ task.progress|default:0 }}" 
-                                           oninput="document.getElementById('progress-value').textContent = this.value + '%'">
-                                </div>
-                            </div>
-                        </div>
+                    <div class="wt-tf-field">
+                        <label for="id_status" class="form-label"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                        <select class="form-select" name="status" id="id_status" required>
+                            {% for v, en, ar in wt_status_options %}<option value="{{ v }}"{% if task.status == v or not task and v == 'pending' %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+                        </select>
                     </div>
-
-                    <!-- Dates Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-calendar"></i> Dates
-                        </div>
-
-                        <div class="row">
-                            <!-- Start Date -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.start_date.id_for_label }}" class="form-label">
-                                        <i class="fas fa-calendar-plus"></i> Start Date
-                                    </label>
-                                    <input type="date" class="form-control {% if form.start_date.errors %}is-invalid{% endif %}" 
-                                           name="start_date" id="{{ form.start_date.id_for_label }}" 
-                                           value="{% if task and task.start_date %}{{ task.start_date|date:'Y-m-d' }}{% endif %}">
-                                    {% if form.start_date.errors %}
-                                        <div class="invalid-feedback">{{ form.start_date.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Deadline -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.deadline.id_for_label }}" class="form-label">
-                                        <i class="fas fa-calendar-check"></i> Deadline
-                                        <span class="required">*</span>
-                                    </label>
-                                    <input type="date" class="form-control {% if form.deadline.errors %}is-invalid{% endif %}" 
-                                           name="deadline" id="{{ form.deadline.id_for_label }}" 
-                                           value="{% if task and task.deadline %}{{ task.deadline|date:'Y-m-d' }}{% endif %}" required>
-                                    {% if form.deadline.errors %}
-                                        <div class="invalid-feedback">{{ form.deadline.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+                    <div class="wt-tf-field">
+                        <label for="id_progress" class="form-label"><span class="lang-en">Progress</span><span class="lang-ar">التقدم</span> <b class="wt-num" id="progress-value">{{ task.progress|default:0 }}%</b></label>
+                        <input type="range" class="form-range" name="progress" id="id_progress" min="0" max="100" step="5" value="{{ task.progress|default:0 }}" oninput="document.getElementById('progress-value').textContent = this.value + '%'">
                     </div>
-                    
-                    <!-- Performance & Effort Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-chart-line" style="color: #667eea;"></i> Performance & Effort
-                        </div>
-
-                        <div class="row g-4">
-                            <!-- Planned Effort -->
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-4" style="background: #f8fafc; border: 2px solid #e2e8f0; transition: all 0.3s ease;">
-                                    <label for="estimated_hours" class="form-label mb-2">
-                                        <i class="fas fa-hourglass-half text-primary"></i> Planned Effort
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="number" step="0.5" class="form-control border-end-0" 
-                                               name="estimated_hours" id="estimated_hours" 
-                                               value="{{ task.estimated_hours|default:0 }}" placeholder="0.0">
-                                        <span class="input-group-text bg-white border-start-0 text-muted small">Hours</span>
-                                    </div>
-                                    <div class="form-text small mt-2">Total expected time to complete this task.</div>
-                                </div>
-                            </div>
-
-                            <!-- KPI Weight -->
-                            <div class="col-md-6">
-                                <div class="p-3 rounded-4" style="background: #fdf2f8; border: 2px solid #fbcfe8; transition: all 0.3s ease;">
-                                    <label for="kpi_weight" class="form-label mb-2">
-                                        <i class="fas fa-weight-hanging" style="color: #db2777;"></i> KPI Weight
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-balance-scale small" style="color: #db2777;"></i></span>
-                                        <input type="number" step="0.1" class="form-control border-start-0" 
-                                               name="kpi_weight" id="kpi_weight" 
-                                               value="{{ task.kpi_weight|default:1.0 }}" placeholder="1.0">
-                                    </div>
-                                    <div class="form-text small mt-2">Importance multiplier for performance scoring.</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Location & Map Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-map-marker-alt"></i> Location & Map
-                            <div class="ms-auto">
-                                <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
-                                    <input class="form-check-input" type="checkbox" role="switch" name="location_enabled" id="location_enabled" {% if task.location_enabled %}checked{% endif %}>
-                                    <label class="form-check-label small fw-bold" for="location_enabled">Activate Map</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="map-feature-container" {% if not task.location_enabled %}style="display: none;"{% endif %}>
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-muted">Country</label>
-                                    <select class="form-select" name="country" id="map_country">
-                                        <option value="Algeria" selected>Algeria</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-muted">Wilaya (Province)</label>
-                                    <select class="form-select" name="wilaya" id="map_wilaya">
-                                        <option value="">-- Select Wilaya --</option>
-                                        <!-- Wilayas will be populated by JS -->
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-muted">Location Name</label>
-                                    <input type="text" class="form-control" name="location_name" id="location_name" value="{{ task.location_name|default:'' }}" placeholder="e.g. Office A, Site B">
-                                </div>
-                            </div>
-
-                            <!-- Map Display -->
-                            <div class="map-wrapper mb-3" style="position: relative; border-radius: 12px; overflow: hidden; border: 2px solid #e0e0e0; height: 400px; background: #f8f9fa;">
-                                <div id="task-map" style="width: 100%; height: 100%;"></div>
-                                <div id="map-placeholder" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(248, 249, 250, 0.8); z-index: 1000; flex-direction: column; gap: 10px;">
-                                    <div class="spinner-border text-danger" role="status"></div>
-                                    <span class="text-muted small">Loading Map Engine...</span>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-muted">Latitude</label>
-                                    <input type="text" class="form-control" name="latitude" id="map_lat" value="{{ task.latitude|default:'' }}" readonly>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-muted">Longitude</label>
-                                    <input type="text" class="form-control" name="longitude" id="map_lng" value="{{ task.longitude|default:'' }}" readonly>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recurrence Settings -->
-                    <div class="form-section" id="automated-reactivation-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-redo-alt"></i> Automated Reactivation
-                        </div>
-                        
-                        <div class="recurrence-box p-4 rounded-4 shadow-sm" style="background: white; border: 2px solid #eef2ff;">
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div>
-                                    <h5 class="mb-1 fw-bold text-dark">Enable Recurring Cycle</h5>
-                                    <p class="text-muted small mb-0">Automatically reset task progress and move deadline forward.</p>
-                                </div>
-                                <div class="form-check form-switch p-0 m-0">
-                                    <input class="form-check-input ms-0" type="checkbox" name="is_recurring" id="is_recurring" 
-                                           style="width: 2.8rem; height: 1.5rem; cursor: pointer;"
-                                           {% if task.is_recurring %}checked{% endif %} onchange="toggleRecurrenceInterval()">
-                                </div>
-                            </div>
-                            
-                            <div id="recurrence-interval-container" class="{% if not task.is_recurring %}d-none{% endif %} animate__animated animate__fadeIn">
-                                <!-- Type Selector -->
-                                <div class="recurrence-type-tabs d-flex p-1 bg-light rounded-3 mb-4" style="max-width: 400px;">
-                                    <label class="flex-fill text-center mb-0">
-                                        <input type="radio" name="recurrence_type" value="preset" class="d-none" 
-                                               {% if not task or task.recurrence_type == 'preset' %}checked{% endif %}
-                                               onchange="updateRecurrenceUI()">
-                                        <div class="tab-btn p-2 rounded-2 cursor-pointer fw-bold small transition" style="cursor: pointer;">Presets</div>
-                                    </label>
-                                    <label class="flex-fill text-center mb-0">
-                                        <input type="radio" name="recurrence_type" value="custom" class="d-none"
-                                               {% if task.recurrence_type == 'custom' %}checked{% endif %}
-                                               onchange="updateRecurrenceUI()">
-                                        <div class="tab-btn p-2 rounded-2 cursor-pointer fw-bold small transition" style="cursor: pointer;">Custom Interval</div>
-                                    </label>
-                                </div>
-
-                                <!-- Preset Options -->
-                                <div id="preset-options" class="{% if task and task.recurrence_type == 'custom' %}d-none{% endif %}">
-                                    <div class="row g-2">
-                                        {% for val, label in recurrence_choices %}
-                                        <div class="col-6 col-md-4 col-lg-2">
-                                            <label class="d-block mb-0">
-                                                <input type="radio" name="recurrence_interval" value="{{ val }}" class="d-none"
-                                                       {% if task.recurrence_interval == val %}checked{% endif %}>
-                                                <div class="preset-chip p-2 text-center rounded-3 border transition fw-bold small" style="cursor: pointer;">
-                                                    {{ label }}
-                                                </div>
-                                            </label>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <!-- Custom Options -->
-                                <div id="custom-options" class="{% if not task or task.recurrence_type == 'preset' %}d-none{% endif %}">
-                                    <div class="row g-3">
-                                        <div class="col-md-5">
-                                            <label class="form-label small fw-bold text-muted">EVERY</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-clock text-primary"></i></span>
-                                                <input type="number" name="recurrence_value" class="form-control border-start-0" 
-                                                       value="{{ task.recurrence_value|default:1 }}" min="1">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-7">
-                                            <label class="form-label small fw-bold text-muted">TIME UNIT</label>
-                                            <select name="recurrence_unit" class="form-select">
-                                                <option value="minutes" {% if task.recurrence_unit == 'minutes' %}selected{% endif %}>Minutes</option>
-                                                <option value="hours" {% if task.recurrence_unit == 'hours' %}selected{% endif %}>Hours</option>
-                                                <option value="days" {% if task.recurrence_unit == 'days' %}selected{% endif %}>Days</option>
-                                                <option value="weeks" {% if task.recurrence_unit == 'weeks' %}selected{% endif %}>Weeks</option>
-                                                <option value="months" {% if task.recurrence_unit == 'months' %}selected{% endif %}>Months</option>
-                                                <option value="years" {% if task.recurrence_unit == 'years' %}selected{% endif %}>Years</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Reactivation Limit -->
-                                <div class="mt-4 pt-4 border-top">
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div>
-                                            <h6 class="mb-1 fw-bold text-dark">Reactivation Limit</h6>
-                                            <p class="text-muted small mb-0">How many times should this task cycle? (Empty or -1 for forever)</p>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="recurrence_limit_forever" id="recurrence_limit_forever"
-                                                   {% if not task or task.recurrence_limit == -1 %}checked{% endif %}
-                                                   onchange="toggleRecurrenceLimitInput()">
-                                            <label class="form-check-label small fw-bold" for="recurrence_limit_forever">Forever</label>
-                                        </div>
-                                    </div>
-                                    <div id="recurrence-limit-input-container" class="{% if not task or task.recurrence_limit == -1 %}d-none{% endif %}">
-                                        <div class="input-group" style="max-width: 250px;">
-                                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-redo text-primary"></i></span>
-                                            <input type="number" name="recurrence_limit_value" id="recurrence_limit_value" class="form-control border-start-0" 
-                                                   value="{% if task and task.recurrence_limit > 0 %}{{ task.recurrence_limit }}{% endif %}" min="1" placeholder="Number of cycles">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Dynamic Form Builder Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-vial"></i> Dynamic Submission Form (Google Form Style)
-                        </div>
-                        <p class="text-muted small mb-4">Define specific fields that workers must fill out when submitting this task (e.g., "Report Number", "Verification Result", etc.)</p>
-                        
-                        <div id="form-builder-container">
-                            <!-- Existing fields will be loaded here -->
-                            {% for field in task.custom_fields.all %}
-                            <div class="field-card" data-field-id="{{ field.id }}">
-                                <span class="remove-field" onclick="this.parentElement.remove()"><i class="fas fa-times-circle"></i></span>
-                                <span class="field-handle"><i class="fas fa-grip-vertical"></i></span>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label small">Field Label (Question)</label>
-                                        <input type="text" name="field_labels[]" class="form-control form-control-sm" value="{{ field.label }}" placeholder="e.g., Client Name" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small">Field Type</label>
-                                        <select name="field_types[]" class="form-select form-select-sm" onchange="toggleFieldOptions(this)">
-                                            <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Short Text</option>
-                                            <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Long Text</option>
-                                            <option value="number" {% if field.field_type == 'number' %}selected{% endif %}>Number</option>
-                                            <option value="select" {% if field.field_type == 'select' %}selected{% endif %}>Select Menu</option>
-                                            <option value="checkbox" {% if field.field_type == 'checkbox' %}selected{% endif %}>Single Checkbox (True/False)</option>
-                                            <option value="checkbox_group" {% if field.field_type == 'checkbox_group' %}selected{% endif %}>Multi-Selection Checkboxes</option>
-                                            <option value="radio" {% if field.field_type == 'radio' %}selected{% endif %}>Radio Buttons</option>
-                                            <option value="date" {% if field.field_type == 'date' %}selected{% endif %}>Date</option>
-                                            <option value="file" {% if field.field_type == 'file' %}selected{% endif %}>File Upload</option>
-                                            <option value="section" {% if field.field_type == 'section' %}selected{% endif %}>Section / Page Break</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end field-required-wrapper" {% if field.field_type == 'section' %}style="display: none !important;"{% endif %}>
-                                        <div class="form-check mb-2">
-                                            <input type="hidden" name="field_index[]" value="{{ forloop.counter0 }}">
-                                            <input class="form-check-input field-required-input" type="checkbox" name="field_required_indexed[]" value="{{ forloop.counter0 }}" {% if field.required %}checked{% endif %}>
-                                            <label class="form-check-label small">Required</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-12 options-container" {% if field.field_type == 'select' or field.field_type == 'radio' or field.field_type == 'checkbox_group' or field.field_type == 'section' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                                        <label class="form-label small options-label">{% if field.field_type == 'section' %}Section Description (Optional){% else %}Options (Comma separated){% endif %}</label>
-                                        <input type="text" name="field_options[]" class="form-control form-control-sm field-options-input" value="{{ field.options }}" placeholder="{% if field.field_type == 'section' %}Description text for this new page...{% else %}Option 1, Option 2, Option 3{% endif %}">
-                                    </div>
-                                </div>
-                                <input type="hidden" name="field_ids[]" value="{{ field.id }}">
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <button type="button" class="add-field-btn mt-3" id="add-field-btn">
-                            <i class="fas fa-plus-circle"></i> Add Custom Field
-                        </button>
-                    </div>
-
-                    <!-- User Assignment Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-user-check"></i> Assign to Users
-                        </div>
-
-                        <div class="user-assignment-widget">
-                            <label class="form-label mb-3">
-                                <i class="fas fa-users me-2" style="color: #667eea;"></i> <strong>Select Team Members by Role</strong>
-                            </label>
-                            
-                            <!-- Search Input -->
-                            <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-                                <div class="input-group shadow-sm flex-grow-1">
-                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                    <input type="text" class="form-control border-start-0 ps-0" id="user-search" placeholder="Search users by name or email across all roles...">
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" id="btn-select-all" title="Select all users matching search">
-                                        <i class="fas fa-check-double me-1"></i> Select All Matching
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" id="btn-clear-all" title="Clear all selections">
-                                        <i class="fas fa-trash-alt me-1"></i> Clear Selection
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Selected Users Display -->
-                            <div id="selected-users-display" class="mb-4 p-3 bg-white rounded-3 shadow-sm border border-light" style="display: none;">
-                                <label class="form-label small fw-bold text-uppercase mb-2 text-muted" style="letter-spacing: 1px;">Currently Selected:</label>
-                                <div class="assigned-users-container mb-0" id="selected-users-chips"></div>
-                            </div>
-
-                            <!-- Premium Tabs -->
-                            <ul class="nav nav-pills nav-fill mb-4 gap-2" id="userRoleTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link rounded-pill fw-bold shadow-sm transition" id="favorites-tab" data-bs-toggle="pill" data-bs-target="#favorites-pane" type="button" role="tab" aria-controls="favorites-pane" aria-selected="false" style="color: #4b5563; background: #fffbeb; border: 1px solid #fde68a;">
-                                        <i class="fas fa-star text-warning me-2"></i> Favorites
-                                        <span class="badge bg-warning text-dark ms-2 rounded-pill">{{ request.user.favorite_users.count }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active rounded-pill fw-bold shadow-sm transition" id="workers-tab" data-bs-toggle="pill" data-bs-target="#workers-pane" type="button" role="tab" aria-controls="workers-pane" aria-selected="true" style="background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); color: white;">
-                                        <i class="fas fa-hard-hat me-2"></i> Workers
-                                        <span class="badge bg-white text-success ms-2 rounded-pill">{{ users|length }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link rounded-pill fw-bold shadow-sm transition" id="managers-tab" data-bs-toggle="pill" data-bs-target="#managers-pane" type="button" role="tab" aria-controls="managers-pane" aria-selected="false" style="color: #4b5563; background: #f3f4f6;">
-                                        <i class="fas fa-user-tie me-2"></i> Managers
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link rounded-pill fw-bold shadow-sm transition" id="admins-tab" data-bs-toggle="pill" data-bs-target="#admins-pane" type="button" role="tab" aria-controls="admins-pane" aria-selected="false" style="color: #4b5563; background: #f3f4f6;">
-                                        <i class="fas fa-crown me-2"></i> Admins
-                                    </button>
-                                </li>
-                            </ul>
-
-                            <!-- Tab Content -->
-                            <div class="tab-content bg-white p-3 rounded-4 shadow-sm border" id="userRoleTabsContent">
-                                <!-- Favorites Pane -->
-                                <div class="tab-pane fade" id="favorites-pane" role="tabpanel" aria-labelledby="favorites-tab" tabindex="0">
-                                    <div class="user-options-list" id="favorites-list">
-                                        {% for user in request.user.favorite_users.all %}
-                                            <div class="user-option-item" data-user-id="{{ user.id }}" data-user-name="{{ user.get_full_name|default:user.username }}" data-user-email="{{ user.email|lower }}">
-                                                <div class="user-avatar-large" style="background: linear-gradient(135deg, #f59e0b, #d97706);">{{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper|default:'' }}</div>
-                                                <div class="user-info-block">
-                                                    <p class="user-name">{{ user.get_full_name|default:user.username }}</p>
-                                                    <p class="user-email">{{ user.email }} <span class="badge bg-warning-soft text-warning border border-warning border-opacity-25 ms-2 rounded-pill fw-normal" style="font-size: 0.65rem;">Favorite | {{ user.role }}</span></p>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-link favorite-toggle-btn p-1 ms-auto" onclick="toggleFavorite(event, '{{ user.id }}', this)" title="Toggle Favorite">
-                                                    <i class="fas fa-star text-warning" style="font-size: 1.1rem;"></i>
-                                                </button>
-                                                <div class="user-selection-checkbox" style="border-radius: 50%;">
-                                                    <i class="fas fa-check" style="display: none;"></i>
-                                                </div>
-                                            </div>
-                                        {% empty %}
-                                            <div class="text-center py-4 text-muted">
-                                                <i class="far fa-star fs-1 mb-3 opacity-25"></i>
-                                                <p>No favorite users yet.</p>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <!-- Workers Pane -->
-                                <div class="tab-pane fade show active" id="workers-pane" role="tabpanel" aria-labelledby="workers-tab" tabindex="0">
-                                    <div class="user-options-list" id="workers-list">
-                                        {% for user in users %}
-                                            {% if user.role == 'worker' or not user.role %}
-                                            <div class="user-option-item" data-user-id="{{ user.id }}" data-user-name="{{ user.get_full_name|default:user.username }}" data-user-email="{{ user.email|lower }}">
-                                                <div class="user-avatar-large" style="background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)));">{{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper|default:'' }}</div>
-                                                <div class="user-info-block">
-                                                    <p class="user-name">{{ user.get_full_name|default:user.username }}</p>
-                                                    <p class="user-email">{{ user.email }} <span class="badge bg-success-soft text-success border border-success border-opacity-25 ms-2 rounded-pill fw-normal" style="font-size: 0.65rem;">Worker</span></p>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-link favorite-toggle-btn p-1 ms-auto" onclick="toggleFavorite(event, '{{ user.id }}', this)" title="Toggle Favorite">
-                                                    <i class="fa{% if user in request.user.favorite_users.all %}s text-warning{% else %}r text-muted{% endif %} fa-star" style="font-size: 1.1rem;"></i>
-                                                </button>
-                                                <div class="user-selection-checkbox" style="border-radius: 50%;">
-                                                    <i class="fas fa-check" style="display: none;"></i>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        {% empty %}
-                                            <div class="text-center py-4 text-muted">
-                                                <i class="fas fa-users-slash fs-1 mb-3 opacity-25"></i>
-                                                <p>No workers available</p>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                
-                                <!-- Managers Pane -->
-                                <div class="tab-pane fade" id="managers-pane" role="tabpanel" aria-labelledby="managers-tab" tabindex="0">
-                                    <div class="user-options-list" id="managers-list">
-                                        {% for user in users %}
-                                            {% if user.role == 'manager' %}
-                                            <div class="user-option-item" data-user-id="{{ user.id }}" data-user-name="{{ user.get_full_name|default:user.username }}" data-user-email="{{ user.email|lower }}">
-                                                <div class="user-avatar-large" style="background: linear-gradient(135deg, #f59e0b, #d97706);">{{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper|default:'' }}</div>
-                                                <div class="user-info-block">
-                                                    <p class="user-name">{{ user.get_full_name|default:user.username }}</p>
-                                                    <p class="user-email">{{ user.email }} <span class="badge bg-warning-soft text-warning border border-warning border-opacity-25 ms-2 rounded-pill fw-normal" style="font-size: 0.65rem;">Manager</span></p>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-link favorite-toggle-btn p-1 ms-auto" onclick="toggleFavorite(event, '{{ user.id }}', this)" title="Toggle Favorite">
-                                                    <i class="fa{% if user in request.user.favorite_users.all %}s text-warning{% else %}r text-muted{% endif %} fa-star" style="font-size: 1.1rem;"></i>
-                                                </button>
-                                                <div class="user-selection-checkbox" style="border-radius: 50%;">
-                                                    <i class="fas fa-check" style="display: none;"></i>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                        {% if not users.filter_managers %}
-                                            <!-- Visually handled by JS if empty -->
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <!-- Admins Pane -->
-                                <div class="tab-pane fade" id="admins-pane" role="tabpanel" aria-labelledby="admins-tab" tabindex="0">
-                                    <div class="user-options-list" id="admins-list">
-                                        {% for user in users %}
-                                            {% if user.role == 'super_admin' %}
-                                            <div class="user-option-item" data-user-id="{{ user.id }}" data-user-name="{{ user.get_full_name|default:user.username }}" data-user-email="{{ user.email|lower }}">
-                                                <div class="user-avatar-large" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">{{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper|default:'' }}</div>
-                                                <div class="user-info-block">
-                                                    <p class="user-name">{{ user.get_full_name|default:user.username }}</p>
-                                                    <p class="user-email">{{ user.email }} <span class="badge bg-primary-soft text-primary border border-primary border-opacity-25 ms-2 rounded-pill fw-normal" style="font-size: 0.65rem;">Admin</span></p>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-link favorite-toggle-btn p-1 ms-auto" onclick="toggleFavorite(event, '{{ user.id }}', this)" title="Toggle Favorite">
-                                                    <i class="fa{% if user in request.user.favorite_users.all %}s text-warning{% else %}r text-muted{% endif %} fa-star" style="font-size: 1.1rem;"></i>
-                                                </button>
-                                                <div class="user-selection-checkbox" style="border-radius: 50%;">
-                                                    <i class="fas fa-check" style="display: none;"></i>
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Hidden form field to store selected user IDs -->
-                            <input type="hidden" name="assigned_to" id="selected-users-hidden" value="{% if task %}{% for user in task.assigned_to.all %}{{ user.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}">
-                        </div>
-                    </div>
-
-                    <!-- File Upload Section -->
-                    <div class="form-section">
-                        <div class="form-section-title">
-                            <i class="fas fa-file-upload"></i> Attachments & Covers
-                        </div>
-
-                        <!-- Main/Cover Attachments -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label for="cover_image" class="form-label">
-                                    <i class="fas fa-image"></i> Task Cover Image <span class="text-muted fw-normal">(for widget display)</span>
-                                </label>
-                                <input class="form-control" type="file" id="cover_image" name="cover_image" accept="image/*">
-                                {% if task and task.cover_image %}
-                                    <div class="mt-2">
-                                        <div class="mb-2">
-                                            <img src="{{ task.cover_image.url }}" alt="Cover Preview" class="img-thumbnail" style="max-height: 120px; border-radius: 8px;">
-                                        </div>
-                                        <div class="small text-muted">
-                                            Current: <a href="{{ task.cover_image.url }}" target="_blank">View image</a>
-                                            <div class="form-check mt-1">
-                                                <input class="form-check-input" type="checkbox" name="clear_cover_image" id="clear_cover_image" value="1">
-                                                <label class="form-check-label" for="clear_cover_image">Remove cover image</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6" id="attachment-field-container" {% if task and task.task_type == 'correspondence' or not task and initial_type == 'correspondence' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                                <label for="attachment" class="form-label">
-                                    <i class="fas fa-file-pdf"></i> Primary Document <span class="text-muted fw-normal">(Correspondence PDF)</span>
-                                </label>
-                                <input class="form-control" type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx">
-                                {% if task and task.attachment %}
-                                    <div class="mt-2 small text-muted">
-                                        Current: <a href="{{ task.attachment.url }}" target="_blank">View document</a>
-                                        <div class="form-check mt-1">
-                                            <input class="form-check-input" type="checkbox" name="clear_attachment" id="clear_attachment" value="1">
-                                            <label class="form-check-label" for="clear_attachment">Remove document</label>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="mb-4">
-                        <div class="mb-2 fw-bold text-muted"><i class="fas fa-paperclip"></i> Additional Task Files (Discussion/Reference)</div>
-
-                        <!-- Existing Files (if editing task) -->
-                        {% if task and task.documents.all %}
-                        <div class="files-panel mb-4">
-                            <div style="padding: 1rem; background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
-                                <h6 class="mb-0" style="color: #667eea; font-weight: 600;">
-                                    <i class="fas fa-folder-open me-2"></i> Existing Attachments
-                                </h6>
-                            </div>
-                            <table class="table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 50%;">File Name</th>
-                                        <th style="width: 20%;">Size</th>
-                                        <th style="width: 15%;">Uploaded</th>
-                                        <th style="width: 15%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for file in task.documents.all %}
-                                    <tr id="existing-file-{{ file.id }}">
-                                        <td>
-                                            <i class="fas fa-file me-2" style="color: #667eea;"></i>
-                                            <a href="{{ file.file.url }}" target="_blank" style="text-decoration: none; color: #667eea; font-weight: 500;">
-                                                {{ file.file.name|truncatechars:50 }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            {% if file.display_size %}
-                                                <span id="file-size-{{ file.id }}">{{ file.display_size|filesizeformat }}</span>
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ file.created_at|date:"M d, Y" }}</td>
-                                        <td>
-                                            <button type="button" class="btn-remove-file" onclick="deleteExistingFile('{{ file.id }}', '{{ file.file.name|escapejs|truncatechars:30 }}')" title="Delete file">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% endif %}
-
-                        <div class="file-upload-container" id="file-upload-area" onclick="document.getElementById('task_files').click();">
-                            <div class="file-upload-icon">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div class="file-upload-text">Drag files here or click to upload</div>
-                            <div class="file-upload-hint">You can upload multiple files. Formats: PDF, DOC, XLS, IMG, etc.</div>
-                            <input type="file" class="form-control" name="task_files" id="task_files" multiple style="display: none;">
-                        </div>
-
-                        <!-- Files Preview Table -->
-                        <div class="files-panel mt-3" id="files-panel" style="display:none;">
-                            <div style="padding: 1rem; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-                                <span class="files-counter" id="files-counter">0 files selected</span>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-more-files-btn">
-                                    <i class="fas fa-plus me-1"></i> Add More Files
-                                </button>
-                            </div>
-                            <table class="table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 45%;">File Name</th>
-                                        <th style="width: 15%;">Size</th>
-                                        <th style="width: 15%;">Status</th>
-                                        <th style="width: 15%;">Progress</th>
-                                        <th style="width: 10%;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="files-table"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="mt-4 pt-3" style="border-top: 1.5px solid var(--line); display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                        {% if initial_type == 'correspondence' and not task or task and task.task_type == 'correspondence' %}
-                        <button type="submit" class="tg-btn tg-btn-primary">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">mark_email_read</span>
-                            {% if task %}Update Correspondence{% else %}Issue Correspondence{% endif %}
-                        </button>
-                        <a href="/correspondence/" class="tg-btn tg-btn-ghost">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                            Cancel
-                        </a>
-                        {% else %}
-                        <button type="submit" class="tg-btn tg-btn-primary">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">save</span>
-                            {% if task %}Update Task{% else %}Create Task{% endif %}
-                        </button>
-                        <a href="{% url 'task-list' %}" class="tg-btn tg-btn-ghost">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                            Cancel
-                        </a>
-                        {% endif %}
-                    </div>
-                </form>
+                </div>
             </div>
+        </section>
+
+        {# ── Dates and effort ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-dates">
+            <div class="wt-panel-head"><h2 id="tf-dates"><span class="lang-en">Dates and effort</span><span class="lang-ar">المواعيد والجهد</span></h2></div>
+            <div class="wt-tf-body wt-tf-grid">
+                <div class="wt-tf-field">
+                    <label for="id_start_date" class="form-label"><span class="lang-en">Start date</span><span class="lang-ar">تاريخ البدء</span></label>
+                    <input type="date" class="form-control" name="start_date" id="id_start_date" value="{% if task.start_date %}{{ task.start_date|date:'Y-m-d' }}{% endif %}">
+                </div>
+                <div class="wt-tf-field">
+                    <label for="id_deadline" class="form-label"><span class="lang-en">Deadline</span><span class="lang-ar">الموعد النهائي</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                    <input type="date" class="form-control{% if form.deadline.errors %} is-invalid{% endif %}" name="deadline" id="id_deadline" value="{% if task.deadline %}{{ task.deadline|date:'Y-m-d' }}{% endif %}" required>
+                    {% if form.deadline.errors %}<div class="invalid-feedback">{{ form.deadline.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="wt-tf-field">
+                    <label for="estimated_hours" class="form-label"><span class="lang-en">Planned hours</span><span class="lang-ar">الساعات المخططة</span></label>
+                    <input type="number" step="0.5" min="0" class="form-control" name="estimated_hours" id="estimated_hours" value="{{ task.estimated_hours|default:0 }}">
+                    <small class="wt-tf-help"><span class="lang-en">Expected time to finish the task.</span><span class="lang-ar">الوقت المتوقع لإنجاز المهمة.</span></small>
+                </div>
+                <div class="wt-tf-field">
+                    <label for="kpi_weight" class="form-label"><span class="lang-en">Score weight</span><span class="lang-ar">وزن المؤشر</span></label>
+                    <input type="number" step="0.1" min="0" class="form-control" name="kpi_weight" id="kpi_weight" value="{{ task.kpi_weight|default:1.0 }}">
+                    <small class="wt-tf-help"><span class="lang-en">How much this task counts in each person's score (1 = normal).</span><span class="lang-ar">مدى احتساب هذه المهمة في نتيجة كل شخص (1 = عادي).</span></small>
+                </div>
+            </div>
+        </section>
+
+        {# ── People ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-people">
+            <div class="wt-panel-head">
+                <h2 id="tf-people"><span class="lang-en">Assign to</span><span class="lang-ar">إسناد إلى</span></h2>
+                <span class="wt-panel-meta"><span class="wt-num" id="tf-picked-count">0</span>&nbsp;<span class="lang-en">selected</span><span class="lang-ar">محدد</span></span>
+            </div>
+            <div class="wt-tf-body">
+                <div class="wt-tf-people-tools">
+                    <label class="wt-filter wt-filter-search">
+                        <span class="visually-hidden"><span class="lang-en">Search people</span><span class="lang-ar">ابحث عن أشخاص</span></span>
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" class="form-control" id="user-search" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد{% else %}Search by name or email{% endif %}">
+                    </label>
+                    <button type="button" class="btn btn-light" id="btn-select-all"><i class="fas fa-check-double"></i><span class="lang-en">Select shown</span><span class="lang-ar">تحديد الظاهرين</span></button>
+                    <button type="button" class="btn btn-light" id="btn-clear-all"><i class="fas fa-xmark"></i><span class="lang-en">Clear</span><span class="lang-ar">مسح</span></button>
+                </div>
+                <div id="selected-users-display" class="wt-tf-chips" hidden aria-live="polite">
+                    <div id="selected-users-chips" class="wt-tf-chiplist"></div>
+                </div>
+
+                <div class="wt-seg wt-tf-roles" id="userRoleTabs" role="tablist">
+                    <button type="button" role="tab" id="favorites-tab" data-bs-toggle="pill" data-bs-target="#favorites-pane" aria-controls="favorites-pane" aria-selected="false"><i class="fas fa-star" aria-hidden="true"></i><span class="lang-en">Favourites</span><span class="lang-ar">المفضلون</span> <span class="badge wt-num">{{ request.user.favorite_users.count }}</span></button>
+                    <button type="button" role="tab" id="workers-tab" class="active" data-bs-toggle="pill" data-bs-target="#workers-pane" aria-controls="workers-pane" aria-selected="true"><span class="lang-en">Staff</span><span class="lang-ar">الموظفون</span></button>
+                    <button type="button" role="tab" id="managers-tab" data-bs-toggle="pill" data-bs-target="#managers-pane" aria-controls="managers-pane" aria-selected="false"><span class="lang-en">Managers</span><span class="lang-ar">المديرون</span></button>
+                    <button type="button" role="tab" id="admins-tab" data-bs-toggle="pill" data-bs-target="#admins-pane" aria-controls="admins-pane" aria-selected="false"><span class="lang-en">Admins</span><span class="lang-ar">المسؤولون</span></button>
+                </div>
+
+                <div class="tab-content wt-tf-people" id="userRoleTabsContent">
+                    {% for pane, list_id, role_key in wt_people_panes %}
+                    <div class="tab-pane fade{% if pane == 'workers' %} show active{% endif %}" id="{{ pane }}-pane" role="tabpanel" aria-labelledby="{{ pane }}-tab" tabindex="0">
+                        <ul class="user-options-list" id="{{ list_id }}">
+                            {% if pane == 'favorites' %}{% for u in request.user.favorite_users.all %}{% include 'includes/wt_person_option.html' with u=u fav=True %}{% empty %}<li class="wt-side-empty" data-empty><span class="lang-en">No favourites yet. Star people to keep them here.</span><span class="lang-ar">لا مفضلين بعد. ضع نجمة على الأشخاص لتجدهم هنا.</span></li>{% endfor %}
+                            {% else %}{% for u in users %}{% if role_key == 'worker' and u.role == 'worker' or role_key == 'worker' and not u.role or u.role == role_key and role_key != 'worker' %}{% include 'includes/wt_person_option.html' with u=u fav=False %}{% endif %}{% endfor %}{% endif %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="assigned_to" id="selected-users-hidden" value="{% if task %}{% for u in task.assigned_to.all %}{{ u.id }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}">
+            </div>
+        </section>
+
+        {# ── Submission fields ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-fields">
+            <div class="wt-panel-head"><h2 id="tf-fields"><span class="lang-en">What to submit</span><span class="lang-ar">ما يجب تسليمه</span></h2></div>
+            <div class="wt-tf-body">
+                <p class="wt-tf-help"><span class="lang-en">Add the fields people fill in when they submit this task, for example a report number or a result. Drag the handle to reorder.</span><span class="lang-ar">أضف الحقول التي يملؤها الأشخاص عند تسليم هذه المهمة، مثل رقم التقرير أو النتيجة. اسحب المقبض لتغيير الترتيب.</span></p>
+                <ol id="form-builder-container" class="wt-tf-builder">
+                    {% for field in task.custom_fields.all %}
+                    <li class="field-card" data-field-id="{{ field.id }}">
+                        <span class="field-handle" aria-hidden="true" title="{% if wt_lang == 'ar' %}اسحب لتغيير الترتيب{% else %}Drag to reorder{% endif %}"><i class="fas fa-grip-vertical"></i></span>
+                        <div class="wt-tf-fieldrow">
+                            <div class="wt-tf-field">
+                                <label class="form-label"><span class="lang-en">Question or label</span><span class="lang-ar">السؤال أو التسمية</span></label>
+                                <input type="text" name="field_labels[]" class="form-control" value="{{ field.label }}" required dir="auto">
+                            </div>
+                            <div class="wt-tf-field">
+                                <label class="form-label"><span class="lang-en">Type</span><span class="lang-ar">النوع</span></label>
+                                <select name="field_types[]" class="form-select" onchange="toggleFieldOptions(this)">
+                                    {% for v, en, ar in wt_field_types %}<option value="{{ v }}"{% if field.field_type == v %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-required-wrapper"{% if field.field_type == 'section' %} hidden{% endif %}>
+                                <input type="hidden" name="field_index[]" value="{{ forloop.counter0 }}">
+                                <label class="form-check"><input class="form-check-input field-required-input" type="checkbox" name="field_required_indexed[]" value="{{ forloop.counter0 }}"{% if field.required %} checked{% endif %}> <span class="lang-en">Required</span><span class="lang-ar">مطلوب</span></label>
+                            </div>
+                            <button type="button" class="wt-icon-btn is-danger remove-field" onclick="removeFieldCard(this)" aria-label="{% if wt_lang == 'ar' %}حذف الحقل{% else %}Remove field{% endif %}"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="wt-tf-field options-container"{% if field.field_type != 'select' and field.field_type != 'radio' and field.field_type != 'checkbox_group' and field.field_type != 'section' %} hidden{% endif %}>
+                            <label class="form-label options-label"></label>
+                            <input type="text" name="field_options[]" class="form-control field-options-input" value="{{ field.options }}" dir="auto">
+                        </div>
+                        <input type="hidden" name="field_ids[]" value="{{ field.id }}">
+                    </li>
+                    {% endfor %}
+                </ol>
+                <button type="button" class="btn btn-light" id="add-field-btn"><i class="fas fa-plus"></i><span class="lang-en">Add a field</span><span class="lang-ar">إضافة حقل</span></button>
+            </div>
+        </section>
+
+        {# ── Files ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-files">
+            <div class="wt-panel-head"><h2 id="tf-files"><span class="lang-en">Files</span><span class="lang-ar">الملفات</span></h2></div>
+            <div class="wt-tf-body">
+                <div class="wt-tf-grid">
+                    <div class="wt-tf-field">
+                        <label for="cover_image" class="form-label"><span class="lang-en">Cover image</span><span class="lang-ar">صورة الغلاف</span></label>
+                        <input class="form-control" type="file" id="cover_image" name="cover_image" accept="image/*">
+                        {% if task.cover_image %}
+                        <div class="wt-tf-current">
+                            <img src="{{ task.cover_image.url }}" alt="">
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="clear_cover_image" id="clear_cover_image" value="1"> <span class="lang-en">Remove the current image</span><span class="lang-ar">إزالة الصورة الحالية</span></label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if is_corr == 'correspondence' %}
+                    <div class="wt-tf-field" id="attachment-field-container">
+                        <label for="attachment" class="form-label"><span class="lang-en">Main document (PDF or Word)</span><span class="lang-ar">المستند الأساسي (PDF أو Word)</span></label>
+                        <input class="form-control" type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx">
+                        {% if task.attachment %}
+                        <div class="wt-tf-current">
+                            <a href="{{ task.attachment.url }}" target="_blank" rel="noopener"><i class="fas fa-file-lines"></i> <span class="lang-en">Current document</span><span class="lang-ar">المستند الحالي</span></a>
+                            <label class="form-check"><input class="form-check-input" type="checkbox" name="clear_attachment" id="clear_attachment" value="1"> <span class="lang-en">Remove it</span><span class="lang-ar">إزالته</span></label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h3 class="wt-tf-subhead"><span class="lang-en">Reference files</span><span class="lang-ar">ملفات مرجعية</span></h3>
+                {% if task and task.documents.all %}
+                <ul class="wt-td-files">
+                    {% for file in task.documents.all %}
+                    <li id="existing-file-{{ file.id }}">
+                        <i class="fas fa-paperclip" aria-hidden="true"></i>
+                        <span><a href="{{ file.file.url }}" target="_blank" rel="noopener" dir="auto"><b>{{ file.filename|default:file.file.name }}</b></a><small class="wt-num">{% if file.display_size %}{{ file.display_size|filesizeformat }} · {% endif %}{{ file.created_at|date:"j/n/Y" }}</small></span>
+                        <button type="button" class="wt-icon-btn is-danger" onclick="deleteExistingFile('{{ file.id }}', '{{ file.file.name|escapejs|truncatechars:40 }}')" aria-label="{% if wt_lang == 'ar' %}حذف الملف{% else %}Delete file{% endif %}"><i class="fas fa-trash"></i></button>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="wt-tf-drop" id="file-upload-area" role="button" tabindex="0" aria-describedby="tf-drop-hint">
+                    <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+                    <b><span class="lang-en">Drop files here or choose them</span><span class="lang-ar">أفلت الملفات هنا أو اخترها</span></b>
+                    <small id="tf-drop-hint"><span class="lang-en">Several files at once are fine.</span><span class="lang-ar">يمكن اختيار عدة ملفات معًا.</span></small>
+                    <input type="file" name="task_files" id="task_files" multiple hidden>
+                </div>
+                <div id="files-panel" class="wt-tf-queue" hidden>
+                    <div class="wt-tf-queue-head"><span class="wt-num" id="files-counter"></span><button type="button" class="btn btn-sm btn-light" id="add-more-files-btn"><i class="fas fa-plus"></i><span class="lang-en">Add more</span><span class="lang-ar">إضافة المزيد</span></button></div>
+                    <ul class="wt-td-files" id="files-table"></ul>
+                </div>
+            </div>
+        </section>
+
+        {# ── Repeat ── #}
+        {% if is_corr != 'correspondence' %}
+        <section class="wt-panel wt-tf-sec" id="automated-reactivation-section" aria-labelledby="tf-repeat">
+            <div class="wt-panel-head">
+                <h2 id="tf-repeat"><span class="lang-en">Repeat</span><span class="lang-ar">التكرار</span></h2>
+                <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" name="is_recurring" id="is_recurring"{% if task.is_recurring %} checked{% endif %} onchange="toggleRecurrenceInterval()"> <span class="lang-en">Repeat this task</span><span class="lang-ar">كرّر هذه المهمة</span></label>
+            </div>
+            <div class="wt-tf-body" id="recurrence-interval-container"{% if not task.is_recurring %} hidden{% endif %}>
+                <p class="wt-tf-help"><span class="lang-en">At each cycle the progress resets and the deadline moves forward.</span><span class="lang-ar">في كل دورة يُعاد ضبط التقدم ويُرحَّل الموعد النهائي.</span></p>
+                <div class="wt-seg wt-tf-rtype" role="radiogroup" aria-label="{% if wt_lang == 'ar' %}نوع التكرار{% else %}Repeat type{% endif %}">
+                    <label><input type="radio" name="recurrence_type" value="preset"{% if not task or task.recurrence_type != 'custom' %} checked{% endif %} onchange="updateRecurrenceUI()"> <span class="lang-en">Common</span><span class="lang-ar">شائع</span></label>
+                    <label><input type="radio" name="recurrence_type" value="custom"{% if task.recurrence_type == 'custom' %} checked{% endif %} onchange="updateRecurrenceUI()"> <span class="lang-en">Custom</span><span class="lang-ar">مخصص</span></label>
+                </div>
+                <div id="preset-options" class="wt-tf-presets"{% if task.recurrence_type == 'custom' %} hidden{% endif %}>
+                    {% for val, label in recurrence_choices %}
+                    <label class="wt-tf-preset"><input type="radio" name="recurrence_interval" value="{{ val }}"{% if task.recurrence_interval == val %} checked{% endif %}> <span>{% if wt_lang == 'ar' %}{% if val == 'daily' %}يوميًا{% elif val == 'weekly' %}أسبوعيًا{% elif val == 'monthly' %}شهريًا{% elif val == 'quarterly' %}كل 3 أشهر{% elif val == 'yearly' %}سنويًا{% else %}{{ label }}{% endif %}{% else %}{{ label }}{% endif %}</span></label>
+                    {% endfor %}
+                </div>
+                <div id="custom-options" class="wt-tf-grid"{% if not task or task.recurrence_type != 'custom' %} hidden{% endif %}>
+                    <div class="wt-tf-field">
+                        <label for="recurrence_value" class="form-label"><span class="lang-en">Every</span><span class="lang-ar">كل</span></label>
+                        <input type="number" name="recurrence_value" id="recurrence_value" class="form-control" value="{{ task.recurrence_value|default:1 }}" min="1">
+                    </div>
+                    <div class="wt-tf-field">
+                        <label for="recurrence_unit" class="form-label"><span class="lang-en">Unit</span><span class="lang-ar">الوحدة</span></label>
+                        <select name="recurrence_unit" id="recurrence_unit" class="form-select">
+                            {% for v, en, ar in wt_units %}<option value="{{ v }}"{% if task.recurrence_unit == v or not task.recurrence_unit and v == 'days' %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="wt-tf-limit">
+                    <label class="form-check"><input class="form-check-input" type="checkbox" name="recurrence_limit_forever" id="recurrence_limit_forever"{% if not task or task.recurrence_limit == -1 %} checked{% endif %} onchange="toggleRecurrenceLimitInput()"> <span class="lang-en">Repeat with no end</span><span class="lang-ar">التكرار دون نهاية</span></label>
+                    <div id="recurrence-limit-input-container" class="wt-tf-field"{% if not task or task.recurrence_limit == -1 %} hidden{% endif %}>
+                        <label for="recurrence_limit_value" class="form-label"><span class="lang-en">Number of cycles</span><span class="lang-ar">عدد الدورات</span></label>
+                        <input type="number" name="recurrence_limit_value" id="recurrence_limit_value" class="form-control" value="{% if task and task.recurrence_limit > 0 %}{{ task.recurrence_limit }}{% endif %}" min="1">
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        {# ── Location ── #}
+        <section class="wt-panel wt-tf-sec" aria-labelledby="tf-map">
+            <div class="wt-panel-head">
+                <h2 id="tf-map"><span class="lang-en">Location</span><span class="lang-ar">الموقع</span></h2>
+                <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" name="location_enabled" id="location_enabled"{% if task.location_enabled %} checked{% endif %}> <span class="lang-en">Add a place on the map</span><span class="lang-ar">إضافة مكان على الخريطة</span></label>
+            </div>
+            <div class="wt-tf-body" id="map-feature-container"{% if not task.location_enabled %} hidden{% endif %}>
+                <div class="wt-tf-grid">
+                    <div class="wt-tf-field">
+                        <label for="map_country" class="form-label"><span class="lang-en">Country</span><span class="lang-ar">البلد</span></label>
+                        <select class="form-select" name="country" id="map_country"><option value="Algeria" selected>{% if wt_lang == 'ar' %}الجزائر{% else %}Algeria{% endif %}</option></select>
+                    </div>
+                    <div class="wt-tf-field">
+                        <label for="map_wilaya" class="form-label"><span class="lang-en">Province (wilaya)</span><span class="lang-ar">الولاية</span></label>
+                        <select class="form-select" name="wilaya" id="map_wilaya"><option value="">{% if wt_lang == 'ar' %}اختر الولاية{% else %}Choose a province{% endif %}</option></select>
+                    </div>
+                    <div class="wt-tf-field">
+                        <label for="location_name" class="form-label"><span class="lang-en">Place name</span><span class="lang-ar">اسم المكان</span></label>
+                        <input type="text" class="form-control" name="location_name" id="location_name" value="{{ task.location_name|default:'' }}" dir="auto">
+                    </div>
+                </div>
+                <p class="wt-tf-help"><span class="lang-en">Click the map to drop the pin; drag it to adjust.</span><span class="lang-ar">انقر على الخريطة لوضع العلامة، واسحبها للتعديل.</span></p>
+                <div class="wt-tf-map">
+                    <div id="task-map"></div>
+                    <div id="map-placeholder"><span class="spinner-border spinner-border-sm" role="status"></span> <span class="lang-en">Loading the map…</span><span class="lang-ar">جارٍ تحميل الخريطة…</span></div>
+                </div>
+                <div class="wt-tf-grid">
+                    <div class="wt-tf-field"><label for="map_lat" class="form-label"><span class="lang-en">Latitude</span><span class="lang-ar">خط العرض</span></label><input type="text" class="form-control wt-tf-ltr" name="latitude" id="map_lat" value="{{ task.latitude|default:'' }}" readonly></div>
+                    <div class="wt-tf-field"><label for="map_lng" class="form-label"><span class="lang-en">Longitude</span><span class="lang-ar">خط الطول</span></label><input type="text" class="form-control wt-tf-ltr" name="longitude" id="map_lng" value="{{ task.longitude|default:'' }}" readonly></div>
+                </div>
+            </div>
+        </section>
+
+        {# ── Save bar ── #}
+        <div class="wt-tf-bar">
+            <div class="wt-tf-bar-inner">
+                <span class="wt-tf-status" id="tf-status" role="status" aria-live="polite"></span>
+                <a href="{% if task %}{% url 'task-detail' task.id %}{% elif is_corr == 'correspondence' %}{% url 'admin-correspondence' %}{% else %}{% url 'task-list' %}{% endif %}" class="btn btn-light"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                <button type="submit" class="btn btn-primary" id="tf-save"><i class="fas fa-check"></i>
+                    {% if task %}<span class="lang-en">Save changes</span><span class="lang-ar">حفظ التغييرات</span>
+                    {% elif is_corr == 'correspondence' %}<span class="lang-en">Issue correspondence</span><span class="lang-ar">إصدار المراسلة</span>
+                    {% else %}<span class="lang-en">Create task</span><span class="lang-ar">إنشاء المهمة</span>{% endif %}
+                </button>
+            </div>
+            <div class="wt-tf-progress" hidden><i id="tf-progress-bar"></i></div>
         </div>
-    </div>
-        </div><!-- end task-form-wrap -->
-    </div><!-- end task-wrap -->
-</div><!-- end task-detail-page -->
+    </form>
+</div>
+<div id="task-context" hidden data-csrf="{{ csrf_token }}" data-task-id="{{ task.id|default:'' }}"></div>
+{% endwith %}
+{% endblock %}
 
-<!-- Choices.js Library -->
-<link rel="stylesheet" href="{% static 'vendor/choicesjs/choices.min.css' %}">
-<script src="{% static 'vendor/choicesjs/choices.min.js' %}"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ============== ROLE-TABBED USER SELECTION WIDGET ==============
-    const userOptions = document.querySelectorAll('.user-option-item');
-    const userSearch = document.getElementById('user-search');
-    const selectedUsersDisplay = document.getElementById('selected-users-display');
-    const selectedUsersChips = document.getElementById('selected-users-chips');
-    const selectedUsersHidden = document.getElementById('selected-users-hidden');
-    window.selectedUserIds = window.selectedUserIds || new Set();
-    const selectedUserIds = window.selectedUserIds;
-
-    // Show empty state per pane container
-    function checkEmptyStates() {
-        ['workers-list', 'managers-list', 'admins-list'].forEach(listId => {
-            const list = document.getElementById(listId);
-            if (!list) return;
-            const visible = Array.from(list.querySelectorAll('.user-option-item')).filter(el => el.style.display !== 'none');
-            let emptyMsg = list.querySelector('.tab-empty-state');
-            if (visible.length === 0) {
-                if (!emptyMsg) {
-                    emptyMsg = document.createElement('div');
-                    emptyMsg.className = 'tab-empty-state text-center py-4 text-muted';
-                    emptyMsg.innerHTML = '<i class="fas fa-search-minus fs-2 opacity-25 d-block mb-2"></i>No results match your search.';
-                    list.appendChild(emptyMsg);
-                }
-                emptyMsg.style.display = 'block';
-            } else if (emptyMsg) {
-                emptyMsg.style.display = 'none';
-            }
-        });
-    }
-
-    // Load pre-selected users (edit mode)
-    const initialUsersVal = selectedUsersHidden.value;
-    if (initialUsersVal) {
-        initialUsersVal.split(',').forEach(id => {
-            if (id.trim()) selectedUserIds.add(id.trim());
-        });
-    }
-
-    // Mark already-selected items on page load
-    userOptions.forEach(option => {
-        const userId = option.dataset.userId;
-        const checkbox = option.querySelector('.user-selection-checkbox i');
-        if (selectedUserIds.has(userId)) {
-            option.classList.add('selected');
-            if (checkbox) checkbox.style.display = 'inline';
-        }
-    });
-
-    updateSelectedUsersDisplay();
-
-    window.handleUserRowClick = function(row) {
-        const userId = row.dataset.userId;
-
-        // Sync selection across all occurrences
-        const allInstances = document.querySelectorAll(`.user-option-item[data-user-id="${userId}"]`);
-
-        if (selectedUserIds.has(userId)) {
-            selectedUserIds.delete(userId);
-            allInstances.forEach(el => {
-                el.classList.remove('selected');
-                const cb = el.querySelector('.user-selection-checkbox i');
-                if (cb) cb.style.display = 'none';
-            });
-        } else {
-            selectedUserIds.add(userId);
-            allInstances.forEach(el => {
-                el.classList.add('selected');
-                const cb = el.querySelector('.user-selection-checkbox i');
-                if (cb) cb.style.display = 'inline';
-            });
-        }
-        updateSelectedUsersDisplay();
-    };
-
-    // Handle user selection/deselection (click on any tab row)
-    userOptions.forEach(option => {
-        option.addEventListener('click', function() {
-            window.handleUserRowClick(this);
-        });
-    });
-
-    // Search across ALL tabs simultaneously
-    userSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-
-        userOptions.forEach(option => {
-            const userName = option.dataset.userName.toLowerCase();
-            const userEmail = option.dataset.userEmail.toLowerCase();
-            const matches = !searchTerm || userName.includes(searchTerm) || userEmail.includes(searchTerm);
-            option.style.display = matches ? 'flex' : 'none';
-        });
-
-        checkEmptyStates();
-    });
-
-    // Select All Matching functionality
-    document.getElementById('btn-select-all').addEventListener('click', function() {
-        const visibleOptions = Array.from(userOptions).filter(opt => opt.style.display !== 'none');
-        if (visibleOptions.length === 0) return;
-
-        visibleOptions.forEach(option => {
-            const userId = option.dataset.userId;
-            selectedUserIds.add(userId);
-            
-            // Update all instances and UI
-            document.querySelectorAll(`.user-option-item[data-user-id="${userId}"]`).forEach(el => {
-                el.classList.add('selected');
-                const cb = el.querySelector('.user-selection-checkbox i');
-                if (cb) cb.style.display = 'inline';
-            });
-        });
-
-        updateSelectedUsersDisplay();
-    });
-
-    // Clear All functionality
-    document.getElementById('btn-clear-all').addEventListener('click', function() {
-        if (selectedUserIds.size === 0) return;
-        
-        selectedUserIds.clear();
-        userOptions.forEach(option => {
-            option.classList.remove('selected');
-            const cb = option.querySelector('.user-selection-checkbox i');
-            if (cb) cb.style.display = 'none';
-        });
-
-        updateSelectedUsersDisplay();
-    });
-
-    // Update the display of selected users
-    function updateSelectedUsersDisplay() {
-        selectedUsersChips.innerHTML = '';
-
-        if (selectedUserIds.size === 0) {
-            selectedUsersDisplay.style.display = 'none';
-            selectedUsersHidden.value = '';
-            return;
-        }
-
-        selectedUsersDisplay.style.display = 'block';
-        selectedUserIds.forEach(userId => {
-            const userOption = document.querySelector(`[data-user-id="${userId}"]`);
-            if (!userOption) return;
-            const userName = userOption.dataset.userName;
-            const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase();
-
-            const chip = document.createElement('div');
-            chip.className = 'user-chip';
-            chip.innerHTML = `
-                <div class="user-chip-avatar">${userInitials}</div>
-                <span>${userName}</span>
-                <span class="user-chip-remove" onclick="removeUser('${userId}')" style="cursor: pointer;">×</span>
-            `;
-            selectedUsersChips.appendChild(chip);
-        });
-
-        // Update hidden input with selected user IDs
-        selectedUsersHidden.value = Array.from(selectedUserIds).join(',');
-    }
-
-    // Expose removeUser function globally — clears ALL instances across tabs
-    window.removeUser = function(userId) {
-        selectedUserIds.delete(userId);
-        document.querySelectorAll(`[data-user-id="${userId}"]`).forEach(el => {
-            el.classList.remove('selected');
-            const cb = el.querySelector('.user-selection-checkbox i');
-            if (cb) cb.style.display = 'none';
-        });
-        updateSelectedUsersDisplay();
-    };
-
-    // Delete existing file
-    window.deleteExistingFile = function(fileId, fileName) {
-        amazingConfirm(`Are you sure you want to delete "${fileName}"?`).then(confirmed => {
-            if (!confirmed) {
-                return;
-            }
-
-            // Hide the file row with animation
-            const fileRow = document.getElementById(`existing-file-${fileId}`);
-            if (fileRow) {
-                fileRow.style.opacity = '0.5';
-                fileRow.style.pointerEvents = 'none';
-            }
-
-            // Send delete request to server
-            const formData = new FormData();
-            formData.append('file_id', fileId);
-            formData.append('csrfmiddlewaretoken', document.getElementById('task-context').dataset.csrf);
-
-            const taskId = document.getElementById('task-context').dataset.taskId;
-            const deleteUrl = "{% url 'delete-task-file' 0 %}".replace('0', taskId);
-            fetch(deleteUrl, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    fileRow.remove();
-                    if (window.showToast) window.showToast('✓ File deleted successfully', 'success');
-                } else {
-                    if (window.showToast) window.showToast('Error deleting file: ' + (data.error || 'Unknown error'), 'error');
-                    if (fileRow) {
-                        fileRow.style.opacity = '1';
-                        fileRow.style.pointerEvents = 'auto';
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (window.showToast) window.showToast('Error deleting file', 'error');
-                if (fileRow) {
-                    fileRow.style.opacity = '1';
-                    fileRow.style.pointerEvents = 'auto';
-                }
-            });
-        });
-    };
-
-    // ============== FILE UPLOAD HANDLING ==============
-    const fileInput = document.getElementById('task_files');
-    const fileUploadArea = document.getElementById('file-upload-area');
-    const filesPanel = document.getElementById('files-panel');
-    const filesTable = document.getElementById('files-table');
-    const filesCounter = document.getElementById('files-counter');
-    const addMoreFilesBtn = document.getElementById('add-more-files-btn');
-    window.accumulatedFiles = window.accumulatedFiles || [];
-    const accumulatedFiles = window.accumulatedFiles;
-
-    function humanFileSize(bytes) {
-        if (!bytes) return '0 B';
-        const thresh = 1024;
-        if (Math.abs(bytes) < thresh) return bytes + ' B';
-        const units = ['KB', 'MB', 'GB'];
-        let u = -1;
-        do {
-            bytes /= thresh;
-            ++u;
-        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-        return bytes.toFixed(1) + ' ' + units[u];
-    }
-
-    // Update the file table display
-    function updateFilesDisplay() {
-        filesTable.innerHTML = '';
-
-        if (accumulatedFiles.length === 0) {
-            filesPanel.style.display = 'none';
-            return;
-        }
-
-        filesPanel.style.display = 'block';
-        filesCounter.textContent = `${accumulatedFiles.length} file${accumulatedFiles.length !== 1 ? 's' : ''} selected`;
-
-        accumulatedFiles.forEach((file, idx) => {
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-file-idx', idx);
-            tr.innerHTML = '<td><i class="fas fa-file me-2" style="color: #667eea;"></i>' + file.name + '</td>' +
-                '<td>' + humanFileSize(file.size) + '</td>' +
-                '<td><span class="file-status-badge file-status-ready">Ready</span></td>' +
-                '<td><div class="file-progress"><div class="file-progress-bar" style="width: 0%"></div></div></td>' +
-                '<td><button type="button" class="btn-remove-file" onclick="removeFile(' + idx + ')" title="Remove file"><i class="fas fa-trash-alt"></i></button></td>';
-            filesTable.appendChild(tr);
-        });
-    }
-
-    // Remove a specific file from the list
-    window.removeFile = function(idx) {
-        accumulatedFiles.splice(idx, 1);
-        updateFilesDisplay();
-    };
-
-    // File selection event - ADD files instead of replacing
-    fileInput.addEventListener('change', function() {
-        const files = Array.from(fileInput.files || []);
-        
-        // Add new files to accumulated list
-        files.forEach(file => {
-            accumulatedFiles.push(file);
-        });
-
-        updateFilesDisplay();
-
-        // Reset the file input so user can select same file again if needed
-        fileInput.value = '';
-    });
-
-    // Add More Files button
-    addMoreFilesBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        fileInput.click();
-    });
-
-    // Drag and drop for file upload
-    fileUploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileUploadArea.classList.add('drag-over');
-    });
-
-    fileUploadArea.addEventListener('dragleave', () => {
-        fileUploadArea.classList.remove('drag-over');
-    });
-
-    fileUploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileUploadArea.classList.remove('drag-over');
-        
-        // Add dropped files to accumulated list
-        const droppedFiles = Array.from(e.dataTransfer.files || []);
-        droppedFiles.forEach(file => {
-            accumulatedFiles.push(file);
-        });
-
-        updateFilesDisplay();
-    });
-
-    // ============== DYNAMIC FORM BUILDER ==============
-    const formBuilderContainer = document.getElementById('form-builder-container');
-    const addFieldBtn = document.getElementById('add-field-btn');
-    let fieldCounter = document.querySelectorAll('.field-card').length;
-
-    if (formBuilderContainer && typeof Sortable !== 'undefined') {
-        new Sortable(formBuilderContainer, {
-            handle: '.field-handle',
-            animation: 150,
-            ghostClass: 'bg-light',
-            dragabble: '.field-card'
-        });
-    }
-
-    if (addFieldBtn) {
-        addFieldBtn.addEventListener('click', function() {
-            const idx = fieldCounter++;
-            const fieldHtml = '<div class="field-card">' +
-                '<span class="remove-field" onclick="this.parentElement.remove()"><i class="fas fa-times-circle"></i></span>' +
-                '<span class="field-handle"><i class="fas fa-grip-vertical"></i></span>' +
-                '<div class="row g-3">' +
-                '<div class="col-md-6"><label class="form-label small">Field Label (Question / Section Title)</label><input type="text" name="field_labels[]" class="form-control form-control-sm" placeholder="e.g., Serial Number" required></div>' +
-                '<div class="col-md-4"><label class="form-label small">Field Type</label><select name="field_types[]" class="form-select form-select-sm" onchange="toggleFieldOptions(this)">' +
-                '<option value="text">Short Text</option><option value="textarea">Long Text</option><option value="number">Number</option><option value="select">Select Menu</option><option value="checkbox">Single Checkbox</option><option value="checkbox_group">Multi-Selection Checkboxes</option><option value="radio">Radio Buttons</option><option value="date">Date</option><option value="file">File Upload</option><option value="section">Section / Page Break</option></select></div>' +
-                '<div class="col-md-2 d-flex align-items-end field-required-wrapper"><div class="form-check mb-2">' +
-                '<input type="hidden" name="field_index[]" value="' + idx + '"><input class="form-check-input field-required-input" type="checkbox" name="field_required_indexed[]" value="' + idx + '">' +
-                '<label class="form-check-label small">Required</label></div></div>' +
-                '<div class="col-12 options-container" style="display: none;"><label class="form-label small options-label">Options (Comma separated)</label><input type="text" name="field_options[]" class="form-control form-control-sm field-options-input" placeholder="Option 1, Option 2, Option 3"></div>' +
-                '</div><input type="hidden" name="field_ids[]" value="new"></div>';
-            const div = document.createElement('div');
-            div.innerHTML = fieldHtml;
-            formBuilderContainer.appendChild(div.firstElementChild);
-        });
-    }
-
-    window.toggleFieldOptions = function(select) {
-        const row = select.closest('.field-card');
-        const container = row.querySelector('.options-container');
-        const optionsLabel = row.querySelector('.options-label');
-        const optionsInput = row.querySelector('.field-options-input');
-        const requiredWrapper = row.querySelector('.field-required-wrapper');
-        
-        if (['select', 'radio', 'checkbox_group', 'section'].includes(select.value)) {
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
-        }
-        
-        if (select.value === 'section') {
-            optionsLabel.innerText = 'Section Description (Optional)';
-            optionsInput.placeholder = 'Description text for this new page...';
-            if (requiredWrapper) requiredWrapper.style.setProperty('display', 'none', 'important');
-        } else {
-            optionsLabel.innerText = 'Options (Comma separated)';
-            optionsInput.placeholder = 'Option 1, Option 2, Option 3';
-            if (requiredWrapper) requiredWrapper.style.display = 'flex';
-        }
-    };
-
-    window.toggleRecurrenceInterval = function() {
-        const isRecurring = document.getElementById('is_recurring').checked;
-        const container = document.getElementById('recurrence-interval-container');
-        if (isRecurring) {
-            container.classList.remove('d-none');
-            updateRecurrenceUI();
-        } else {
-            container.classList.add('d-none');
-        }
-    };
-
-    window.updateRecurrenceUI = function() {
-        const type = document.querySelector('input[name="recurrence_type"]:checked').value;
-        const presetContainer = document.getElementById('preset-options');
-        const customContainer = document.getElementById('custom-options');
-        
-        if (type === 'preset') {
-            presetContainer.classList.remove('d-none');
-            customContainer.classList.add('d-none');
-        } else {
-            presetContainer.classList.add('d-none');
-            customContainer.classList.remove('d-none');
-        }
-    };
-
-    window.toggleRecurrenceLimitInput = function() {
-        const forever = document.getElementById('recurrence_limit_forever').checked;
-        const container = document.getElementById('recurrence-limit-input-container');
-        if (forever) {
-            container.classList.add('d-none');
-        } else {
-            container.classList.remove('d-none');
-        }
-    };
-});
-</script>
-
-<!-- Leaflet CSS & JS (Local for Offline Support) -->
-<link rel="stylesheet" href="{% static 'vendor/leaflet-offline/leaflet.css' %}" />
+{% block extra_js %}
 <script src="{% static 'vendor/leaflet-offline/leaflet.js' %}"></script>
-<script>
-    L.Icon.Default.imagePath = "{% static 'vendor/leaflet-offline/images/' %}";
-</script>
+<script>if (typeof L !== 'undefined') { L.Icon.Default.imagePath = "{% static 'vendor/leaflet-offline/images/' %}"; }</script>
 <script src="{% static 'vendor/leaflet-offline/idb.js' %}"></script>
 <script src="{% static 'vendor/leaflet-offline/leaflet.offline.js' %}"></script>
 <script src="{% static 'vendor/sortablejs/sortable.min.js' %}"></script>
-
 <script>
-    const ALGERIA_WILAYAS = [
+(function () {
+const isAr = () => document.documentElement.dir === 'rtl';
+const T = (en, ar) => isAr() ? ar : en;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const toast = (m, t) => { if (window.showToast) window.showToast(m, t || 'success', 3000); };
+const ctx = document.getElementById('task-context').dataset;
+const form = document.getElementById('task-form');
+const FIELD_TYPES = [{% for v, en, ar in wt_field_types %}['{{ v }}', '{{ en|escapejs }}', '{{ ar|escapejs }}'],{% endfor %}];
+
+/* ── People picker ─────────────────────────────────────────── */
+const hidden = document.getElementById('selected-users-hidden');
+const picked = new Set((hidden.value || '').split(',').map(s => s.trim()).filter(Boolean));
+const allRows = () => Array.from(document.querySelectorAll('.user-option-item'));
+function paintRow(row) {
+    const on = picked.has(row.dataset.userId);
+    row.classList.toggle('selected', on);
+    row.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+function renderPicked() {
+    allRows().forEach(paintRow);
+    hidden.value = Array.from(picked).join(',');
+    document.getElementById('tf-picked-count').textContent = picked.size;
+    const box = document.getElementById('selected-users-display');
+    const list = document.getElementById('selected-users-chips');
+    box.hidden = picked.size === 0;
+    list.innerHTML = '';
+    picked.forEach(id => {
+        const row = document.querySelector(`.user-option-item[data-user-id="${CSS.escape(id)}"]`);
+        if (!row) return;
+        const name = row.dataset.userName;
+        const chip = document.createElement('span');
+        chip.className = 'wt-tf-chip';
+        chip.innerHTML = `<span dir="auto">${esc(name)}</span><button type="button" aria-label="${esc(T('Remove ', 'إزالة ') + name)}"><i class="fas fa-xmark"></i></button>`;
+        chip.querySelector('button').addEventListener('click', () => { picked.delete(id); renderPicked(); });
+        list.appendChild(chip);
+    });
+}
+function toggleRow(row) {
+    const id = row.dataset.userId;
+    picked.has(id) ? picked.delete(id) : picked.add(id);
+    renderPicked();
+}
+window.handleUserRowClick = toggleRow;
+document.getElementById('userRoleTabsContent').addEventListener('click', e => {
+    if (e.target.closest('.favorite-toggle-btn')) return;
+    const row = e.target.closest('.user-option-item');
+    if (row) toggleRow(row);
+});
+document.getElementById('userRoleTabsContent').addEventListener('keydown', e => {
+    const row = e.target.closest('.user-option-item');
+    if (row && e.target === row && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); toggleRow(row); }
+});
+document.getElementById('user-search').addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    allRows().forEach(r => { r.hidden = !!q && !(r.dataset.userName.toLowerCase().includes(q) || r.dataset.userEmail.includes(q)); });
+});
+document.getElementById('btn-select-all').addEventListener('click', () => {
+    const pane = document.querySelector('#userRoleTabsContent .tab-pane.active') || document;
+    pane.querySelectorAll('.user-option-item:not([hidden])').forEach(r => picked.add(r.dataset.userId));
+    renderPicked();
+});
+document.getElementById('btn-clear-all').addEventListener('click', () => { picked.clear(); renderPicked(); });
+document.querySelectorAll('#userRoleTabs [role=tab]').forEach(t => t.addEventListener('shown.bs.tab', () => {
+    document.querySelectorAll('#userRoleTabs [role=tab]').forEach(o => o.setAttribute('aria-selected', o === t ? 'true' : 'false'));
+}));
+renderPicked();
+
+/* Favourites */
+const FAV_URL = "{% url 'user-toggle-favorite' 999999999 %}";
+window.toggleFavorite = function (e, userId, btn) {
+    e.stopPropagation();
+    const will = !btn.classList.contains('is-on');
+    document.querySelectorAll(`.user-option-item[data-user-id="${CSS.escape(userId)}"] .favorite-toggle-btn`).forEach(b => {
+        b.classList.toggle('is-on', will);
+        b.setAttribute('aria-pressed', will ? 'true' : 'false');
+        const i = b.querySelector('i'); i.className = (will ? 'fas' : 'far') + ' fa-star';
+    });
+    const favList = document.getElementById('favorites-list');
+    const badge = document.querySelector('#favorites-tab .badge');
+    const existing = favList.querySelector(`.user-option-item[data-user-id="${CSS.escape(userId)}"]`);
+    if (will && !existing) {
+        const clone = btn.closest('.user-option-item').cloneNode(true);
+        clone.hidden = false;
+        favList.querySelector('[data-empty]')?.remove();
+        favList.appendChild(clone);
+    } else if (!will && existing) {
+        existing.remove();
+    }
+    if (badge) badge.textContent = favList.querySelectorAll('.user-option-item').length;
+    fetch(FAV_URL.replace('999999999', userId), { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': ctx.csrf, 'Content-Type': 'application/json' } })
+        .then(r => { if (!r.ok) throw new Error(); })
+        .catch(() => toast(T('Could not update favourites.', 'تعذّر تحديث المفضلين.'), 'error'));
+    renderPicked();
+};
+
+/* ── Files ─────────────────────────────────────────────────── */
+window.accumulatedFiles = [];
+const queue = window.accumulatedFiles;
+const fileInput = document.getElementById('task_files');
+const drop = document.getElementById('file-upload-area');
+const size = b => { if (!b) return '0 B'; const u = ['B', 'KB', 'MB', 'GB']; let i = 0; while (b >= 1024 && i < 3) { b /= 1024; i++; } return (i ? b.toFixed(1) : b) + ' ' + u[i]; };
+function renderQueue() {
+    const panel = document.getElementById('files-panel'), list = document.getElementById('files-table');
+    panel.hidden = queue.length === 0;
+    document.getElementById('files-counter').textContent = isAr() ? `ملفات للرفع: ${queue.length}` : `${queue.length} file${queue.length === 1 ? '' : 's'} to upload`;
+    list.innerHTML = '';
+    queue.forEach((f, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="fas fa-file" aria-hidden="true"></i><span><b dir="auto">${esc(f.name)}</b><small class="wt-num">${size(f.size)}</small></span><button type="button" class="wt-icon-btn is-danger" aria-label="${T('Remove file', 'إزالة الملف')}"><i class="fas fa-xmark"></i></button>`;
+        li.querySelector('button').addEventListener('click', () => { queue.splice(i, 1); renderQueue(); });
+        list.appendChild(li);
+    });
+}
+const addFiles = files => { Array.from(files || []).forEach(f => queue.push(f)); renderQueue(); };
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+document.getElementById('add-more-files-btn').addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag-over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('drag-over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
+
+window.deleteExistingFile = async function (fileId, name) {
+    if (!(await amazingConfirm(T(`Delete "${name}"? This cannot be undone.`, `حذف "${name}"؟ لا يمكن التراجع عن ذلك.`)))) return;
+    const row = document.getElementById('existing-file-' + fileId);
+    const fd = new FormData(); fd.append('file_id', fileId); fd.append('csrfmiddlewaretoken', ctx.csrf);
+    try {
+        const r = await fetch("{% if task %}{% url 'delete-task-file' task.id %}{% endif %}", { method: 'POST', credentials: 'same-origin', body: fd });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || '');
+        row?.remove();
+        toast(T('File deleted.', 'حُذف الملف.'));
+    } catch (e) { toast(T('Could not delete the file.', 'تعذّر حذف الملف.'), 'error'); }
+};
+
+/* ── Submission field builder ──────────────────────────────── */
+const builder = document.getElementById('form-builder-container');
+let fieldCounter = builder.querySelectorAll('.field-card').length;
+if (typeof Sortable !== 'undefined') new Sortable(builder, { handle: '.field-handle', animation: 150, draggable: '.field-card' });
+function labelOptions(card) {
+    const type = card.querySelector('select[name="field_types[]"]').value;
+    const box = card.querySelector('.options-container');
+    const lbl = card.querySelector('.options-label');
+    const inp = card.querySelector('.field-options-input');
+    const req = card.querySelector('.field-required-wrapper');
+    box.hidden = !['select', 'radio', 'checkbox_group', 'section'].includes(type);
+    if (type === 'section') {
+        lbl.textContent = T('Section description (optional)', 'وصف القسم (اختياري)');
+        inp.placeholder = T('Text shown at the top of this page', 'نص يظهر أعلى هذه الصفحة');
+    } else {
+        lbl.textContent = T('Choices, separated by commas', 'الخيارات، مفصولة بفواصل');
+        inp.placeholder = T('Option 1, Option 2, Option 3', 'خيار 1، خيار 2، خيار 3');
+    }
+    if (req) req.hidden = type === 'section';
+}
+window.toggleFieldOptions = sel => labelOptions(sel.closest('.field-card'));
+window.removeFieldCard = btn => btn.closest('.field-card').remove();
+builder.querySelectorAll('.field-card').forEach(labelOptions);
+document.getElementById('add-field-btn').addEventListener('click', () => {
+    const idx = fieldCounter++;
+    const li = document.createElement('li');
+    li.className = 'field-card';
+    li.innerHTML = `<span class="field-handle" aria-hidden="true"><i class="fas fa-grip-vertical"></i></span>
+        <div class="wt-tf-fieldrow">
+            <div class="wt-tf-field"><label class="form-label">${T('Question or label', 'السؤال أو التسمية')}</label><input type="text" name="field_labels[]" class="form-control" required dir="auto"></div>
+            <div class="wt-tf-field"><label class="form-label">${T('Type', 'النوع')}</label><select name="field_types[]" class="form-select" onchange="toggleFieldOptions(this)">${FIELD_TYPES.map(t => `<option value="${t[0]}">${isAr() ? t[2] : t[1]}</option>`).join('')}</select></div>
+            <div class="field-required-wrapper"><input type="hidden" name="field_index[]" value="${idx}"><label class="form-check"><input class="form-check-input field-required-input" type="checkbox" name="field_required_indexed[]" value="${idx}"> ${T('Required', 'مطلوب')}</label></div>
+            <button type="button" class="wt-icon-btn is-danger remove-field" onclick="removeFieldCard(this)" aria-label="${T('Remove field', 'حذف الحقل')}"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="wt-tf-field options-container" hidden><label class="form-label options-label"></label><input type="text" name="field_options[]" class="form-control field-options-input" dir="auto"></div>
+        <input type="hidden" name="field_ids[]" value="new">`;
+    builder.appendChild(li);
+    labelOptions(li);
+    li.querySelector('input[type=text]').focus();
+});
+
+/* ── Repeat ────────────────────────────────────────────────── */
+window.toggleRecurrenceInterval = () => { const on = document.getElementById('is_recurring').checked; document.getElementById('recurrence-interval-container').hidden = !on; if (on) updateRecurrenceUI(); };
+window.updateRecurrenceUI = () => {
+    const t = document.querySelector('input[name="recurrence_type"]:checked')?.value;
+    document.getElementById('preset-options').hidden = t !== 'preset';
+    document.getElementById('custom-options').hidden = t !== 'custom';
+};
+window.toggleRecurrenceLimitInput = () => { document.getElementById('recurrence-limit-input-container').hidden = document.getElementById('recurrence_limit_forever').checked; };
+
+/* ── Map ───────────────────────────────────────────────────── */
+const ALGERIA_WILAYAS = [
         {id: 1, name: "Adrar", lat: 27.8763, lng: 0.2934},
         {id: 2, name: "Chlef", lat: 36.1627, lng: 1.9507},
         {id: 3, name: "Laghouat", lat: 33.7958, lng: 2.8943},
@@ -1909,854 +596,112 @@ document.addEventListener('DOMContentLoaded', function() {
         {id: 57, name: "El M'Ghair", lat: 34.8667, lng: 6.0333},
         {id: 58, name: "El Menia", lat: 28.5833, lng: 2.8833}
     ];
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('location_enabled');
-        const container = document.getElementById('map-feature-container');
-        const wilayaSelect = document.getElementById('map_wilaya');
-        const latInput = document.getElementById('map_lat');
-        const lngInput = document.getElementById('map_lng');
-        const locationNameInput = document.getElementById('location_name');
-        
-        let map = null;
-        let marker = null;
-
-        // Populate Wilayas
-        ALGERIA_WILAYAS.forEach(w => {
-            const opt = document.createElement('option');
-            opt.value = w.name;
-            opt.textContent = `${w.id.toString().padStart(2, '0')} - ${w.name}`;
-            if ("{{ task.wilaya }}" === w.name) opt.selected = true;
-            wilayaSelect.appendChild(opt);
-        });
-
-        // Init map with offline support
-        function initMap() {
-            if (map) return;
-            
-            if (typeof L.tileLayer.offline !== 'function') {
-                console.error("Leaflet.offline plugin failed to load correctly.");
-                return;
-            }
-            
-            const placeholder = document.getElementById('map-placeholder');
-            if (placeholder) placeholder.style.display = 'none';
-            
-            const initialLat = latInput.value ? parseFloat(latInput.value) : 28.0339;
-            const initialLng = lngInput.value ? parseFloat(lngInput.value) : 1.6596;
-            const initialZoom = latInput.value ? 10 : 5;
-
-            try {
-                // Define Layers with Conservative Upscaling (Level 17) to avoid provider placeholders
-                // Define Layers with Offline Support
-                // Street Map with Offline Support (v3) - Source Tile Server for Caching
-                const streetLayer = L.tileLayer.offline('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; CARTO',
-                    subdomains: 'abcd',
-                    maxNativeZoom: 18,
-                    maxZoom: 24
-                });
-
-                // Satellite Map with Offline Support (v3) - Source Tile Server for Caching
-                const satelliteLayer = L.tileLayer.offline('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri',
-                    maxNativeZoom: 17, // Conservative upscaling to avoid missing tile placeholders
-                    maxZoom: 24
-                });
-
-                map = L.map('task-map', {
-                    center: [initialLat, initialLng],
-                    zoom: initialZoom,
-                    layers: [streetLayer]
-                });
-
-                // Savetiles Control (v3) - Expanded zoom levels for comprehensive offline use
-                const progress = L.control.savetiles(null, { // null will use the active layer if specified or we can bind to layers
+(function () {
+    const toggle = document.getElementById('location_enabled');
+    const box = document.getElementById('map-feature-container');
+    const wilaya = document.getElementById('map_wilaya');
+    const lat = document.getElementById('map_lat'), lng = document.getElementById('map_lng');
+    let map = null, marker = null;
+    const current = "{{ task.wilaya|default:''|escapejs }}";
+    ALGERIA_WILAYAS.forEach(w => {
+        const o = document.createElement('option');
+        o.value = w.name; o.textContent = `${String(w.id).padStart(2, '0')} · ${w.name}`;
+        if (current === w.name) o.selected = true;
+        wilaya.appendChild(o);
+    });
+    function pin(latlng) {
+        lat.value = latlng.lat.toFixed(6); lng.value = latlng.lng.toFixed(6);
+        if (marker) { marker.setLatLng(latlng); return; }
+        marker = L.marker(latlng, { draggable: true }).addTo(map);
+        marker.on('dragend', () => { const p = marker.getLatLng(); lat.value = p.lat.toFixed(6); lng.value = p.lng.toFixed(6); });
+    }
+    function initMap() {
+        if (map || typeof L === 'undefined') return;
+        const ph = document.getElementById('map-placeholder');
+        try {
+            const has = lat.value && lng.value;
+            const street = (L.tileLayer.offline || L.tileLayer)('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxNativeZoom: 19, maxZoom: 22 });
+            const sat = (L.tileLayer.offline || L.tileLayer)('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxNativeZoom: 17, maxZoom: 22 });
+            map = L.map('task-map', { center: has ? [parseFloat(lat.value), parseFloat(lng.value)] : [28.03, 1.66], zoom: has ? 10 : 5, layers: [street] });
+            const layers = {}; layers[T('Street', 'شوارع')] = street; layers[T('Satellite', 'قمر صناعي')] = sat;
+            L.control.layers(layers).addTo(map);
+            if (L.control.savetiles) {
+                const save = L.control.savetiles(street, {
                     zoomlevels: [10, 18],
-                    confirm(layer, successcallback) {
-                        const layerName = layer === streetLayer ? 'Street' : 'Satellite';
-                        amazingConfirm(`Save ${layerName} tiles for the current area (Zoom 10-18)?<br><br><small>Note: This will download tiles for offline use.</small>`).then(confirmed => {
-                            if (confirmed) {
-                                successcallback();
-                            }
-                        });
-                    },
-                    confirmRemoval(layer, successcallback) {
-                        amazingConfirm('Remove all cached tiles for this layer?').then(confirmed => {
-                            if (confirmed) {
-                                successcallback();
-                            }
-                        });
-                    },
-                    saveButtonHtml: '<i class="fas fa-download"></i>',
-                    removeButtonHtml: '<i class="fas fa-trash"></i>',
+                    confirm(layer, ok) { amazingConfirm(T('Save this area\'s map tiles for offline use (zoom 10 to 18)? This downloads data.', 'حفظ خريطة هذه المنطقة للاستخدام دون اتصال (التكبير 10 إلى 18)؟ سيُنزَّل ذلك بيانات.')).then(c => { if (c) ok(); }); },
+                    confirmRemoval(layer, ok) { amazingConfirm(T('Remove the saved offline tiles?', 'إزالة خرائط دون اتصال المحفوظة؟')).then(c => { if (c) ok(); }); },
+                    saveButtonHtml: '<i class="fas fa-download"></i>', removeButtonHtml: '<i class="fas fa-trash"></i>'
                 });
-
-                // Helper to update the layer being saved
-                map.on('baselayerchange', function(e) {
-                    progress._layer = e.layer;
-                });
-                
-                // Set initial layer for saving
-                progress._layer = streetLayer;
-                
-                progress.addTo(map);
-
-                // Create a custom status display
-                satelliteLayer.on('savestart', (e) => {
-                    console.log('Downloading ' + e._tilesforSave.length + ' tiles');
-                });
-
-                // Layer Control
-                const baseMaps = {
-                    "Street Map": streetLayer,
-                    "Satellite Map": satelliteLayer
-                };
-                L.control.layers(baseMaps).addTo(map);
-
-                if (latInput.value && lngInput.value) {
-                    marker = L.marker([initialLat, initialLng], {draggable: true}).addTo(map);
-                    marker.on('dragend', function(e) {
-                        const pos = marker.getLatLng();
-                        latInput.value = pos.lat.toFixed(6);
-                        lngInput.value = pos.lng.toFixed(6);
-                    });
-                }
-
-                map.on('click', function(e) {
-                    const lat = e.latlng.lat;
-                    const lng = e.latlng.lng;
-                    
-                    latInput.value = lat.toFixed(6);
-                    lngInput.value = lng.toFixed(6);
-
-                    if (marker) {
-                        marker.setLatLng(e.latlng);
-                    } else {
-                        marker = L.marker(e.latlng, {draggable: true}).addTo(map);
-                        marker.on('dragend', function(ev) {
-                            const pos = marker.getLatLng();
-                            latInput.value = pos.lat.toFixed(6);
-                            lngInput.value = pos.lng.toFixed(6);
-                        });
-                    }
-                });
-
-                // Force layout recalculation to avoid grey/empty map blocks
-                setTimeout(() => { if(map) map.invalidateSize(); }, 500);
-
-            } catch (err) {
-                console.error("Leaflet initialization failed", err);
-                const placeholder = document.getElementById('map-placeholder');
-                if (placeholder) {
-                    placeholder.style.display = 'flex';
-                    placeholder.innerHTML = `<div class="text-center p-4"><i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i><p class="mb-0 text-muted">Map initialization failed.<br><small>${err.message}</small></p></div>`;
-                }
+                map.on('baselayerchange', e => { save._layer = e.layer; });
+                save.addTo(map);
             }
+            if (has) pin(L.latLng(parseFloat(lat.value), parseFloat(lng.value)));
+            map.on('click', e => pin(e.latlng));
+            if (ph) ph.hidden = true;
+            setTimeout(() => map.invalidateSize(), 300);
+        } catch (err) {
+            if (ph) ph.textContent = T('The map could not load. You can still save the task.', 'تعذّر تحميل الخريطة. يمكنك حفظ المهمة رغم ذلك.');
         }
-
-        toggle.addEventListener('change', function() {
-            if (this.checked) {
-                container.style.display = 'block';
-                setTimeout(initMap, 200);
-            } else {
-                container.style.display = 'none';
-            }
-        });
-
-        wilayaSelect.addEventListener('change', function() {
-            const selected = ALGERIA_WILAYAS.find(w => w.name === this.value);
-            if (selected && map) {
-                map.flyTo([selected.lat, selected.lng], 9);
-                
-                if (!marker) {
-                    const center = [selected.lat, selected.lng];
-                    marker = L.marker(center, {draggable: true}).addTo(map);
-                    latInput.value = selected.lat.toFixed(6);
-                    lngInput.value = selected.lng.toFixed(6);
-                }
-            }
-        });
-
-        if (toggle.checked) {
-            setTimeout(initMap, 200);
-        }
+    }
+    toggle.addEventListener('change', () => { box.hidden = !toggle.checked; if (toggle.checked) setTimeout(initMap, 100); });
+    wilaya.addEventListener('change', () => {
+        const w = ALGERIA_WILAYAS.find(x => x.name === wilaya.value);
+        if (w && map) { map.flyTo([w.lat, w.lng], 9); if (!marker) pin(L.latLng(w.lat, w.lng)); }
     });
+    if (toggle.checked) setTimeout(initMap, 100);
+})();
 
-    // Toggle Correspondence Fields
-    function toggleCorrespondenceFields() {
-        const typeCorrEl = document.getElementById('type_correspondence');
-        const fields = document.getElementById('correspondence-fields');
-        const attachmentContainer = document.getElementById('attachment-field-container');
-        const labelStd = document.getElementById('label_standard');
-        const labelCorr = document.getElementById('label_correspondence');
-        const recurrenceSection = document.getElementById('automated-reactivation-section');
-
-        if (!typeCorrEl) {
-            if (fields) fields.style.display = 'none';
-            if (recurrenceSection) recurrenceSection.style.display = 'block';
-            return;
+/* ── Save (AJAX, with real upload progress) ────────────────── */
+const status = document.getElementById('tf-status');
+const saveBtn = document.getElementById('tf-save');
+const prog = document.querySelector('.wt-tf-progress');
+const bar = document.getElementById('tf-progress-bar');
+form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+        form.classList.add('wt-checked');
+        const bad = form.querySelector(':invalid');
+        if (bad) {
+            bad.scrollIntoView({ block: 'center' }); bad.focus({ preventScroll: true });
+            const lbl = bad.id ? form.querySelector(`label[for="${CSS.escape(bad.id)}"]`) : bad.closest('.wt-tf-field')?.querySelector('.form-label');
+            const name = lbl ? (lbl.querySelector(isAr() ? '.lang-ar' : '.lang-en') || lbl).textContent.replace('*', '').trim() : '';
+            toast(T('Fill in: ', 'أكمل الحقل: ') + name, 'error');
         }
-
-        const isCorrespondence = typeCorrEl.checked;
-        if (isCorrespondence) {
-            if (fields) fields.style.display = 'block';
-            if (attachmentContainer) attachmentContainer.style.display = 'block';
-            if (recurrenceSection) recurrenceSection.style.display = 'none';
-            if (labelCorr) {
-                labelCorr.style.border = '2px solid #6366f1';
-                labelCorr.style.background = '#eef2ff';
-            }
-            if (labelStd) {
-                labelStd.style.border = '2px solid #e0e0e0';
-                labelStd.style.background = '#f8f9fa';
-            }
-            
-            const isRecurringCb = document.getElementById('is_recurring');
-            if (isRecurringCb) {
-                isRecurringCb.checked = false;
-                if (typeof window.toggleRecurrenceInterval === 'function') window.toggleRecurrenceInterval();
-            }
+        return;
+    }
+    const fd = new FormData(form);
+    fd.delete('assigned_to'); picked.forEach(id => fd.append('assigned_to', id));
+    if (queue.length) { fd.delete('task_files'); queue.forEach(f => fd.append('task_files', f)); }
+    saveBtn.disabled = true;
+    prog.hidden = false; bar.style.setProperty('--p', '4%');
+    status.textContent = T('Saving…', 'جارٍ الحفظ…');
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action || window.location.href, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.timeout = 120000;
+    xhr.upload.addEventListener('progress', ev => {
+        if (!ev.lengthComputable) return;
+        const p = Math.round(ev.loaded / ev.total * 90);
+        bar.style.setProperty('--p', Math.max(4, p) + '%');
+        if (queue.length) status.textContent = T('Uploading files… ', 'جارٍ رفع الملفات… ') + p + '%';
+    });
+    const fail = msg => { saveBtn.disabled = false; prog.hidden = true; status.textContent = ''; toast(msg, 'error'); };
+    xhr.onerror = () => fail(T('Could not reach the server. Check your connection and try again.', 'تعذّر الوصول إلى الخادم. تحقّق من الاتصال وحاول مرة أخرى.'));
+    xhr.ontimeout = () => fail(T('The server took too long. Try again.', 'استغرق الخادم وقتًا طويلًا. حاول مرة أخرى.'));
+    xhr.onload = () => {
+        let d = null; try { d = JSON.parse(xhr.responseText); } catch (err) {}
+        if (xhr.status >= 200 && xhr.status < 300 && d && d.status === 'success') {
+            bar.style.setProperty('--p', '100%');
+            status.textContent = T('Saved. Opening…', 'تم الحفظ. جارٍ الفتح…');
+            window.location.href = d.redirect_url || "{% url 'task-list' %}";
+        } else if (xhr.status >= 200 && xhr.status < 300 && !d && xhr.responseURL) {
+            window.location.href = xhr.responseURL;
         } else {
-            if (fields) fields.style.display = 'none';
-            if (attachmentContainer) attachmentContainer.style.display = 'none';
-            if (recurrenceSection) recurrenceSection.style.display = 'block';
-            if (labelStd) {
-                labelStd.style.border = '2px solid #667eea';
-                labelStd.style.background = '#f0f1ff';
-            }
-            if (labelCorr) {
-                labelCorr.style.border = '2px solid #e0e0e0';
-                labelCorr.style.background = '#f8f9fa';
-            }
+            fail((d && (d.message || d.error)) || T('The task could not be saved. Check the fields and try again.', 'تعذّر حفظ المهمة. تحقّق من الحقول وحاول مرة أخرى.'));
         }
-    }
-
-    function toggleFavorite(e, userId, btn) {
-        e.stopPropagation();
-        
-        const allToggleBtns = document.querySelectorAll(`[data-user-id="${userId}"] .favorite-toggle-btn i`);
-        const itemRow = btn.closest('.user-option-item');
-        
-        // Optimistic UI update
-        const isCurrentlyFavorite = btn.querySelector('i').classList.contains('fas');
-        const willBeFavorite = !isCurrentlyFavorite;
-
-        allToggleBtns.forEach(icon => {
-            if (willBeFavorite) {
-                icon.classList.remove('far', 'text-muted');
-                icon.classList.add('fas', 'text-warning');
-            } else {
-                icon.classList.remove('fas', 'text-warning');
-                icon.classList.add('far', 'text-muted');
-            }
-        });
-
-        // Dynamic DOM Movement for Favorites Tab
-        const favList = document.getElementById('favorites-list');
-        const favCountBadge = document.querySelector('#favorites-tab .badge');
-        
-        if (favList && itemRow) {
-            if (willBeFavorite) {
-                // Add to Favorites tab
-                const existing = favList.querySelector(`[data-user-id="${userId}"]`);
-                if (!existing) {
-                    const clone = itemRow.cloneNode(true);
-                    
-                    // Attach click handler for the new clone
-                    clone.addEventListener('click', function() {
-                        if (typeof window.handleUserRowClick === 'function') {
-                            window.handleUserRowClick(this);
-                        }
-                    });
-                    
-                    // Clean up empty state text if present
-                    const emptyText = favList.querySelector('p:not(.user-email)');
-                    if (emptyText && emptyText.textContent.includes('No favorite')) {
-                        emptyText.remove();
-                    }
-                    
-                    favList.appendChild(clone);
-                }
-            } else {
-                // Remove from Favorites tab
-                const existing = favList.querySelector(`[data-user-id="${userId}"]`);
-                if (existing) {
-                    existing.remove();
-                }
-                
-                // Show empty state if nothing left
-                const remaining = favList.querySelectorAll('.user-option-item');
-                if (remaining.length === 0) {
-                    const noFavs = document.createElement('p');
-                    noFavs.className = 'text-muted py-3 text-center small';
-                    noFavs.textContent = 'No favorite users yet.';
-                    favList.appendChild(noFavs);
-                }
-            }
-            
-            // Update the badge count
-            if (favCountBadge) {
-                const currentCount = parseInt(favCountBadge.textContent) || 0;
-                favCountBadge.textContent = willBeFavorite ? currentCount + 1 : Math.max(0, currentCount - 1);
-            }
-        }
-
-        fetch(`/api/users/${userId}/toggle_favorite/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to toggle favorite on server.');
-            }
-        })
-        .catch(error => console.error('Error toggling favorite:', error));
-    }
-
-    // Initial call to set correct state on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleCorrespondenceFields();
-    });
-</script>
-
-<!-- AMAZING TASK CREATION PROGRESS LOADING OVERLAY -->
-<div id="amazing-task-loading-overlay" class="task-loading-overlay">
-    <div class="task-loading-card">
-        <div class="loading-orb-container">
-            <div class="loading-ring-outer"></div>
-            <div class="loading-ring-inner"></div>
-            <div class="loading-icon-center" id="loading-status-icon">
-                <img src="{% if site_config.logo %}{{ site_config.logo.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="Logo" class="loading-logo-img">
-            </div>
-        </div>
-
-        <h3 class="loading-title" id="loading-title">
-            {% if task %}Updating Task...{% else %}{% if initial_type == 'correspondence' %}Issuing Correspondence...{% else %}Creating New Task...{% endif %}{% endif %}
-        </h3>
-        <p class="loading-subtitle" id="loading-subtitle">Please wait while WorkTrack Pro processes your submission.</p>
-
-        <!-- Progress Bar Container -->
-        <div class="loading-progress-box">
-            <div class="loading-progress-track">
-                <div class="loading-progress-bar" id="loading-progress-bar" style="width: 5%;"></div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="small text-white-50">Upload & Save Progress</span>
-                <span class="loading-percentage" id="loading-percentage">5%</span>
-            </div>
-        </div>
-
-        <!-- Dynamic Steps Tracker -->
-        <div class="loading-steps-list">
-            <div class="loading-step active" id="step-1">
-                <i class="fas fa-circle-notch fa-spin step-icon"></i>
-                <span>Validating task details & parameters</span>
-            </div>
-            <div class="loading-step" id="step-2">
-                <i class="far fa-circle step-icon"></i>
-                <span>Encrypting & processing file attachments</span>
-            </div>
-            <div class="loading-step" id="step-3">
-                <i class="far fa-circle step-icon"></i>
-                <span>Assigning team members & dispatching alerts</span>
-            </div>
-            <div class="loading-step" id="step-4">
-                <i class="far fa-circle step-icon"></i>
-                <span>Finalizing task registration</span>
-            </div>
-        </div>
-
-        <div id="loading-error-box" class="loading-error-box" style="display: none;">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <span id="loading-error-text">An error occurred while saving the task.</span>
-            <button type="button" class="btn btn-sm btn-outline-danger mt-3 w-100 fw-bold" id="close-loading-error-btn">Dismiss & Fix Errors</button>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* Unified Dashboard Banner Theme for Task Hero */
-    .task-hero {
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.65) 0%, rgba(35, 8, 16, 0.75) 50%, rgba(10, 2, 5, 0.85) 100%), var(--dashboard-banner-url) center/cover no-repeat !important;
-        border: 1px solid rgba(var(--banner-primary-rgb, 220, 38, 38), 0.3) !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35) !important;
-        border-radius: 20px !important;
-    }
-    .task-hero::before { display: none !important; }
-    .task-hero h1 { color: #ffffff !important; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important; }
-    .task-hero p.sub { color: rgba(255,255,255,0.85) !important; }
-
-    /* Amazing Task Loading Overlay Styles */
-    .task-loading-overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        z-index: 99999;
-        background: rgba(7, 13, 31, 0.88);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.4s ease, visibility 0.4s ease;
-        visibility: hidden;
-    }
-
-    .task-loading-overlay.active {
-        opacity: 1;
-        pointer-events: all;
-        visibility: visible;
-    }
-
-    .task-loading-card {
-        background: rgba(15, 23, 42, 0.95);
-        border: 1px solid rgba(var(--banner-primary-rgb, 220, 38, 38), 0.4);
-        box-shadow: 0 0 50px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.35), 0 25px 60px rgba(0, 0, 0, 0.7);
-        border-radius: 24px;
-        padding: 2.5rem 2rem;
-        max-width: 480px;
-        width: 90%;
-        text-align: center;
-        color: white;
-        position: relative;
-        overflow: hidden;
-        transform: scale(0.92);
-        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .task-loading-overlay.active .task-loading-card {
-        transform: scale(1);
-    }
-
-    .loading-orb-container {
-        position: relative;
-        width: 100px;
-        height: 100px;
-        margin: 0 auto 1.5rem;
-    }
-
-    .loading-ring-outer {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        border: 3px solid transparent;
-        border-top-color: var(--banner-primary, var(--color-primary, #10b981));
-        border-right-color: var(--banner-accent, #ef4444);
-        animation: loadingSpin 1.5s linear infinite;
-        box-shadow: 0 0 18px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.45);
-    }
-
-    .loading-ring-inner {
-        position: absolute;
-        inset: 12px;
-        border-radius: 50%;
-        border: 3px solid transparent;
-        border-bottom-color: #f59e0b;
-        border-left-color: var(--banner-primary, var(--color-primary, #10b981));
-        animation: loadingSpinReverse 1.2s linear infinite;
-    }
-
-    .loading-icon-center {
-        position: absolute;
-        inset: 24px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(var(--banner-primary-rgb, 220, 38, 38), 0.25) 0%, rgba(15, 23, 42, 0.95) 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        color: var(--banner-primary, var(--color-primary, #10b981));
-        box-shadow: inset 0 0 15px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.35);
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-
-    .loading-logo-img {
-        width: 42px;
-        height: 42px;
-        object-fit: contain;
-        filter: drop-shadow(0 0 8px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.7));
-        animation: logoPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes logoPulse {
-        0%, 100% { transform: scale(1); opacity: 0.9; }
-        50% { transform: scale(1.12); opacity: 1; filter: drop-shadow(0 0 16px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.95)); }
-    }
-
-    @keyframes loadingSpin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    @keyframes loadingSpinReverse {
-        0% { transform: rotate(360deg); }
-        100% { transform: rotate(0deg); }
-    }
-
-    .loading-title {
-        font-size: 1.4rem;
-        font-weight: 800;
-        margin-bottom: 0.4rem;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-    }
-
-    .loading-subtitle {
-        font-size: 0.88rem;
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 1.5rem;
-    }
-
-    .loading-progress-box {
-        margin-bottom: 1.5rem;
-    }
-
-    .loading-progress-track {
-        height: 10px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        margin-bottom: 0.5rem;
-    }
-
-    .loading-progress-bar {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, var(--banner-primary, var(--color-primary, #10b981)), var(--banner-accent, #ef4444), #f59e0b);
-        background-size: 200% 100%;
-        animation: gradientMove 2s ease infinite;
-        border-radius: 20px;
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 0 15px rgba(var(--banner-primary-rgb, 220, 38, 38), 0.6);
-    }
-
-    @keyframes gradientMove {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    .loading-percentage {
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: var(--banner-accent, #ef4444);
-        letter-spacing: 0.5px;
-    }
-
-    .loading-steps-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.65rem;
-        text-align: left;
-        background: rgba(255, 255, 255, 0.04);
-        padding: 1.1rem;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .loading-step {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.5);
-        transition: all 0.3s ease;
-    }
-
-    .loading-step.active {
-        color: #ffffff;
-        font-weight: 600;
-    }
-
-    .loading-step.completed {
-        color: var(--wt-ok);
-        font-weight: 500;
-    }
-
-    .loading-step .step-icon {
-        font-size: 0.95rem;
-        width: 18px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-
-    .loading-step.active .step-icon {
-        color: var(--banner-primary, var(--color-primary, #10b981));
-    }
-
-    .loading-step.completed .step-icon {
-        color: var(--wt-ok);
-    }
-
-    .loading-error-box {
-        margin-top: 1.25rem;
-        padding: 1rem;
-        background: rgba(192, 40, 58, 0.15);
-        border: 1px solid rgba(192, 40, 58, 0.4);
-        border-radius: 12px;
-        color: #fca5a5;
-        font-size: 0.85rem;
-        text-align: left;
-    }
-</style>
-
-<script>
-    (function() {
-        function safeDOMReady(fn) {
-            if (document.readyState === 'interactive' || document.readyState === 'complete') {
-                fn();
-            } else {
-                document.addEventListener('DOMContentLoaded', fn);
-            }
-        }
-
-        safeDOMReady(function() {
-            const selectedUserIds = window.selectedUserIds || new Set();
-            const accumulatedFiles = window.accumulatedFiles || [];
-            const form = document.getElementById('task-form');
-            const selectedUsersHidden = document.getElementById('selected-users-hidden');
-
-            // Pre-fill selected users in edit mode
-            if (selectedUsersHidden && selectedUsersHidden.value) {
-                selectedUsersHidden.value.split(',').forEach(id => {
-                    if (id.trim()) selectedUserIds.add(id.trim());
-                });
-            }
-
-            // Close loading error overlay button
-            const closeErrBtn = document.getElementById('close-loading-error-btn');
-            if (closeErrBtn) {
-                closeErrBtn.addEventListener('click', function() {
-                    const overlay = document.getElementById('amazing-task-loading-overlay');
-                    if (overlay) overlay.classList.remove('active');
-                });
-            }
-
-            if (!form) return;
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                // Native HTML validation check
-                if (!form.checkValidity()) {
-                    form.reportValidity();
-                    const firstInvalid = form.querySelector(':invalid');
-                    if (firstInvalid) {
-                        firstInvalid.focus();
-                        const fieldName = firstInvalid.getAttribute('name') || firstInvalid.getAttribute('id') || 'field';
-                        if (window.showToast) {
-                            window.showToast('Please fill out the required ' + fieldName + ' field.', 'error');
-                        }
-                    }
-                    return;
-                }
-
-                // Title check
-                const titleInput = form.querySelector('[name="title"]');
-                if (!titleInput || !titleInput.value.trim()) {
-                    if (window.showToast) window.showToast('Please enter a task title', 'error');
-                    if (titleInput) titleInput.focus();
-                    return;
-                }
-
-                // Elements reference
-                const overlay = document.getElementById('amazing-task-loading-overlay');
-                const progressBar = document.getElementById('loading-progress-bar');
-                const percentageEl = document.getElementById('loading-percentage');
-                const loadingTitle = document.getElementById('loading-title');
-                const loadingSubtitle = document.getElementById('loading-subtitle');
-                const errorBox = document.getElementById('loading-error-box');
-                const errorText = document.getElementById('loading-error-text');
-
-                let currentProgress = 15;
-                let tickerInterval = null;
-                let safetyTimeout = null;
-
-                function setProgress(val) {
-                    currentProgress = Math.max(currentProgress, val);
-                    if (progressBar) progressBar.style.width = currentProgress + '%';
-                    if (percentageEl) percentageEl.textContent = currentProgress + '%';
-                }
-
-                function updateStep(stepNum, status) {
-                    for (let i = 1; i < stepNum; i++) {
-                        const el = document.getElementById('step-' + i);
-                        if (el) {
-                            el.className = 'loading-step completed';
-                            const icon = el.querySelector('.step-icon');
-                            if (icon) icon.className = 'fas fa-check-circle step-icon';
-                        }
-                    }
-                    const currentEl = document.getElementById('step-' + stepNum);
-                    if (currentEl) {
-                        if (status === 'active') {
-                            currentEl.className = 'loading-step active';
-                            const icon = currentEl.querySelector('.step-icon');
-                            if (icon) icon.className = 'fas fa-circle-notch fa-spin step-icon';
-                        } else if (status === 'completed') {
-                            currentEl.className = 'loading-step completed';
-                            const icon = currentEl.querySelector('.step-icon');
-                            if (icon) icon.className = 'fas fa-check-circle step-icon';
-                        }
-                    }
-                }
-
-                function startProcessingTicker() {
-                    if (tickerInterval) clearInterval(tickerInterval);
-                    tickerInterval = setInterval(() => {
-                        if (currentProgress < 94) {
-                            currentProgress += 1;
-                            setProgress(currentProgress);
-                            if (currentProgress >= 25 && currentProgress < 60) {
-                                updateStep(2, 'active');
-                            } else if (currentProgress >= 60 && currentProgress < 85) {
-                                updateStep(3, 'active');
-                            } else if (currentProgress >= 85) {
-                                updateStep(4, 'active');
-                            }
-                        }
-                    }, 180);
-                }
-
-                // Activate Overlay & set initial 15% progress
-                if (overlay) {
-                    overlay.classList.add('active');
-                    if (errorBox) errorBox.style.display = 'none';
-                    updateStep(1, 'active');
-                    setProgress(15);
-                }
-
-                startProcessingTicker();
-
-                const formData = new FormData(form);
-
-                // Add selected user IDs
-                formData.delete('assigned_to');
-                if (selectedUserIds && selectedUserIds.size > 0) {
-                    selectedUserIds.forEach(userId => {
-                        formData.append('assigned_to', userId);
-                    });
-                } else if (selectedUsersHidden && selectedUsersHidden.value) {
-                    selectedUsersHidden.value.split(',').forEach(id => {
-                        if (id.trim()) formData.append('assigned_to', id.trim());
-                    });
-                }
-
-                // Add accumulated files
-                if (accumulatedFiles && accumulatedFiles.length > 0) {
-                    formData.delete('task_files');
-                    accumulatedFiles.forEach(file => {
-                        formData.append('task_files', file);
-                    });
-                }
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', form.action || window.location.href, true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-                // Realtime upload progress tracking
-                xhr.upload.addEventListener('progress', function(ev) {
-                    if (ev.lengthComputable && ev.total > 0) {
-                        const uploadPercent = Math.round(ev.loaded / ev.total * 65);
-                        const totalProgress = Math.min(85, Math.max(15, uploadPercent));
-                        setProgress(totalProgress);
-
-                        if (totalProgress > 25) {
-                            updateStep(2, 'active');
-                        }
-                        if (totalProgress > 60) {
-                            updateStep(3, 'active');
-                        }
-                    }
-                });
-
-                // Safety timeout (60 seconds max)
-                safetyTimeout = setTimeout(() => {
-                    if (tickerInterval) clearInterval(tickerInterval);
-                    if (xhr.readyState !== 4) {
-                        xhr.abort();
-                        showError('Request timed out. The server took too long to respond. Please try again.');
-                    }
-                }, 60000);
-
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (tickerInterval) clearInterval(tickerInterval);
-                        if (safetyTimeout) clearTimeout(safetyTimeout);
-
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                const response = JSON.parse(xhr.responseText);
-                                if (response.status === 'success') {
-                                    setProgress(100);
-                                    updateStep(1, 'completed');
-                                    updateStep(2, 'completed');
-                                    updateStep(3, 'completed');
-                                    updateStep(4, 'completed');
-
-                                    const iconCenter = document.getElementById('loading-status-icon');
-                                    if (iconCenter) {
-                                        iconCenter.innerHTML = '<i class="fas fa-check-circle text-success" style="font-size: 2.2rem;"></i>';
-                                        iconCenter.style.background = 'radial-gradient(circle, rgba(0,255,65,0.4) 0%, rgba(15,23,42,0.9) 100%)';
-                                    }
-                                    if (loadingTitle) {
-                                        loadingTitle.textContent = 'Task Saved Successfully!';
-                                        loadingTitle.style.color = '#00ff41';
-                                    }
-                                    if (loadingSubtitle) {
-                                        loadingSubtitle.textContent = response.message || 'Redirecting to workspace...';
-                                    }
-
-                                    setTimeout(() => {
-                                        window.location.href = response.redirect_url || '{% url "task-list" %}';
-                                    }, 800);
-                                    return;
-                                } else {
-                                    showError(response.message || 'Validation error saving task.');
-                                }
-                            } catch(err) {
-                                if (xhr.responseURL && !xhr.responseText.includes('"status":')) {
-                                    setProgress(100);
-                                    window.location.href = xhr.responseURL;
-                                    return;
-                                }
-                                showError('Unexpected server response. Please try again.');
-                            }
-                        } else {
-                            try {
-                                const errResp = JSON.parse(xhr.responseText);
-                                showError(errResp.error || errResp.message || 'Server error (' + xhr.status + ')');
-                            } catch(e) {
-                                showError('Server error occurred (' + xhr.status + '). Please try again.');
-                            }
-                        }
-                    }
-                };
-
-                function showError(msg) {
-                    if (tickerInterval) clearInterval(tickerInterval);
-                    if (safetyTimeout) clearTimeout(safetyTimeout);
-                    if (errorBox && errorText) {
-                        errorText.textContent = msg;
-                        errorBox.style.display = 'block';
-                    }
-                    const iconCenter = document.getElementById('loading-status-icon');
-                    if (iconCenter) {
-                        iconCenter.innerHTML = '<i class="fas fa-exclamation-triangle text-danger" style="font-size: 2rem;"></i>';
-                    }
-                    if (loadingTitle) loadingTitle.textContent = 'Action Failed';
-                }
-
-                xhr.send(formData);
-            });
-        });
-    })();
+    };
+    xhr.send(fd);
+});
+})();
 </script>
 {% endblock %}

@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lat = parseFloat(m.lat) || 0, lng = parseFloat(m.lng) || 0;
         const map = L.map('task-view-map').setView([lat, lng], 13);
         window.taskLeafletMap = map;
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
         L.marker([lat, lng]).addTo(map).bindPopup('<b>' + esc("{{ task.title|escapejs }}") + '</b>');
         setTimeout(() => map.invalidateSize(), 400);
     } catch (err) { console.warn('Map:', err); }
