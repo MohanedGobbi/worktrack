@@ -1,2265 +1,296 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block title %}{{ module.name }} — Module Dashboard · Worktrack Pro{% endblock %}
-
-{% block extra_css %}
-{% with module_color=module.color|default:"#2563eb" bg_alpha=module.color|default:"#2563eb"|add:"22" %}
-<style>
-:root {
-    --module-color: {{ module_color }};
-    --module-color-alpha: {{ bg_alpha }};
-}
-/* ===== PREMIUM BANNER SYSTEM ===== */
-.module-hero {
-    background: var(--wt-hero-bg) !important;
-    border-radius: 24px;
-    padding: 0;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    min-height: 220px;
-    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
-    box-shadow: none !important;
-}
-/* Background orbs */
-.module-hero::before {
-    display: none !important;
-}
-.module-hero::after {
-    display: none !important;
-}
-/* Mesh pattern overlay */
-.hero-mesh {
-    display: none !important;
-}
-.hero-content {
-    position: relative;
-    z-index: 2;
-    padding: 2.5rem 2.5rem 2rem;
-    color: white;
-}
-.hero-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-.hero-back-btn {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    display: flex; align-items: center; justify-content: center;
-    color: white; text-decoration: none;
-    transition: all 0.25s;
-    backdrop-filter: blur(4px);
-}
-.hero-back-btn:hover { background: rgba(255,255,255,0.25); color: white; }
-.hero-badge {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    backdrop-filter: blur(4px);
-    border-radius: 50px;
-    padding: 0.3rem 1rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.9);
-}
-.hero-title {
-    font-size: 2.4rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.hero-desc { opacity: 0.8; font-size: 1rem; margin-bottom: 1.5rem; max-width: 600px; }
-
-.hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.hero-btn-primary {
-    padding: 0.6rem 1.5rem;
-    border-radius: 50px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    background: rgba(255,255,255,0.95);
-    color: #1e293b;
-    border: none;
-    text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: all 0.25s;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.hero-btn-primary:hover { background: white; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); color: #1e293b; }
-.hero-btn-outline {
-    padding: 0.6rem 1.5rem;
-    border-radius: 50px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    background: transparent;
-    color: white;
-    border: 1px solid rgba(255,255,255,0.4);
-    text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: all 0.25s;
-    backdrop-filter: blur(4px);
-}
-.hero-btn-outline:hover { background: rgba(255,255,255,0.15); color: white; transform: translateY(-2px); }
-
-/* Module icon orb */
-.hero-icon-orb {
-    position: absolute;
-    right: 2.5rem; top: 50%; transform: translateY(-50%);
-    width: 130px; height: 130px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    backdrop-filter: blur(6px);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 3.5rem;
-    color: rgba(255,255,255,0.35);
-    z-index: 2;
-}
-@keyframes float {
-    0%, 100% { transform: translateY(-50%) translateX(0); }
-    50% { transform: translateY(-58%) translateX(-5px); }
-}
-.hero-icon-orb { animation: float 6s ease-in-out infinite; }
-
-/* Pie Chart Styles */
-.hero-pies-container {
-    position: absolute;
-    right: 2rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1.5rem;
-}
-.hero-pie-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-}
-.hero-pie-chart {
-    width: 105px;
-    height: 105px;
-    border-radius: 50%;
-    background: conic-gradient(var(--color-primary, #10b981) var(--progress), rgba(255,255,255,0.08) 0);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.hero-pie-chart.accent {
-    background: conic-gradient(var(--color-accent, #34d399) var(--progress), rgba(255,255,255,0.08) 0);
-}
-.hero-pie-chart::after {
-    content: attr(data-progress) '%';
-    position: absolute;
-    inset: 9px;
-    background: color-mix(in oklab, var(--wt-brand) 62%, #000);
-    border: 2px solid rgba(var(--wt-brand-rgb), 0.4);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 1.15rem;
-    color: #ffffff;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
-}
-.hero-pie-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: rgba(255,255,255,0.85);
-    text-align: center;
-}
-.hero-pie-edit-btn {
-    position: absolute;
-    top: -12px;
-    right: -8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: color-mix(in oklab, var(--wt-brand) 62%, #000);
-    border: 1.5px solid rgba(var(--wt-brand-rgb), 0.6);
-    color: var(--wt-accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    transition: all 0.25s;
-    text-decoration: none;
-    z-index: 10;
-}
-.hero-pie-edit-btn:hover {
-    background: var(--color-primary, #10b981);
-    color: color-mix(in oklab, var(--wt-brand) 62%, #000);
-    transform: scale(1.1);
-    border-color: var(--wt-accent);
-}
-@media (max-width: 992px) {
-    .hero-pies-container { position: relative; right: 0; transform: none; margin-top: 2rem; }
-    .hero-icon-orb { display: none; }
-}
-/* ===== RTL OVERRIDES FOR BANNER ===== */
-body.rtl-mode .hero-pies-container {
-    right: auto !important;
-    left: 2rem !important;
-}
-body.rtl-mode .hero-icon-orb {
-    right: auto !important;
-    left: 2.5rem !important;
-}
-/* In RTL mode, pies are on the LEFT — text starts from the RIGHT, needs left room */
-body.rtl-mode .hero-content {
-    padding-left: 18rem !important;
-    padding-right: 2.5rem !important;
-}
-@media (max-width: 992px) {
-    body.rtl-mode .hero-pies-container {
-        left: 0 !important;
-        right: 0 !important;
-        position: relative !important;
-    }
-    body.rtl-mode .hero-content {
-        padding-right: 2rem !important;
-        padding-left: 2rem !important;
-    }
-}
-
-
-/* ===== STATS GRID ===== */
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-@media (max-width: 992px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width: 576px) { .stats-grid { grid-template-columns: 1fr; } }
-
-.stat-card {
-    background: white;
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    display: flex; flex-direction: column;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-.stat-card::before {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-}
-.stat-card.blue::before { background: linear-gradient(90deg, #2563eb, #60a5fa); }
-.stat-card.green::before { background: linear-gradient(90deg, var(--color-primary, #10b981), var(--color-accent, #34d399)); }
-.stat-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.stat-card.indigo::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
-
-.stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-.stat-icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-}
-.stat-icon.blue { background: rgba(37,99,235,0.1); color: #2563eb; }
-.stat-icon.green { background: rgba(var(--wt-brand-rgb),0.1); color: var(--color-primary, #10b981); }
-.stat-icon.amber { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.stat-icon.indigo { background: rgba(99,102,241,0.1); color: #6366f1; }
-
-.stat-number { font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1; }
-.stat-label { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-top: 0.25rem; }
-
-/* Progress bar inline */
-.stat-progress { margin-top: 1rem; }
-.stat-progress-bar { height: 5px; border-radius: 99px; background: #f1f5f9; overflow: hidden; }
-.stat-progress-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
-
-/* ===== PREMIUM MODULE TABS ===== */
-.module-tabs-nav {
-    display: flex;
-    width: 100%;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    padding: 0.4rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-.module-tab-btn {
-    flex: 1;
-    min-width: 160px;
-    padding: 0.8rem 1.5rem;
-    border-radius: 12px;
-    border: none;
-    background: transparent;
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #64748b;
-    display: flex; align-items: center; justify-content: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.module-tab-btn i { font-size: 1.1rem; }
-.module-tab-btn:hover { background: rgba(255,255,255,0.9); color: #334155; transform: translateY(-1px); }
-.module-tab-btn.active {
-    background: var(--module-color);
-    color: white;
-    box-shadow: 0 8px 20px var(--module-color-alpha);
-    transform: translateY(-2px);
-}
-.module-tab-btn[data-color="indigo"].active { 
-    background: linear-gradient(135deg, #6366f1, #818cf8); 
-    box-shadow: 0 8px 20px rgba(99,102,241,0.25); 
-}
-.module-tab-btn[data-color="blue"].active { 
-    background: linear-gradient(135deg, #2563eb, #60a5fa); 
-    box-shadow: 0 8px 20px rgba(37,99,235,0.25); 
-}
-.module-tab-btn[data-color="green"].active { 
-    background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-accent, #34d399)); 
-    box-shadow: 0 8px 20px rgba(var(--wt-brand-rgb),0.25); 
-}
-
-.tab-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 22px; height: 22px; padding: 0 6px;
-    border-radius: 99px;
-    font-size: 0.75rem; font-weight: 800;
-    background: rgba(255,255,255,0.25);
-    color: white;
-    margin-left: 0.25rem;
-}
-.module-tab-btn:not(.active) .tab-badge {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-/* ===== AMAZING SEARCH FIELD ===== */
-.search-input-wrap { 
-    position: relative; 
-    display: flex; 
-    align-items: center; 
-}
-.search-input-wrap i { 
-    position: absolute; 
-    left: 16px; 
-    color: #94a3b8; 
-    font-size: 0.9rem;
-    transition: color 0.3s;
-    pointer-events: none;
-}
-.search-input-wrap input {
-    padding: 0.65rem 1rem 0.65rem 2.8rem;
-    border: 2px solid transparent;
-    border-radius: 99px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    background: #f1f5f9;
-    color: #334155;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-width: 280px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-}
-.search-input-wrap input::placeholder { color: #94a3b8; font-weight: 400; }
-.search-input-wrap input:hover { background: #e2e8f0; }
-.search-input-wrap input:focus { 
-    background: white; 
-    outline: none; 
-    border-color: var(--module-color);
-    box-shadow: 0 0 0 4px var(--module-color-alpha), 0 4px 15px rgba(0,0,0,0.05); 
-}
-.search-input-wrap input:focus + i,
-.search-input-wrap:focus-within i { 
-    color: var(--module-color); 
-}
-
-/* ===== CARDS / TABLE PANELS ===== */
-.panel-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    overflow: hidden;
-}
-.panel-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 0.75rem;
-}
-.panel-title { font-weight: 700; font-size: 1rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; margin:0; }
-
-/* ===== LIST/GRID TOGGLES ===== */
-/* ===== AMAZING TOGGLE CONTROLS ===== */
-.layout-toggles {
-    display: flex;
-    align-items: center;
-    background: white;
-    padding: 0.25rem;
-    border-radius: 99px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid #e2e8f0;
-}
-.task-layout-btn, .sub-layout-btn {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #94a3b8;
-    background: transparent;
-    border: none;
-    border-radius: 50%;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.task-layout-btn:hover, .sub-layout-btn:hover { color: var(--module-color); background: #f1f5f9; }
-.task-layout-btn.active, .sub-layout-btn.active {
-    background: var(--module-color);
-    color: white;
-    box-shadow: 0 4px 12px var(--module-color-alpha);
-}
-
-/* ===== TASK CONTAINER STRUCTURE ===== */
-.task-container { display: flex; flex-direction: column; }
-.task-header {
-    display: flex; align-items: center; font-weight: 700; font-size: .74rem; 
-    text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; 
-    padding: .85rem 1rem .85rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #f1f5f9;
-}
-.task-item {
-    display: flex; align-items: center; background: white; 
-    border-bottom: 1px solid #f1f5f9; padding: .85rem 1rem .85rem 1.5rem; 
-    transition: background .2s, transform 0.2s, box-shadow 0.2s;
-}
-.task-item:hover { background: #fafbff; }
-.task-item:last-child { border-bottom: none; }
-
-/* LIST VIEW SPACED ZEBRA STRIPING */
-.task-list-view #tasksTableBody,
-.task-list-view #corrTableBody {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    padding: 0.5rem 0;
-}
-.task-list-view .task-item {
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    border-bottom: 1px solid #e2e8f0 !important;
-}
-.task-list-view .task-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-.task-list-view .task-item:nth-child(even) {
-    background-color: var(--module-color-alpha) !important;
-}
-.task-list-view .task-item:nth-child(odd) {
-    background-color: #ffffff !important;
-}
-
-/* Grid specific text visibility */
-.grid-label { display: none; }
-
-/* ===== GRID VIEW OVERRIDES (WIDGET TIMELINE) ===== */
-.task-grid-view {
-    padding: 1.5rem 2rem 2.5rem;
-    background: transparent;
-}
-.task-grid-view #tasksTableBody {
-    display: flex !important;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 1.5rem;
-    padding-bottom: 1.5rem;
-    padding-top: 1rem;
-    align-items: flex-start;
-    /* Hide scrollbar for clean look */
-    scrollbar-width: none;
-}
-.task-grid-view #tasksTableBody::-webkit-scrollbar { display: none; }
-
-.task-grid-view .task-header { display: none !important; }
-
-/* The Timeline Node / Card */
-.task-grid-view .task-item {
-    display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
-    border: 1px solid #e2e8f0; border-radius: 16px;
-    padding: 1rem 1.25rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
-    height: auto;
-    min-width: 280px;
-    max-width: 320px;
-    background: white !important;
-    position: relative;
-    border-left: 1px solid #e2e8f0 !important; /* Override the list-view left border */
-}
-
-/* Timeline Connection Line */
-.task-grid-view .task-item::before {
-    content: '';
-    position: absolute;
-    top: 1.5rem; /* Align with the step indicator */
-    right: -1.5rem; /* Stretch across the gap */
-    width: 1.5rem; 
-    height: 3px;
-    background: #cbd5e1;
-    z-index: 0;
-}
-.task-grid-view .task-item:last-child::before { display: none; } /* No line after the last item */
-
-/* Hover state for the card */
-.task-grid-view .task-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.08);
-    border-color: var(--module-color);
-    z-index: 5;
-}
-
-/* Sequence Indicator (Circle) */
-.task-grid-view .task-item::after {
-    content: counter(timeline-step);
-    counter-increment: timeline-step;
-    position: absolute;
-    top: -12px;
-    left: 16px;
-    width: 24px;
-    height: 24px;
-    background: var(--module-color);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 800;
-    box-shadow: 0 4px 10px var(--module-color-alpha);
-    border: 2px solid white;
-}
-.task-grid-view #tasksTableBody { counter-reset: timeline-step; }
-
-/* Grid columns layout adjustment */
-.task-grid-view .c-col { width: 100% !important; margin-bottom: 0.4rem; padding: 0 !important; flex-direction: column; align-items: flex-start; }
-.task-grid-view .c-col.c-task { 
-    border-bottom: 1px dashed #e2e8f0; 
-    padding-bottom: 0.5rem !important; 
-    margin-bottom: 0.5rem;
-}
-.task-grid-view .c-col.c-task .fw-bold { font-size: 1rem; color: #1e293b; margin-bottom: 0.15rem; }
-
-.task-grid-view .c-col:last-child { 
-    margin-bottom: 0; 
-    margin-top: 0.5rem; 
-    display: flex; justify-content: space-between; align-items: center; 
-    width: 100% !important; border-top: 1px solid #f1f5f9; padding-top: 0.75rem !important; flex-direction: row; 
-}
-.task-grid-view .grid-label { display: inline-block; width: 60px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 0; flex-shrink: 0; }
-.task-grid-view .d-flex-align { display: flex; align-items: center; width: 100%; gap: 0.4rem; }
-
-/* ===== GRID VIEW COVER IMAGES ===== */
-.grid-cover-top { display: none; }
-.task-grid-view .grid-cover-top {
-    display: block;
-    width: calc(100% + 2.5rem);
-    height: 100px;
-    margin: -1rem -1.25rem 1rem -1.25rem;
-    border-radius: 16px 16px 0 0;
-    background-size: cover;
-    background-position: center;
-    background-color: #f1f5f9;
-    position: relative;
-    border-bottom: 1px solid #e2e8f0;
-}
-.task-grid-view .grid-cover-top.is-pdf {
-    display: flex; align-items: center; justify-content: center; flex-direction: column;
-}
-.task-grid-view .grid-cover-top i.fa-file-pdf { font-size: 3rem; color: var(--wt-bad); opacity: 0.9; }
-.task-grid-view .grid-cover-side { display: none !important; } /* Hide the list-view side cover */
-.task-list-view .grid-cover-top { display: none !important; }
-
-/* Desktop Flex Widths (List View) */
-.task-list-view .c-task     { flex: 1 1 28%; min-width: 170px; padding-right: 0.75rem; }
-.task-list-view .c-status   { width: 110px; flex-shrink: 0; padding-right: 0.5rem; }
-.task-list-view .c-priority { width: 95px; flex-shrink: 0; padding-right: 0.5rem; }
-.task-list-view .c-deadline { width: 115px; flex-shrink: 0; padding-right: 0.5rem; }
-.task-list-view .c-progress { width: 135px; flex-shrink: 0; padding-right: 0.5rem; }
-.task-list-view .c-action   { width: 115px; flex-shrink: 0; text-align: right; justify-content: flex-end; }
-
-.c-action .btn-pill {
-    width: 30px !important;
-    height: 30px !important;
-    padding: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
-    flex-shrink: 0 !important;
-}
-body.rtl-mode .task-list-view .c-action {
-    text-align: left;
-    justify-content: flex-start;
-}
-
-/* ===== SUBMISSIONS CONTAINER STRUCTURE ===== */
-.sub-container { display: flex; flex-direction: column; }
-.sub-header {
-    display: flex; align-items: center; font-weight: 700; font-size: .74rem; 
-    text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; 
-    padding: .85rem 1rem .85rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #f1f5f9;
-}
-.sub-item {
-    display: flex; align-items: center; background: white; 
-    border-bottom: 1px solid #f1f5f9; padding: .9rem 1rem .9rem 1.5rem; 
-    transition: background .2s;
-}
-.sub-item:hover { background: #fafbff; }
-.sub-item:last-child { border-bottom: none; }
-
-/* ===== GRID VIEW OVERRIDES SUBMISSIONS ===== */
-.sub-grid-view {
-    padding: 1.25rem;
-    background: #f8fafc;
-    border-radius: 0 0 16px 16px;
-}
-.sub-grid-view #subTableBody {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-.sub-grid-view .sub-header { display: none !important; }
-.sub-grid-view .sub-item {
-    display: flex; flex-flow: row wrap; justify-content: space-between; align-items: flex-start;
-    border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 1.25rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    transition: transform 0.2s, box-shadow 0.2s;
-    height: 100%;
-}
-.sub-grid-view .sub-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-    background: white;
-}
-.sub-grid-view .c-col { width: 48% !important; margin-bottom: 0.85rem; padding: 0 !important; flex-direction: column; align-items: flex-start; }
-.sub-grid-view .c-col.c-task { display: flex; flex-direction: column; width: 100% !important; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem !important; }
-.sub-grid-view .c-col:last-child { margin-bottom: 0; margin-top: auto; display: flex; justify-content: flex-end; width: 100% !important; border-top: 1px dashed #e2e8f0; padding-top: .85rem !important; flex-direction: row; }
-.sub-grid-view .grid-label { display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; margin-bottom: 0.25rem; }
-.sub-grid-view .d-flex-align { display: flex; align-items: flex-start; }
-
-/* Desktop Flex Widths (List View) SUBMISSIONS */
-.sub-list-view .c-task      { width: 40%; padding-right: 1rem; }
-.sub-list-view .c-worker    { width: 20%; padding-right: 1rem; }
-.sub-list-view .c-status    { width: 15%; padding-right: 1rem; }
-.sub-list-view .c-submitted { width: 15%; padding-right: 1rem; }
-.sub-list-view .c-action    { width: 10%; text-align: right; justify-content: flex-end; }
-
-
-/* ===== PRIORITY / STATUS CHIPS ===== */
-.chip { display: inline-flex; align-items: center; gap: 4px; padding: 0.3rem 0.75rem; border-radius: 99px; font-size: 0.78rem; font-weight: 600; }
-.chip-success { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
-.chip-info    { background: #dbeafe; color: #1e40af; }
-.chip-warning { background: #fef9c3; color: #854d0e; }
-.chip-danger  { background: #fee2e2; color: color-mix(in oklab, var(--wt-bad) 70%, #000); }
-.chip-secondary { background: #f1f5f9; color: #475569; }
-.chip-indigo  { background: rgba(99,102,241,0.1); color: #4338ca; border: 1px solid rgba(99,102,241,0.2); }
-.chip-red     { background: rgba(192, 40, 58,0.1); color: var(--color-primary, #10b981); border: 1px solid rgba(192, 40, 58,0.2); }
-.chip-amber   { background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.2); }
-.chip-green   { background: rgba(var(--wt-brand-rgb),0.1); color: var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)); border: 1px solid rgba(var(--wt-brand-rgb),0.2); }
-.chip-gray    { background: rgba(15,23,42,0.06); color: #334155; border: 1px solid rgba(15,23,42,0.15); }
-
-/* ===== ACTION BUTTONS ===== */
-/* ===== EMPTY STATE COMPONENT ===== */
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5rem 2rem;
-    text-align: center;
-    background: #ffffff;
-    border-radius: 20px;
-    border: 2px dashed #e2e8f0;
-    margin: 2rem 0;
-    transition: all 0.4s ease;
-}
-.empty-state:hover {
-    border-color: var(--module-color);
-    background: rgba(99, 102, 241, 0.02);
-    transform: translateY(-2px);
-}
-.empty-state-icon {
-    width: 100px;
-    height: 100px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    color: #94a3b8;
-    margin-bottom: 2rem;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-    position: relative;
-    overflow: hidden;
-}
-.empty-state-icon::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, var(--module-color) 0%, transparent 100%);
-    opacity: 0.08;
-}
-.empty-state-icon i {
-    z-index: 1;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-}
-.empty-state h5 {
-    color: #1e293b;
-    font-weight: 800;
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.5px;
-}
-.empty-state p {
-    color: #64748b;
-    max-width: 400px;
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 0;
-}
-.btn-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 0.4rem 1rem;
-    border-radius: 50px;
-    font-size: 0.8rem; font-weight: 600;
-    border: 1.5px solid #e2e8f0;
-    background: white; color: #334155;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-.btn-pill:hover { border-color: #94a3b8; background: #f8fafc; color: #0f172a; transform: translateY(-1px); }
-.btn-pill-primary {
-    background: var(--module-color); border-color: var(--module-color); color: white;
-}
-.btn-pill-primary:hover { filter: brightness(1.1); color: white; }
-.btn-pill-indigo { background: #6366f1; border-color: #6366f1; color: white; }
-.btn-pill-indigo:hover { filter: brightness(1.1); color: white; }
-
-/* ===== CORRESPONDENCE CALLOUT in MODULE PAGE (System Emerald Theme) ===== */
-.corr-callout {
-    background: linear-gradient(135deg, rgba(var(--wt-brand-rgb), 0.08) 0%, rgba(var(--wt-brand-rgb), 0.05) 100%);
-    border: 1.5px solid rgba(var(--wt-brand-rgb), 0.25);
-    border-radius: 16px;
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-.corr-callout-left { display: flex; align-items: center; gap: 1.25rem; }
-.corr-callout-icon {
-    width: 52px; height: 52px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.3rem; color: white;
-    box-shadow: 0 6px 16px rgba(var(--wt-brand-rgb), 0.25);
-}
-.corr-callout-title { font-size: 1.05rem; font-weight: 700; color: color-mix(in oklab, var(--wt-brand) 62%, #000); margin: 0 0 0.25rem; }
-.corr-callout-sub { font-size: 0.85rem; color: color-mix(in oklab, var(--wt-brand) 62%, #000); margin: 0; }
-
-/* ===== PAGINATION ===== */
-.pagination-wrap {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #f1f5f9;
-    flex-wrap: wrap; gap: 0.75rem;
-}
-.pagination { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
-.pagination .page-item .page-link {
-    display: flex; align-items: center; justify-content: center;
-    width: 34px; height: 34px;
-    border-radius: 8px;
-    border: 1.5px solid #e2e8f0;
-    background: white;
-    color: #475569;
-    font-size: 0.875rem; font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-.pagination .page-item.active .page-link { background: var(--module-color); border-color: var(--module-color); color: white; }
-.pagination .page-item .page-link:hover:not(:disabled) { border-color: var(--module-color); color: var(--module-color); background: #f8fafc; }
-
-#todoPaginationControls .page-link {
-    border-radius: 10px; border: none; margin: 0 4px; padding: 6px 12px;
-    background: #f1f5f9; color: #64748b; font-weight: 700; font-size: 0.75rem; 
-    transition: all 0.2s;
-}
-#todoPaginationControls .page-item.active .page-link { background: #6366f1; color: white; box-shadow: 0 4px 10px rgba(99,102,241,0.2); }
-#todoPaginationControls .page-item.disabled .page-link { opacity: 0.4; }
-
-/* ===== PREMIUM TODO COMPONENTS ===== */
-.quick-todo-panel {
-    background: #ffffff;
-    border-radius: 24px; padding: 1.25rem 2rem;
-    border: 1px solid #eef2f6;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
-    margin: 2rem 0;
-    display: flex; align-items: center; justify-content: space-between;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative; overflow: hidden;
-}
-.quick-todo-panel:hover {
-    transform: translateY(-4px) scale(1.005);
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-}
-.quick-todo-panel::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
-    background: linear-gradient(to bottom, #6366f1, #8b5cf6);
-}
-.quick-todo-panel.hidden {
-    opacity: 0; transform: translateY(-10px);
-    height: 0; padding: 0; margin: 0;
-    pointer-events: none;
-}
-.panel-add-btn {
-    width: 44px; height: 44px; border-radius: 14px;
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    color: white; border: none;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 4px 15px rgba(99,102,241,0.3);
-    font-size: 1.15rem;
-}
-.panel-add-btn:hover { transform: scale(1.15); box-shadow: 0 8px 25px rgba(99,102,241,0.5); }
-
-body { transition: padding-right 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important; }
-body.todo-panel-open { padding-right: 450px !important; }
-
-.section-todo { 
-    position: fixed; top: 0; right: 0; width: 450px; height: 100vh;
-    background: linear-gradient(135deg, #ffffff 0%, #fefeff 100%); 
-    border-radius: 32px 0 0 32px; padding: 2.5rem 2rem; 
-    border-left: 1px solid #eef2f6; z-index: 1050;
-    box-shadow: -20px 0 45px rgba(15, 23, 42, 0.08); /* Sophisticated shadow */
-    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex; flex-direction: column;
-}
-.section-todo.minimized { transform: translateX(100%); }
-.todo-content-wrapper { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 8px; margin-top: 0.5rem; }
-.todo-content-wrapper::-webkit-scrollbar { width: 4px; }
-.todo-content-wrapper::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
-
-.todo-status-pill {
-    background: #f1f5f9; color: #475569; padding: 0.15rem 0.75rem; border-radius: 99px;
-    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px; margin-top: 4px; display: inline-block;
-}
-
-.todo-drawer-toggle {
-    position: fixed; right: 30px; bottom: 30px; width: 64px; height: 64px;
-    background: #6366f1; color: white; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; cursor: pointer; z-index: 1060;
-    box-shadow: 0 12px 30px rgba(99,102,241,0.4);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.todo-drawer-toggle:hover { transform: scale(1.1) rotate(12deg); background: #4f46e5; }
-.todo-drawer-toggle i { transition: transform 0.4s; }
-.section-todo:not(.minimized) ~ .todo-drawer-toggle i { transform: rotate(180deg); }
-
-.todo-list { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 2rem; }
-.todo-card {
-    background: #f8fafc; border-radius: 16px; padding: 1.25rem;
-    border: 1px solid #f1f5f9; position: relative;
-    transition: all 0.2s ease; display: flex; align-items: center; gap: 1.25rem;
-}
-.todo-card:hover { background: white; border-color: #6366f1; box-shadow: 0 8px 16px rgba(0,0,0,0.04); }
-.todo-card.completed { opacity: 0.7; }
-.todo-card.completed .todo-title { text-decoration: line-through; color: #94a3b8; }
-.todo-card.hide-completed-mode.completed { display: none !important; }
-
-/* Status-based colors */
-.todo-card.priority-high { border-left: 4px solid var(--wt-bad); }
-.todo-card.priority-medium { border-left: 4px solid #f59e0b; }
-.todo-card.priority-low { border-left: 4px solid var(--color-primary, #10b981); }
-
-.todo-title { font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 0.5rem; }
-.todo-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 0; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; white-space: normal; padding-right: 0.5rem; word-break: break-word; }
-.todo-desc img { max-width: 100%; height: auto; object-fit: cover; border-radius: 6px; margin-top: 5px; display: none; }
-.todo-toggle-btn {
-    min-width: 24px; width: 24px; height: 24px; border-radius: 50%;
-    border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all 0.2s; color: transparent; font-size: 0.75rem;
-}
-.todo-toggle-btn.checked { background: #6366f1; border-color: #6366f1; color: white; }
-
-.todo-actions { display: flex; gap: 0.5rem; opacity: 0; transition: opacity 0.2s; align-items: center; }
-.todo-card:hover .todo-actions { opacity: 1; }
-
-.todo-list-add {
-    border: 2px dashed #e2e8f0; border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 1.25rem; color: #64748b; transition: all 0.2s; cursor: pointer;
-    gap: 0.75rem; font-weight: 600;
-}
-.todo-list-add:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.02); }
-
-.collapse-todo-btn {
-    cursor: pointer; transition: all 0.3s ease; color: #64748b;
-    width: 32px; height: 32px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    background: #f1f5f9;
-}
-.collapse-todo-btn:hover { background: #e2e8f0; color: #1e293b; }
-
-/* Premium Modal */
-.premium-modal .modal-content { border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-.premium-modal .modal-header { border-bottom: 1px solid #f1f5f9; padding: 1.5rem 2rem; }
-.form-label-premium { font-weight: 700; color: #334155; font-size: 0.85rem; margin-bottom: 0.5rem; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-control-premium {
-    border-radius: 14px; border: 1.5px solid #e2e8f0; padding: 0.85rem 1.1rem;
-    transition: all 0.2s; font-size: 0.95rem; background: #f8fafc;
-}
-.form-control-premium:focus { border-color: #6366f1; background: white; box-shadow: 0 0 0 4px rgba(99,102,241,0.1); outline: none; }
-</style>
-{% endwith %}
-{% endblock %}
+{% block title %}{{ module.name }} · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-
-    <!-- ===== PREMIUM HERO BANNER ===== -->
-    <div class="module-hero">
-        <div class="hero-mesh"></div>
-        <div class="hero-icon-orb">
-            <i class="fas {{ module.icon_class }}"></i>
+{% comment %}
+  Module page, "Task timeline first": the module's tasks as bars from start to deadline with a today line, a side rail
+  with progress and dates, then tabs for Tasks, Submissions, Correspondence and Team. Data: core.template_views.module_dashboard.
+{% endcomment %}
+{% with is_mgr=user.role %}
+<div class="wt-home wt-md" style="--mc: {{ module.color|default:'var(--wt-brand)' }};">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1 dir="auto"><span class="wt-up-dot" aria-hidden="true"></span> {{ module.name }}</h1>
+            <p>
+                <span class="lang-en">{{ stats.total }} task{{ stats.total|pluralize }} · {{ completion_rate }}% done{% if wt_overdue %} · {{ wt_overdue }} overdue{% endif %}{% if wt_reviews and is_mgr != 'worker' %} · {{ wt_reviews }} to review{% endif %}{% if module.deadline %} · due {{ module.deadline|date:"j M Y" }}{% endif %}</span>
+                <span class="lang-ar">المهام: <span class="wt-num">{{ stats.total }}</span> · المنجز: <span class="wt-num">{{ completion_rate }}%</span>{% if wt_overdue %} · متأخرة: <span class="wt-num">{{ wt_overdue }}</span>{% endif %}{% if wt_reviews and is_mgr != 'worker' %} · للمراجعة: <span class="wt-num">{{ wt_reviews }}</span>{% endif %}{% if module.deadline %} · الموعد <span class="wt-num">{{ module.deadline|date:"j/n/Y" }}</span>{% endif %}</span>
+            </p>
         </div>
-        <div class="hero-content">
-            <div class="hero-breadcrumb">
-                <a href="{% url 'dashboard' %}" class="hero-back-btn">
-                    <i class="fas fa-arrow-left" style="font-size: 0.8rem;"></i>
-                </a>
-                <span class="hero-badge"><i class="fas fa-layer-group me-1"></i><span class="lang-en">Command Center</span><span class="lang-ar">مركز القيادة</span></span>
-                <span style="color:rgba(255,255,255,0.4); font-size: 0.85rem;">/ {{ module.name }}</span>
-            </div>
-            <h1 class="hero-title" style="color: #ffffff !important; font-size: 2.5rem; font-weight: 800; text-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 0.75rem;">{{ module.name }}</h1>
-            <p class="hero-desc">{{ module.description|default:"Manage tasks, submissions, and workflow optimizations for this unit." }}</p>
-            <div class="hero-actions">
-                {% if user.role == 'manager' or user.role == 'super_admin' %}
-                <a href="{% url 'task-create' %}?module={{ module.slug }}" class="hero-btn-primary" style="background: linear-gradient(135deg, var(--wt-brand) 0%, var(--wt-brand) 100%); color: color-mix(in oklab, var(--wt-brand) 62%, #000); font-weight: 800; border: none; box-shadow: 0 4px 15px rgba(var(--wt-brand-rgb), 0.35);">
-                    <i class="fas fa-plus"></i><span class="lang-en">Create Task</span><span class="lang-ar">إنشاء مهمة</span></a>
-                {% endif %}
-                
-                {% if user in enrolled_team %}
-                <form id="leaveForm-{{ module.slug }}" action="{% url 'unenroll-module' module.slug %}" method="POST" class="m-0 p-0" style="display:inline-block;">
-                    {% csrf_token %}
-                    <button type="button" onclick="confirmLeave('{{ module.slug }}')" class="hero-btn-outline" style="border-color: rgba(192, 40, 58, 0.6); color: #fca5a5;" onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'" onmouseout="this.style.background='transparent'">
-                        <i class="fas fa-sign-out-alt"></i> <span class="lang-en">Leave Module</span><span class="lang-ar">مغادرة الوحدة</span>
-                    </button>
-                </form>
-                {% endif %}
-                
-                {% if module.start_date or module.deadline %}
-                <div class="d-flex gap-2 ms-md-2">
-                    {% if module.start_date %}
-                    <div class="hero-badge" title="Start Date" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15);">
-                        <i class="fas fa-calendar-alt me-1 opacity-75"></i> Starts: {{ module.start_date|date:"M d" }}
-                    </div>
-                    {% endif %}
-                    {% if module.deadline %}
-                    <div class="hero-badge" title="Deadline Target" style="background: rgba(192, 40, 58, 0.2); border-color: rgba(192, 40, 58, 0.3); color: #fecaca;">
-                        <i class="fas fa-flag-checkered me-1 opacity-75"></i> Due: {{ module.deadline|date:"M d, Y" }}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Dual Pie Charts -->
-        <div class="hero-pies-container">
-            {% if user.role == 'manager' or user.role == 'super_admin' %}
-            <a href="{% url 'module-edit' module.slug %}" class="hero-pie-edit-btn" title="Edit Module / تعديل بيانات الوحدة">
-                <i class="fas fa-pen"></i>
-            </a>
+        <div class="wt-home-actions">
+            {% if user in enrolled_team %}
+            <form id="leaveForm-{{ module.slug }}" action="{% url 'unenroll-module' module.slug %}" method="POST" class="m-0">{% csrf_token %}
+                <button type="button" class="btn btn-light" onclick="confirmLeave('{{ module.slug }}')"><i class="fas fa-right-from-bracket rtl-flip"></i><span class="lang-en">Leave module</span><span class="lang-ar">مغادرة الوحدة</span></button>
+            </form>
             {% endif %}
-            <div class="hero-pie-wrapper">
-                <div class="hero-pie-chart" style="--progress: {{ completion_rate }}%" data-progress="{{ completion_rate }}"></div>
-                <div class="hero-pie-label"><span class="lang-en">Task<br>Completion</span><span class="lang-ar">إنجاز<br>المهام</span></div>
-            </div>
-            <div class="hero-pie-wrapper">
-                <div class="hero-pie-chart accent" style="--progress: {{ avg_task_progress }}%" data-progress="{{ avg_task_progress }}"></div>
-                <div class="hero-pie-label"><span class="lang-en">Avg Task<br>Progress</span><span class="lang-ar">متوسط<br>التقدم</span></div>
-            </div>
+            {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+            <a class="btn btn-light" href="{% url 'module-edit' module.slug %}"><i class="fas fa-pen"></i><span class="lang-en">Edit module</span><span class="lang-ar">تعديل الوحدة</span></a>
+            <a class="btn btn-primary" href="{% url 'task-create' %}?module={{ module.slug }}"><i class="fas fa-plus"></i><span class="lang-en">New task</span><span class="lang-ar">مهمة جديدة</span></a>
+            {% endif %}
         </div>
+    </header>
 
-        <div class="hero-icon-orb">
-            <i class="fas {{ module.icon_class|default:'fa-cube' }}"></i>
+    <div class="wt-home-grid">
+        <section class="wt-panel wt-md-tl" aria-labelledby="md-tl-title">
+            <div class="wt-panel-head">
+                <h2 id="md-tl-title"><span class="lang-en">Timeline</span><span class="lang-ar">الجدول الزمني</span></h2>
+                {% if wt_timeline %}<span class="wt-panel-meta wt-num">{{ wt_timeline.start|date:"j/n/Y" }} – {{ wt_timeline.end|date:"j/n/Y" }}</span>{% endif %}
+            </div>
+            {% if wt_timeline %}
+            <div class="wt-md-tl-body" style="--t: {{ wt_timeline.today }};">
+                <div class="wt-md-ticks" aria-hidden="true">{% for k in wt_timeline.ticks %}<span style="--x: {{ k.pct }}%;"><span class="lang-en">{{ k.en }}</span><span class="lang-ar">{{ k.ar }}</span>{% if k.year %} <span class="wt-num">{{ k.year }}</span>{% endif %}</span>{% endfor %}</div>
+                <ul class="wt-md-rows">
+                    {% for r in wt_timeline.rows %}
+                    <li class="wt-md-row{% if forloop.counter > 10 %} is-extra{% endif %}">
+                        <a class="wt-md-name" href="{{ r.task.detail_url }}"><b dir="auto">{{ r.task.title }}</b><small>{% include 'includes/wt_status_label.html' with s=r.task.status %}</small></a>
+                        <span class="wt-md-track">
+                            <span class="wt-md-bar{% if r.overdue %} is-late{% elif r.done %} is-done{% endif %}" style="--l: {{ r.left }}%; --w: {{ r.width }}%;" title="{{ r.task.start_date|default:r.task.created_at|date:'j/n/Y' }} – {{ r.task.deadline|date:'j/n/Y' }} · {{ r.task.progress|default:0 }}%"><i style="--p: {{ r.task.progress|default:0 }}%;"></i></span>
+                            {% if r.overdue or r.reviews and is_mgr != 'worker' %}<span class="wt-md-chips" style="--at: calc({{ r.left }}% + {{ r.width }}%);">
+                                {% if r.reviews and is_mgr != 'worker' %}<span class="wt-chip is-review"><span class="wt-num">{{ r.reviews }}</span> <span class="lang-en">to review</span><span class="lang-ar">للمراجعة</span></span>{% endif %}
+                                {% if r.overdue %}<span class="wt-chip is-alert"><span class="lang-en">Overdue</span><span class="lang-ar">متأخرة</span></span>{% endif %}
+                            </span>{% endif %}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <b class="wt-md-today" title="{% if wt_lang == 'ar' %}اليوم{% else %}Today{% endif %}" aria-hidden="true"></b>
+            </div>
+            {% if wt_timeline.rows|length > 10 %}
+            <button type="button" class="wt-road-more" onclick="const p=this.closest('.wt-md-tl'); p.classList.toggle('show-all'); this.querySelectorAll('span[data-w]').forEach(s=>s.hidden=!s.hidden);">
+                <span data-w><span class="lang-en">Show all {{ wt_timeline.rows|length }} tasks</span><span class="lang-ar">عرض كل المهام ({{ wt_timeline.rows|length }})</span></span>
+                <span data-w hidden><span class="lang-en">Show fewer</span><span class="lang-ar">عرض أقل</span></span>
+            </button>
+            {% endif %}
+            {% else %}
+            <div class="wt-empty">
+                <p><span class="lang-en">No tasks in this module yet.</span><span class="lang-ar">لا مهام في هذه الوحدة بعد.</span></p>
+                {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}<a class="btn btn-primary" href="{% url 'task-create' %}?module={{ module.slug }}"><i class="fas fa-plus"></i><span class="lang-en">Create the first task</span><span class="lang-ar">أنشئ أول مهمة</span></a>{% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <div class="wt-wp-side">
+            <section class="wt-panel wt-today" aria-labelledby="md-prog">
+                <div class="wt-panel-head"><h2 id="md-prog"><span class="lang-en">Progress</span><span class="lang-ar">التقدم</span></h2></div>
+                <dl class="wt-today-list">
+                    <div><dt><span class="lang-en">Tasks done</span><span class="lang-ar">المهام المنجزة</span> <small class="wt-num">{{ stats.completed }} / {{ stats.total }}</small></dt><dd class="wt-num">{{ completion_rate }}%</dd><span class="wt-today-bar" aria-hidden="true"><i style="--p: {{ completion_rate }}%;"></i></span></div>
+                    <div><dt><span class="lang-en">Average task progress</span><span class="lang-ar">متوسط تقدم المهام</span></dt><dd class="wt-num">{{ avg_task_progress }}%</dd></div>
+                    <div><dt><span class="lang-en">Submissions waiting</span><span class="lang-ar">تسليمات بالانتظار</span></dt><dd class="wt-num">{{ submissions_stats.pending }}</dd></div>
+                    {% if stats.recurring %}<div><dt><span class="lang-en">Repeating tasks</span><span class="lang-ar">مهام متكررة</span></dt><dd class="wt-num">{{ stats.recurring }}</dd></div>{% endif %}
+                </dl>
+            </section>
+            <section class="wt-panel wt-today" aria-labelledby="md-about">
+                <div class="wt-panel-head"><h2 id="md-about"><span class="lang-en">About</span><span class="lang-ar">عن الوحدة</span></h2></div>
+                {% if module.description %}<p class="wt-md-desc" dir="auto">{{ module.description|linebreaksbr }}</p>{% endif %}
+                <dl class="wt-today-list wt-td-mini">
+                    <div><dt><span class="lang-en">Starts</span><span class="lang-ar">البداية</span></dt><dd class="wt-td-dd wt-num">{{ module.start_date|date:"j/n/Y"|default:"–" }}</dd></div>
+                    <div><dt><span class="lang-en">Due</span><span class="lang-ar">الموعد</span></dt><dd class="wt-td-dd wt-num">{{ module.deadline|date:"j/n/Y"|default:"–" }}</dd></div>
+                    {% if is_mgr != 'worker' %}<div><dt><span class="lang-en">Team</span><span class="lang-ar">الفريق</span></dt><dd class="wt-td-dd wt-num">{{ enrolled_users_count }}</dd></div>{% endif %}
+                </dl>
+            </section>
         </div>
     </div>
 
-    <!-- ===== STATS GRID ===== -->
-    <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
-        <!-- Active Tasks -->
-        <div class="stat-card blue">
-            <div class="stat-icon blue"><i class="fas fa-stream"></i></div>
-            <div class="stat-number">{{ stats.total }}</div>
-            <div class="stat-label"><span class="lang-en">Total Tasks</span><span class="lang-ar">إجمالي المهام</span></div>
+    <section class="wt-panel wt-md-tabs-panel" aria-label="{% if wt_lang == 'ar' %}محتوى الوحدة{% else %}Module content{% endif %}">
+        <div class="wt-td-tabs" role="tablist">
+            <button type="button" class="tg-tab-btn" role="tab" aria-selected="true" aria-controls="tab-tasks" data-md-tab="tab-tasks"><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span> <span class="wt-td-count wt-num">{{ all_tasks.count }}</span></button>
+            <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="tab-submissions" tabindex="-1" data-md-tab="tab-submissions"><span class="lang-en">Submissions</span><span class="lang-ar">التسليمات</span> <span class="wt-td-count wt-num">{{ all_submissions.count }}</span></button>
+            <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="tab-correspondence" tabindex="-1" data-md-tab="tab-correspondence"><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span> <span class="wt-td-count wt-num">{{ correspondence_count }}</span></button>
+            {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}<button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="tab-team" tabindex="-1" data-md-tab="tab-team"><span class="lang-en">Team</span><span class="lang-ar">الفريق</span> <span class="wt-td-count wt-num" id="md-team-count">{{ enrolled_users_count }}</span></button>{% endif %}
         </div>
-        <!-- Automated Reactivations -->
-        <div class="stat-card amber">
-            <div class="stat-icon amber"><i class="fas fa-redo-alt"></i></div>
-            <div class="stat-number">{{ stats.recurring }}</div>
-            <div class="stat-label">Automated Reactivation</div>
-        </div>
-        <!-- Correspondence -->
-        <div class="stat-card indigo">
-            <div class="stat-icon indigo"><i class="fas fa-envelope-open-text"></i></div>
-            <div class="stat-number">{{ correspondence_count }}</div>
-            <div class="stat-label"><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></div>
-        </div>
-        <!-- Submissions -->
-        <div class="stat-card gray">
-            <div class="stat-icon gray" style="background: rgba(100,116,139,0.1); color: #64748b;"><i class="fas fa-file-alt"></i></div>
-            <div class="stat-number">{{ submissions_stats.total }}</div>
-            <div class="stat-label">Submissions</div>
-        </div>
-        <!-- Completion Rate -->
-        <div class="stat-card green">
-            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
-            <div class="stat-number">{{ completion_rate }}%</div>
-            <div class="stat-label">Completion Rate</div>
-        </div>
-    </div>
 
-    <!-- ===== CORRESPONDENCE CALLOUT (always above tabs) ===== -->
-    {% if correspondence_count > 0 or user.role in 'manager,super_admin' %}
-    <div class="corr-callout mb-3">
-                <div class="corr-callout-left">
-                    <div class="corr-callout-icon"><i class="fas fa-envelope-open-text"></i></div>
-                    <div>
-                        <p class="corr-callout-title"><span class="lang-en">Administrative Correspondence</span><span class="lang-ar">المراسلات الإدارية</span></p>
-                        <p class="corr-callout-sub">
-                            {% if correspondence_count > 0 %}
-                                {{ correspondence_count }} item{{ correspondence_count|pluralize }} — circulars, directives, memos & notices for this module.
-                            {% else %}
-                                No correspondence items yet for this module.
-                            {% endif %}
-                        </p>
-                    </div>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{% url 'admin-correspondence' %}?module={{ module.slug }}" class="btn-pill btn-pill-indigo">
-                        <i class="fas fa-external-link-alt"></i> View Correspondence Page
-                    </a>
-                    {% if user.role == 'manager' or user.role == 'super_admin' %}
-                    <a href="{% url 'correspondence-create' %}?module={{ module.slug }}" class="btn-pill" style="border-color:#6366f1; color:#6366f1;">
-                        <i class="fas fa-plus"></i><span class="lang-en">New Correspondence</span><span class="lang-ar">مراسلة جديدة</span></a>
+        {# Tasks #}
+        <div id="tab-tasks" role="tabpanel" class="wt-md-pane">
+            <div class="wt-md-tools">
+                <label class="wt-filter wt-filter-search"><span class="visually-hidden"><span class="lang-en">Search tasks</span><span class="lang-ar">ابحث في المهام</span></span><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" class="form-control" data-md-search="tasks" placeholder="{% if wt_lang == 'ar' %}ابحث في مهام الوحدة{% else %}Search this module's tasks{% endif %}"></label>
+                <a class="btn btn-light" href="{% url 'task-list' %}?module={{ module.slug }}"><span class="lang-en">Open in task list</span><span class="lang-ar">فتح في قائمة المهام</span></a>
+            </div>
+            {% if all_tasks %}
+            <ul class="wt-tl-list" data-md-list="tasks">
+                {% for task in all_tasks %}
+                <li class="wt-tl-row wt-md-trow" data-q="{{ task.title|lower }}">
+                    <span class="wt-up-dot" aria-hidden="true"></span>
+                    <span class="wt-tl-main"><a class="wt-cell-link" href="{{ task.detail_url }}" dir="auto">{{ task.title }}</a><small><span dir="auto">{{ task.created_by.get_full_name|default:task.created_by.email }}</span>{% if task.priority == 'high' or task.priority == 'critical' %} <span class="wt-chip is-review">{% include 'includes/wt_priority_label.html' with p=task.priority %}</span>{% endif %}</small></span>
+                    <span class="wt-tl-due wt-num">{{ task.deadline|date:"j/n/Y"|default:"–" }}</span>
+                    <span class="wt-tl-status"><span class="wt-chip {% if task.status == 'approved' or task.status == 'completed' %}is-ok{% elif task.status == 'rejected' or task.status == 'overdue' %}is-alert{% elif task.status == 'submitted' %}is-review{% else %}is-muted{% endif %}">{% include 'includes/wt_status_label.html' with s=task.status %}</span></span>
+                    <span class="wt-tl-prog"><span class="wt-up-bar"><i style="--p: {{ task.progress|default:0 }}%;"></i></span><span class="wt-num">{{ task.progress|default:0 }}%</span></span>
+                    {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+                    <span class="wt-md-acts">
+                        <a class="wt-icon-btn" href="{% url 'task-edit' task.id %}" aria-label="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}: {{ task.title }}" title="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pen"></i></a>
+                        <button type="button" class="wt-icon-btn is-danger" onclick="deleteTask('{{ task.id }}')" aria-label="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}: {{ task.title }}" title="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash"></i></button>
+                    </span>
                     {% endif %}
-                </div>
-    </div>
-    {% endif %}
-
-    <!-- ===== TABBED INTERFACE ===== -->
-    <div class="module-tabs-nav" id="moduleTabs">
-        <button class="module-tab-btn active" onclick="switchTab('tasks', this)" type="button">
-            <i class="fas fa-tasks"></i> Unit Action Plan
-            <span class="tab-badge">{{ all_tasks.count|default:0 }}</span>
-        </button>
-        <button class="module-tab-btn" data-color="blue" onclick="switchTab('submissions', this)" type="button">
-            <i class="fas fa-folder-open"></i> Submissions Registry
-            <span class="tab-badge">{{ all_submissions.count|default:0 }}</span>
-        </button>
-        <button class="module-tab-btn" data-color="indigo" onclick="switchTab('correspondence', this)" type="button">
-            <i class="fas fa-envelope-open-text"></i> Official Documents
-            <span class="tab-badge">{{ correspondence_count|default:0 }}</span>
-        </button>
-        {% if user.role == 'manager' or user.role == 'super_admin' %}
-        <button class="module-tab-btn" data-color="green" onclick="switchTab('team', this)" type="button">
-            <i class="fas fa-users"></i> Enrolled Team
-            <span class="tab-badge">{{ enrolled_users_count|default:0 }}</span>
-        </button>
-        {% endif %}
-    </div>
-
-    <!-- ===== TAB PANELS ===== -->
-    <div id="tab-tasks">
-        <div class="panel-card">
-                <div class="panel-header">
-                    <span class="panel-title">
-                        <i class="fas fa-list-ul" style="color: var(--module-color);"></i>
-                        Task Directory
-                    </span>
-                    <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <div class="search-input-wrap">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="taskSearchInput" placeholder="Search tasks..." autocomplete="off">
-                        </div>
-                        <a href="{% url 'task-list' %}?module={{ module.slug }}" class="btn-pill">
-                            <i class="fas fa-external-link-alt"></i> View All
-                        </a>
-                        <div class="layout-toggles">
-                            <button type="button" class="task-layout-btn active" data-layout="list" title="List View"><i class="fas fa-list"></i></button>
-                            <button type="button" class="task-layout-btn" data-layout="grid" title="Grid View"><i class="fas fa-th-large"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="task-container task-list-view" id="moduleTaskContainer">
-                    <div class="task-header">
-                        <div class="c-col c-task">Task</div>
-                        <div class="c-col c-status"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></div>
-                        <div class="c-col c-priority"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></div>
-                        <div class="c-col c-deadline">Deadline</div>
-                        <div class="c-col c-progress">Progress</div>
-                        <div class="c-col c-action"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></div>
-                    </div>
-                    
-                    <div id="tasksTableBody">
-                        {% for task in all_tasks %}
-                        <div class="task-item task-row {% if task.cover_image or task.attachment or module.banner_image %}has-side-cover{% endif %}" style="border-left: 5px solid var(--module-color) !important;">
-                            
-                            {% if task.cover_image %}
-                            <div class="grid-cover-top" style="background-image: url('{{ task.cover_image.url }}');"></div>
-                            <div class="grid-cover-side" style="background-image: url('{{ task.cover_image.url }}');"></div>
-                            {% elif task.attachment %}
-                            <div class="grid-cover-top is-pdf">
-                                <i class="fas fa-file-pdf"></i>
-                                <span style="font-size:0.75rem; font-weight:700; margin-top:0.5rem; text-align:center; padding: 0 10px; color: #64748b; line-height: 1.2;">{{ task.attachment.name|truncatechars:20 }}</span>
-                            </div>
-                            <div class="grid-cover-side">
-                                <i class="fas fa-file-pdf"></i>
-                                <span style="font-size:0.75rem; font-weight:700; margin-top:0.5rem; text-align:center; padding: 0 10px; color: #64748b; line-height: 1.2;">{{ task.attachment.name|truncatechars:15 }}</span>
-                            </div>
-                            {% elif module.banner_image %}
-                            <div class="grid-cover-top" style="background-image: url('{{ module.banner_image.url }}');"></div>
-                            <div class="grid-cover-side" style="background-image: url('{{ module.banner_image.url }}');"></div>
-                            {% endif %}
-
-                            <div class="c-col c-task">
-                                <div class="fw-bold text-dark task-search-title">{{ task.title }}</div>
-                                <div class="small text-muted">
-                                    <i class="fas fa-user-circle me-1"></i>{{ task.created_by.first_name }} {{ task.created_by.last_name }}
-                                </div>
-                            </div>
-                            
-                            <div class="c-col c-status d-flex-align">
-                                <span class="grid-label">Status:</span>
-                                <span class="task-search-status" style="display:none;">{{ task.status }}</span>
-                                {% if task.status == 'completed' %}
-                                    <span class="chip chip-success"><i class="fas fa-check"></i> Done</span>
-                                {% elif task.status == 'in_progress' %}
-                                    <span class="chip chip-info"><i class="fas fa-spinner"></i> In Progress</span>
-                                {% else %}
-                                    <span class="chip chip-secondary"><i class="fas fa-hourglass"></i> Pending</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="c-col c-priority d-flex-align">
-                                <span class="grid-label">Priority:</span>
-                                {% if task.priority == 'high' or task.priority == 'critical' %}
-                                    <span class="chip chip-danger"><i class="fas fa-arrow-up"></i> High</span>
-                                {% elif task.priority == 'medium' %}
-                                    <span class="chip chip-warning"><i class="fas fa-minus"></i> Medium</span>
-                                {% else %}
-                                    <span class="chip chip-info"><i class="fas fa-arrow-down"></i> Low</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="c-col c-deadline d-flex-align">
-                                <span class="grid-label">Deadline:</span>
-                                {% if task.deadline %}
-                                    <span class="fw-bold small text-dark">{{ task.deadline|date:"M d, Y" }}</span>
-                                {% else %}
-                                    <span class="text-muted small">—</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="c-col c-progress">
-                                <span class="grid-label d-block mb-1">Progress:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div style="flex:1; height:5px; border-radius:99px; background:#f1f5f9; overflow:hidden;">
-                                        <div style="height:100%; border-radius:99px; background: var(--module-color); --w: {{ task.progress|default:0 }}%; width: var(--w);"></div>
-                                    </div>
-                                    <small class="fw-bold text-muted">{{ task.progress|default:0 }}%</small>
-                                </div>
-                            </div>
-                            
-                            <div class="c-col c-action d-flex flex-row gap-2">
-                                <a href="{{ task.detail_url }}" class="btn-pill" title="View Task">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                {% if user.role == 'manager' or user.role == 'super_admin' %}
-                                <a href="{% url 'task-edit' task.id %}" class="btn-pill" title="Edit Task">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn-pill" onclick="deleteTask('{{ task.id }}')" style="color: var(--wt-bad); border-color: rgba(192, 40, 58,0.2);" title="Delete Task">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="p-4 w-100 placeholder-row">
-                            <div class="empty-state">
-                                <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
-                                <h5>No Tasks Found</h5>
-                                <p>This module doesn't have any tasks scheduled yet. Start by creating your first workflow assignment.</p>
-                                {% if user.role == 'manager' or user.role == 'super_admin' %}
-                                <a href="{% url 'task-create' %}?module={{ module.slug }}" class="btn-pill btn-pill-primary mt-4">
-                                    <i class="fas fa-plus"></i> Create First Task
-                                </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>                    <div id="noTaskResults" class="empty-state" style="display:none; border-style: solid; background: #f8fafc;">
-                        <div class="empty-state-icon" style="background: white;"><i class="fas fa-search-minus text-primary"></i></div>
-                        <h5>Search: No Matches</h5>
-                        <p>We couldn't find any tasks matching your current filters or search terms. Try broadening your criteria.</p>
-                        <button type="button" class="btn btn-sm btn-light rounded-pill px-4 mt-3 fw-bold border" onclick="resetTaskFilters()">
-                            <i class="fas fa-redo me-1"></i> Reset All Filters
-                        </button>
-                    </div>
-                <div class="pagination-wrap" id="taskPaginationWrap" style="display:none;">
-                    <div class="small text-muted fw-semibold">
-                        Showing <span id="taskPageStart">0</span>–<span id="taskPageEnd">0</span> of <span id="taskTotal">0</span>
-                    </div>
-                    <ul class="pagination" id="taskPaginationControls"></ul>
-                </div>
-            </div>
-        </div><!-- end #tab-tasks -->
-    <div id="tab-correspondence" style="display:none;">
-        <div class="panel-card">
-            <div class="panel-header">
-                <span class="panel-title">
-                    <i class="fas fa-envelope-open-text" style="color: #6366f1;"></i>
-                    Correspondence Repository
-                </span>
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div class="search-input-wrap">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="corrSearchInput" placeholder="Search documents..." autocomplete="off">
-                    </div>
-                </div>
-            </div>
-            <div class="task-container task-list-view" id="moduleCorrContainer">
-                <div class="task-header">
-                    <div class="c-col" style="width: 40%;">Document</div>
-                    <div class="c-col" style="width: 15%;">Type</div>
-                    <div class="c-col" style="width: 15%;"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></div>
-                    <div class="c-col" style="width: 15%;">Deadline</div>
-                    <div class="c-col" style="width: 15%; text-align: right;"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></div>
-                </div>
-                <div id="corrTableBody">
-                    {% for item in correspondence_tasks %}
-                    <div class="task-item corr-row" style="border-left: 5px solid #6366f1 !important;">
-                        <div class="c-col" style="width: 40%;">
-                            <div class="fw-bold text-dark corr-search-title">{{ item.title }}</div>
-                            <div class="small text-muted">{{ item.reference_number|default:"No Ref #" }}</div>
-                        </div>
-                        <div class="c-col" style="width: 15%;">
-                            <span class="chip chip-indigo corr-search-type">{{ item.correspondence_type|upper }}</span>
-                        </div>
-                        <div class="c-col" style="width: 15%;">
-                            {% if item.priority == 'high' or item.priority == 'critical' %}
-                                <span class="chip chip-danger"><i class="fas fa-arrow-up"></i> {{ item.priority|capfirst }}</span>
-                            {% else %}
-                                <span class="chip chip-info">{{ item.priority|capfirst }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="c-col" style="width: 15%;">
-                            <span class="small fw-bold">{{ item.deadline|date:"M d, Y"|default:"—" }}</span>
-                        </div>
-                        <div class="c-col" style="width: 15%; text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
-                            <a href="{{ item.detail_url }}" class="btn-pill" title="View Document">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            {% if user.role == 'manager' or user.role == 'super_admin' %}
-                            <a href="{{ item.edit_url }}" class="btn-pill" title="Edit Document">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon"><i class="fas fa-envelope-open-text"></i></div>
-                        <h5>No Documents Found</h5>
-                        <p>This module's correspondence repository is currently empty. All official communications will be organized here.</p>
-                        <a href="{% url 'correspondence-create' %}?module={{ module.slug }}" class="btn-pill btn-pill-primary mt-4">
-                            <i class="fas fa-plus"></i><span class="lang-en">New Correspondence</span><span class="lang-ar">مراسلة جديدة</span></a>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div id="noCorrResults" class="empty-state" style="display:none; border-style: solid; background: #f8fafc;">
-                <div class="empty-state-icon" style="background: white;"><i class="fas fa-search-minus text-primary"></i></div>
-                <h5>Repository: No Matches</h5>
-                <p>We couldn't find any official documents matching your search. Try different keywords or check your filters.</p>
-                <button type="button" class="btn btn-sm btn-light rounded-pill px-4 mt-3 fw-bold border" onclick="resetCorrFilters()">
-                    <i class="fas fa-redo me-1"></i> Reset All Filters
-                </button>
-            </div>
-            <div class="pagination-wrap" id="corrPaginationWrap" style="display:none;">
-                <div class="small text-muted fw-semibold">
-                    Showing <span id="corrPageStart">0</span>–<span id="corrPageEnd">0</span> of <span id="corrTotal">0</span>
-                </div>
-                <ul class="pagination" id="corrPaginationControls"></ul>
-            </div>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="wt-td-empty wt-md-nomatch" hidden><span class="lang-en">No task matches.</span><span class="lang-ar">لا توجد مهمة مطابقة.</span></p>
+            {% else %}<div class="wt-empty"><p><span class="lang-en">No tasks yet.</span><span class="lang-ar">لا مهام بعد.</span></p></div>{% endif %}
         </div>
-    </div><!-- end #tab-correspondence -->
 
-    <div id="tab-submissions" style="display:none;">
-        <div class="panel-card">
-                <div class="panel-header">
-                    <span class="panel-title">
-                        <i class="fas fa-folder-open" style="color: #2563eb;"></i>
-                        Official Submissions Registry
-                    </span>
-                    <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <div class="search-input-wrap">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="subSearchInput" placeholder="Search submissions..." autocomplete="off">
-                        </div>
-                        <div class="layout-toggles">
-                            <button type="button" class="sub-layout-btn active" data-layout="list" title="List View"><i class="fas fa-list"></i></button>
-                            <button type="button" class="sub-layout-btn" data-layout="grid" title="Grid View"><i class="fas fa-th-large"></i></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sub-container sub-list-view" id="moduleSubContainer">
-                    <div class="sub-header">
-                        <div class="c-col c-task">Task</div>
-                        <div class="c-col c-worker">Submitter</div>
-                        <div class="c-col c-status"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></div>
-                        <div class="c-col c-submitted">Submitted</div>
-                        <div class="c-col c-action"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></div>
-                    </div>
-                    
-                    <div id="subTableBody">
-                        {% for submission in all_submissions %}
-                        <div class="sub-item sub-row">
-                            <div class="c-col c-task">
-                                <div class="fw-bold text-dark sub-search-task">{{ submission.task.title }}</div>
-                                <span class="chip chip-secondary mt-1" style="font-size:0.72rem; padding: 0.15rem 0.6rem;">v{{ submission.version }}</span>
-                            </div>
-                            
-                            <div class="c-col c-worker d-flex-align">
-                                <span class="grid-label">Submitter:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div style="width:28px; height:28px; border-radius:50%; background: linear-gradient(135deg, #2563eb, #60a5fa); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">
-                                        {{ submission.worker.first_name|first|upper }}
-                                    </div>
-                                    <div class="fw-semibold text-dark sub-search-worker small">{{ submission.worker.get_full_name }}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="c-col c-status d-flex-align">
-                                <span class="grid-label">Status:</span>
-                                <span class="sub-search-status" style="display:none;">{{ submission.status }}</span>
-                                {% if submission.status == 'approved' %}
-                                    <span class="chip chip-success"><i class="fas fa-check-circle"></i> Approved</span>
-                                {% elif submission.status == 'rejected' %}
-                                    <span class="chip chip-danger"><i class="fas fa-times-circle"></i> Rejected</span>
-                                {% elif submission.status == 'submitted' %}
-                                    <span class="chip chip-info"><i class="fas fa-paper-plane"></i> Submitted</span>
-                                {% elif submission.status == 'under_review' %}
-                                    <span class="chip chip-warning"><i class="fas fa-search"></i> Reviewing</span>
-                                {% else %}
-                                    <span class="chip chip-secondary"><i class="fas fa-pencil-alt"></i> Draft</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="c-col c-submitted d-flex-align">
-                                <span class="grid-label">Submitted:</span>
-                                {% if submission.submitted_at %}
-                                    <span class="small fw-semibold text-dark">{{ submission.submitted_at|date:"M d, Y" }}</span>
-                                {% else %}
-                                    <span class="text-muted small">—</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="c-col c-action d-flex flex-row gap-2">
-                                <a href="{% url 'submission-detail' submission.id %}" class="btn-pill">
-                                    <i class="fas fa-eye"></i> Review
-                                </a>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="empty-state">
-                            <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                            <h5>No Submissions Yet</h5>
-                            <p>No reports or work progress has been filed for this module. Once a task is completed, you'll see the details here.</p>
-                        </div>
+        {# Submissions #}
+        <div id="tab-submissions" role="tabpanel" class="wt-md-pane" hidden>
+            <div class="wt-md-tools">
+                <label class="wt-filter wt-filter-search"><span class="visually-hidden"><span class="lang-en">Search submissions</span><span class="lang-ar">ابحث في التسليمات</span></span><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" class="form-control" data-md-search="subs" placeholder="{% if wt_lang == 'ar' %}ابحث بالمهمة أو الاسم{% else %}Search by task or person{% endif %}"></label>
+            </div>
+            {% if all_submissions %}
+            <div class="table-responsive wt-hist">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th><span class="lang-en">Task</span><span class="lang-ar">المهمة</span></th><th><span class="lang-en">By</span><span class="lang-ar">بواسطة</span></th><th><span class="lang-en">Submitted</span><span class="lang-ar">تاريخ التسليم</span></th><th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th></tr></thead>
+                    <tbody data-md-list="subs">
+                        {% for s in all_submissions %}
+                        <tr data-q="{{ s.task.title|lower }} {{ s.worker.get_full_name|lower }} {{ s.worker.email|lower }}">
+                            <td><div class="wt-cell-title"><span><a class="wt-cell-link" href="{% url 'submission-detail' s.id %}" dir="auto">{{ s.task.title }}</a><small class="wt-num">v{{ s.version }}</small></span></div></td>
+                            <td><span class="wt-sl-person"><span class="wt-avatar">{{ s.worker.first_name|default:s.worker.email|first|upper }}{{ s.worker.last_name|first|upper }}</span><span dir="auto">{{ s.worker.get_full_name|default:s.worker.email }}</span></span></td>
+                            <td class="wt-num">{{ s.submitted_at|date:"j/n/Y"|default:"–" }}</td>
+                            <td><span class="wt-chip {% if s.status == 'approved' %}is-ok{% elif s.status == 'rejected' %}is-alert{% elif s.status == 'draft' %}is-muted{% else %}is-review{% endif %}">{% include 'includes/wt_status_label.html' with s=s.status %}</span></td>
+                        </tr>
                         {% endfor %}
-                    </div>
-                </div>
-                <div id="noSubResults" class="empty-state" style="display:none; border-style: solid; background: #f8fafc;">
-                        <div class="empty-state-icon" style="background: white;"><i class="fas fa-search-minus text-primary"></i></div>
-                        <h5>Submissions: No Matches</h5>
-                        <p>No task submissions match your current search or status filters. Adjust your criteria to see more results.</p>
-                        <button type="button" class="btn btn-sm btn-light rounded-pill px-4 mt-3 fw-bold border" onclick="resetSubFilters()">
-                            <i class="fas fa-redo me-1"></i> Reset All Filters
-                        </button>
-                    </div>
-                <div class="pagination-wrap" id="subPaginationWrap" style="display:none;">
-                    <div class="small text-muted fw-semibold">
-                        Showing <span id="subPageStart">0</span>–<span id="subPageEnd">0</span> of <span id="subTotal">0</span>
-                    </div>
-                    <ul class="pagination" id="subPaginationControls"></ul>
-                </div>
+                    </tbody>
+                </table>
             </div>
-        </div><!-- end #tab-submissions -->
+            <p class="wt-td-empty wt-md-nomatch" hidden><span class="lang-en">No submission matches.</span><span class="lang-ar">لا يوجد تسليم مطابق.</span></p>
+            {% else %}<div class="wt-empty"><p><span class="lang-en">No submissions yet.</span><span class="lang-ar">لا تسليمات بعد.</span></p></div>{% endif %}
+        </div>
 
-    <div id="tab-team" style="display:none;">
-        {% if user.role == 'manager' or user.role == 'super_admin' %}
-        <div class="panel-card">
-            <div class="panel-header">
-                <span class="panel-title">
-                    <i class="fas fa-users" style="color: var(--color-primary, #10b981);"></i>
-                    Enrolled Team Members
-                </span>
-                
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div class="search-input-wrap">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="teamSearchInput" placeholder="Search team..." autocomplete="off">
-                    </div>
-                    <button type="button" class="btn-pill" onclick="openEnrollUserModal()" style="background: var(--color-primary, #10b981); color: #ffffff; border-color: var(--color-primary, #10b981); font-weight: 700; padding: 0.45rem 1.15rem; box-shadow: 0 4px 12px rgba(var(--wt-brand-rgb), 0.25);">
-                        <i class="fas fa-user-plus me-1"></i>
-                        <span class="lang-en">Add Member</span><span class="lang-ar">إضافة عضو</span>
-                    </button>
-                </div>
+        {# Correspondence #}
+        <div id="tab-correspondence" role="tabpanel" class="wt-md-pane" hidden>
+            <div class="wt-md-tools">
+                <label class="wt-filter wt-filter-search"><span class="visually-hidden"><span class="lang-en">Search correspondence</span><span class="lang-ar">ابحث في المراسلات</span></span><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" class="form-control" data-md-search="corr" placeholder="{% if wt_lang == 'ar' %}ابحث بالعنوان أو المرجع{% else %}Search by title or reference{% endif %}"></label>
+                <a class="btn btn-light" href="{% url 'admin-correspondence' %}?module={{ module.slug }}"><span class="lang-en">All correspondence</span><span class="lang-ar">كل المراسلات</span></a>
+                {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}<a class="btn btn-primary" href="{% url 'correspondence-create' %}?module={{ module.slug }}"><i class="fas fa-plus"></i><span class="lang-en">New correspondence</span><span class="lang-ar">مراسلة جديدة</span></a>{% endif %}
             </div>
-            
-            <div class="task-container task-list-view">
-                <div class="task-header">
-                    <div class="c-col" style="width: 35%;">Member Name</div>
-                    <div class="c-col" style="width: 30%;">Role & Contact</div>
-                    <div class="c-col" style="width: 25%;">Productivity</div>
-                    <div class="c-col" style="width: 10%; text-align: right;"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></div>
-                </div>
-                
-                <div id="teamTableBody">
-                    {% for member in enrolled_team %}
-                    <div class="task-item team-row" style="border-left: 5px solid var(--color-primary, #10b981) !important;">
-                        <div class="c-col" style="width: 35%;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-accent, #34d399)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(var(--wt-brand-rgb),0.2);">
-                                    {{ member.first_name|first|upper }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-dark team-search-name" style="font-size: 1.05rem;">{{ member.get_full_name|default:member.username }}</div>
-                                    <div class="small text-muted">Active user profile</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="c-col d-flex flex-column justify-content-center align-items-start" style="width: 30%; gap: 0.2rem;">
-                            {% if member.role == 'super_admin' %}
-                                <span class="chip chip-danger"><i class="fas fa-crown"></i> Administrator</span>
-                            {% elif member.role == 'manager' %}
-                                <span class="chip chip-indigo"><i class="fas fa-user-tie"></i> Manager</span>
-                            {% else %}
-                                <span class="chip chip-success"><i class="fas fa-user"></i> Worker</span>
-                            {% endif %}
-                            <span class="fw-semibold text-dark small team-search-email"><i class="fas fa-envelope text-muted me-1"></i> {{ member.email }}</span>
-                        </div>
-                        <div class="c-col d-flex flex-column justify-content-center" style="width: 25%;">
-                            <span class="grid-label d-block mb-1">Tasks Completed:</span>
-                            <div class="d-flex align-items-center gap-2">
-                                {% widthratio member.module_tasks_completed member.module_tasks_total|default:1 100 as progress_percent %}
-                                <div style="flex:1; height:6px; border-radius:99px; background:#f1f5f9; overflow:hidden;">
-                                    {% if member.module_tasks_total == 0 %}
-                                    <div style="height:100%; border-radius:99px; background: #e2e8f0; width: 0%;"></div>
-                                    {% else %}
-                                    <div style="height:100%; border-radius:99px; background: var(--color-primary, #10b981); width: {{ progress_percent }}%;"></div>
-                                    {% endif %}
-                                </div>
-                                <small class="fw-bold text-muted">{{ member.module_tasks_completed }} / {{ member.module_tasks_total }}</small>
-                            </div>
-                        </div>
-                        <div class="c-col d-flex flex-row gap-2 justify-content-end align-items-center" style="width: 10%; text-align: right;">
-                            <a href="{% url 'user-edit' member.id %}" class="btn-pill" title="Edit Profile">
-                                <i class="fas fa-edit text-primary"></i>
-                            </a>
-                            <form id="removeUserForm-{{ member.id }}" action="{% url 'module-remove-user' module.slug member.id %}" method="POST" class="m-0 p-0">
-                                {% csrf_token %}
-                                <button type="button" onclick="confirmRemoveTeamMember({{ member.id }}, '{{ member.get_full_name|escapejs }}')" class="btn-pill" style="color: var(--wt-bad); border-color: rgba(192, 40, 58,0.2);" title="Remove User">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon" style="background: linear-gradient(135deg, #fee2e2 0%, #fff1f2 100%); color: var(--color-primary, #10b981);"><i class="fas fa-users-slash"></i></div>
-                        <h5>No Team Members Enrolled</h5>
-                        <p>There are no workers officially subscribed to this specific module yet.</p>
-                    </div>
-                    {% endfor %}
-                </div>
+            {% if correspondence_tasks %}
+            <ul class="wt-side-list wt-md-corr" data-md-list="corr">
+                {% for item in correspondence_tasks %}
+                <li data-q="{{ item.title|lower }} {{ item.reference_number|default:''|lower }}">
+                    <a class="wt-side-row is-link" href="{% url 'correspondence-detail' item.obj.pk %}">
+                        <span class="wt-side-main"><b dir="auto">{{ item.title }}</b><small><span class="wt-num">{{ item.reference_number|default:"" }}</span>{% if item.reference_number %} · {% endif %}<span class="wt-num">{{ item.created_at|date:"j/n/Y" }}</span>{% if item.deadline %} · <span class="lang-en">due</span><span class="lang-ar">الموعد</span> <span class="wt-num">{{ item.deadline|date:"j/n/Y" }}</span>{% endif %}</small></span>
+                        <span class="wt-md-ack" title="{% if wt_lang == 'ar' %}تأكيدات الاستلام{% else %}Acknowledged{% endif %}"><span class="wt-num">{{ item.acknowledged_count }} / {{ item.total_assigned }}</span><span class="wt-up-bar"><i style="--p: {{ item.ack_pct }}%;"></i></span></span>
+                        {% if user.role == 'worker' %}{% if item.user_acked %}<span class="wt-chip is-ok"><span class="lang-en">Read</span><span class="lang-ar">تم الاطلاع</span></span>{% else %}<span class="wt-chip is-review"><span class="lang-en">Unread</span><span class="lang-ar">غير مقروء</span></span>{% endif %}{% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="wt-td-empty wt-md-nomatch" hidden><span class="lang-en">Nothing matches.</span><span class="lang-ar">لا شيء مطابق.</span></p>
+            {% else %}<div class="wt-empty"><p><span class="lang-en">No correspondence for this module.</span><span class="lang-ar">لا مراسلات لهذه الوحدة.</span></p></div>{% endif %}
+        </div>
+
+        {# Team (managers) #}
+        {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+        <div id="tab-team" role="tabpanel" class="wt-md-pane" hidden>
+            <div class="wt-md-tools">
+                <label class="wt-filter wt-filter-search"><span class="visually-hidden"><span class="lang-en">Search the team</span><span class="lang-ar">ابحث في الفريق</span></span><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" class="form-control" data-md-search="team" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد{% else %}Search by name or email{% endif %}"></label>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enrollUserModal"><i class="fas fa-user-plus"></i><span class="lang-en">Add people</span><span class="lang-ar">إضافة أشخاص</span></button>
             </div>
-            
-            <div id="noTeamResults" class="empty-state" style="display:none; border-style: solid; background: #f8fafc;">
-                <div class="empty-state-icon" style="background: white;"><i class="fas fa-search-minus text-primary"></i></div>
-                <h5>Team Search: No Matches</h5>
-                <p>We couldn't find any team members matching your current search terms.</p>
-                <button type="button" class="btn btn-sm btn-light rounded-pill px-4 mt-3 fw-bold border" onclick="resetTeamFilters()">
-                    <i class="fas fa-redo me-1"></i> Reset Search
-                </button>
-            </div>
-            <div class="pagination-wrap" id="teamPaginationWrap" style="display:none;">
-                <div class="small text-muted fw-semibold">
-                    Showing <span id="teamPageStart">0</span>–<span id="teamPageEnd">0</span> of <span id="teamTotal">0</span>
-                </div>
-                <ul class="pagination" id="teamPaginationControls"></ul>
-            </div>
-            
+            {% if enrolled_team %}
+            <ul class="wt-side-list wt-md-team" data-md-list="team">
+                {% for m in enrolled_team %}
+                <li class="wt-side-row" data-q="{{ m.get_full_name|lower }} {{ m.email|lower }}">
+                    <span class="wt-avatar">{{ m.first_name|default:m.email|first|upper }}{{ m.last_name|first|upper }}</span>
+                    <span class="wt-side-main"><b dir="auto">{{ m.get_full_name|default:m.username|default:m.email }}</b><small>{{ m.email }} · {% if m.role == 'super_admin' %}<span class="lang-en">Admin</span><span class="lang-ar">مسؤول</span>{% elif m.role == 'manager' %}<span class="lang-en">Manager</span><span class="lang-ar">مدير</span>{% else %}<span class="lang-en">Staff</span><span class="lang-ar">موظف</span>{% endif %}</small></span>
+                    <span class="wt-md-done" title="{% if wt_lang == 'ar' %}مهام منجزة في هذه الوحدة{% else %}Tasks done in this module{% endif %}"><span class="wt-num">{{ m.module_tasks_completed }} / {{ m.module_tasks_total }}</span></span>
+                    <a class="wt-icon-btn" href="{% url 'user-edit' m.id %}" aria-label="{% if wt_lang == 'ar' %}تعديل الملف{% else %}Edit profile{% endif %}" title="{% if wt_lang == 'ar' %}تعديل الملف{% else %}Edit profile{% endif %}"><i class="fas fa-pen"></i></a>
+                    <form id="removeUserForm-{{ m.id }}" action="{% url 'module-remove-user' module.slug m.id %}" method="POST" class="m-0">{% csrf_token %}
+                        <button type="button" class="wt-icon-btn is-danger" onclick="confirmRemoveTeamMember({{ m.id }}, '{{ m.get_full_name|default:m.email|escapejs }}')" aria-label="{% if wt_lang == 'ar' %}إزالة من الوحدة{% else %}Remove from module{% endif %}" title="{% if wt_lang == 'ar' %}إزالة من الوحدة{% else %}Remove from module{% endif %}"><i class="fas fa-user-minus"></i></button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="wt-td-empty wt-md-nomatch" hidden><span class="lang-en">Nobody matches.</span><span class="lang-ar">لا أحد مطابق.</span></p>
+            {% else %}<div class="wt-empty"><p><span class="lang-en">Nobody has joined this module yet.</span><span class="lang-ar">لم ينضم أحد إلى هذه الوحدة بعد.</span></p></div>{% endif %}
         </div>
         {% endif %}
-    </div><!-- end #tab-team -->
-
-</div><!-- end container-fluid -->
-
-<!-- ======= MODALS ======= -->
-<!-- Share Module Modal -->
-<div class="modal fade" id="shareModuleModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
-            <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold">Share Module to Chat</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.6rem;"></button>
-            </div>
-            <div class="modal-body p-3">
-                <input type="text" id="share-search-input" class="form-control form-control-sm rounded-pill mb-2" placeholder="Search contacts...">
-                <div id="share-contacts-list" style="max-height: 250px; overflow-y: auto;">
-                    <div class="text-center p-3 text-muted small">Loading...</div>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" id="confirm-share-btn" class="btn btn-primary btn-sm rounded-pill w-100" disabled>Send</button>
-            </div>
-        </div>
-    </div>
+    </section>
 </div>
 
-<!-- Enroll New User Modal -->
-<div class="modal fade" id="enrollUserModal" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-0 pt-3 px-4 bg-light">
-                <div class="d-flex align-items-center gap-3">
-                    <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(var(--wt-brand-rgb), 0.15); color: var(--color-primary, #10b981); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0">
-                            <span class="lang-en">Enroll Team Member</span>
-                            <span class="lang-ar">إضافة عضو جديد للوحدة</span>
-                        </h5>
-                        <small class="text-muted">
-                            <span class="lang-en">Search and add team members to {{ module.name }}</span>
-                            <span class="lang-ar">ابحث وأضف أعضاء الفريق إلى {{ module.name }}</span>
-                        </small>
-                    </div>
-                </div>
-                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            
-            <div class="modal-body p-4">
-                <!-- Search bar in popup -->
-                <div class="position-relative mb-3">
-                    <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted" style="left: 14px; z-index: 2;"></i>
-                    <input type="text" id="modalUserSearchInput" class="form-control ps-5 pe-4 rounded-pill border-1" placeholder="بحث بالاسم أو البريد أو الدور... / Search users..." style="height: 42px; background: #f8fafc; border-color: rgba(var(--wt-brand-rgb), 0.35);" oninput="filterAvailableUsers()">
-                </div>
-                
-                <!-- Users list container -->
-                <div id="availableUsersList" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;" class="pe-1">
+{% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+<div class="modal fade" id="enrollUserModal" tabindex="-1" aria-labelledby="enrollUserTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-6" id="enrollUserTitle"><span class="lang-en">Add people to</span><span class="lang-ar">إضافة أشخاص إلى</span> <span dir="auto">{{ module.name }}</span></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% if wt_lang == 'ar' %}إغلاق{% else %}Close{% endif %}"></button></div>
+            <div class="modal-body">
+                <input type="search" id="modalUserSearchInput" class="form-control mb-2" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد{% else %}Search by name or email{% endif %}" aria-label="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد{% else %}Search by name or email{% endif %}">
+                <ul class="wt-side-list wt-td-pick" id="availableUsersList">
                     {% for u in available_users %}
-                    <div class="avail-user-row p-2 rounded-3 border d-flex align-items-center justify-content-between" data-user-id="{{ u.id }}" data-search-text="{{ u.get_full_name|default:u.username|lower }} {{ u.email|lower }} {{ u.role|lower }}" style="background: #ffffff; transition: background 0.2s;">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-accent, #34d399)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;">
-                                {{ u.first_name|first|default:u.username|first|upper }}
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark avail-user-name" style="font-size: 0.95rem;">{{ u.get_full_name|default:u.username }}</div>
-                                <div class="small text-muted">{{ u.email|default:"No email" }} • <span class="badge bg-light text-dark border">{{ u.get_role_display|default:u.role|title }}</span></div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold btn-enroll-user" onclick="enrollUserAjax('{{ u.id }}', this)" style="background: var(--color-primary, #10b981); color: #ffffff; border: none;">
-                            <span class="lang-en">Add</span><span class="lang-ar">إضافة</span>
-                            <i class="fas fa-plus ms-1"></i>
-                        </button>
-                    </div>
+                    <li class="wt-side-row avail-user-row" data-user-id="{{ u.id }}" data-q="{{ u.get_full_name|default:u.username|lower }} {{ u.email|lower }} {{ u.role|lower }}">
+                        <span class="wt-avatar">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>
+                        <span class="wt-side-main"><b dir="auto">{{ u.get_full_name|default:u.username|default:u.email }}</b><small>{{ u.email }}</small></span>
+                        <button type="button" class="btn btn-sm btn-light" onclick="enrollUserAjax('{{ u.id }}', this)"><i class="fas fa-plus"></i><span class="lang-en">Add</span><span class="lang-ar">إضافة</span></button>
+                    </li>
                     {% empty %}
-                    <div class="text-center py-4 text-muted small">
-                        <i class="fas fa-user-check fs-2 text-success opacity-50 mb-2"></i><br>
-                        <span class="lang-en">All available users are already enrolled in this module.</span>
-                        <span class="lang-ar">جميع المستخدمين مضافون بالفعل في هذه الوحدة.</span>
-                    </div>
+                    <li class="wt-side-empty"><span class="lang-en">Everyone is already in this module.</span><span class="lang-ar">الجميع مضافون بالفعل إلى هذه الوحدة.</span></li>
                     {% endfor %}
-                </div>
-                <div id="noModalUserResults" class="text-center py-4 text-muted small" style="display: none;">
-                    <i class="fas fa-search-minus fs-3 text-muted mb-2"></i><br>
-                    <span class="lang-en">No users matching search query.</span>
-                    <span class="lang-ar">لا يوجد مستخدمون يطابقون عبارة البحث.</span>
-                </div>
+                </ul>
             </div>
-            <div class="modal-footer border-0 pt-0 bg-light">
-                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
-                    <span class="lang-en">Done</span><span class="lang-ar">تم</span>
-                </button>
-            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal"><span class="lang-en">Done</span><span class="lang-ar">تم</span></button></div>
         </div>
     </div>
 </div>
-
+{% endif %}
+{% endwith %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // ─── Datatables & Toggles ───
-    setupDatatables();
-    setupTodoPagination();
-    setupLayoutToggles();
-    setupShareFeature();
-    updatePendingCount();
-    
-    // ─── Restore State ───
-    const isCollapsed = localStorage.getItem('todoCollapsed') !== 'false';
-    const section = document.getElementById('todo-summary-section');
-    if (section) {
-        if (isCollapsed) section.classList.add('minimized');
-        else section.classList.remove('minimized');
-    }
-});
+(function () {
+    const isAr = () => document.documentElement.dir === 'rtl';
+    const T = (en, ar) => isAr() ? ar : en;
+    const CSRF = '{{ csrf_token }}';
 
-// ─── Shared Logic Functions ───
-function setupDatatables() {
-    createDatatable({ rowSelector: '.task-row', bodyId: 'tasksTableBody', searchInputId: 'taskSearchInput', noResultsId: 'noTaskResults', paginationWrapId: 'taskPaginationWrap', paginationControlsId: 'taskPaginationControls', pageStartId: 'taskPageStart', pageEndId: 'taskPageEnd', totalId: 'taskTotal', searchTargets: ['task-search-title', 'task-search-status'] });
-    createDatatable({ rowSelector: '.sub-row', bodyId: 'subTableBody', searchInputId: 'subSearchInput', noResultsId: 'noSubResults', paginationWrapId: 'subPaginationWrap', paginationControlsId: 'subPaginationControls', pageStartId: 'subPageStart', pageEndId: 'subPageEnd', totalId: 'subTotal', searchTargets: ['sub-search-task', 'sub-search-worker', 'sub-search-status'] });
-    createDatatable({ rowSelector: '.corr-row', bodyId: 'corrTableBody', searchInputId: 'corrSearchInput', noResultsId: 'noCorrResults', paginationWrapId: 'corrPaginationWrap', paginationControlsId: 'corrPaginationControls', pageStartId: 'corrPageStart', pageEndId: 'corrPageEnd', totalId: 'corrTotal', searchTargets: ['corr-search-title', 'corr-search-type'] });
-}
-
-function setupTodoPagination() {
-    // This function is now handled by the new renderTodoPagination logic
-    // createDatatable({ rowSelector: '.todo-card', bodyId: 'todo-grid-container', searchInputId: null, noResultsId: null, paginationWrapId: 'todoPaginationWrap', paginationControlsId: 'todoPaginationControls', itemsPerPage: 3 });
-}
-
-function updatePendingCount() {
-    const pendings = document.querySelectorAll('.todo-card:not(.completed)').length;
-    const el = document.getElementById('pending-count');
-    const pill = document.getElementById('todo-pending-pill');
-    if (el) el.innerText = pendings;
-    if (pill) {
-        if (pendings > 0) { pill.style.background = '#fee2e2'; pill.style.color = '#ef4444'; }
-        else { pill.style.background = '#f1f5f9'; pill.style.color = '#475569'; }
-    }
-}
-
-function createDatatable({ rowSelector, bodyId, searchInputId, noResultsId, paginationWrapId, paginationControlsId, pageStartId, pageEndId, totalId, searchTargets, itemsPerPage = 8 }) {
-    const allRows = Array.from(document.querySelectorAll(rowSelector));
-    const body = document.getElementById(bodyId);
-    if (!body && allRows.length === 0) return;
-    
-    const searchInput = document.getElementById(searchInputId);
-    const noResults = document.getElementById(noResultsId);
-    const paginationWrap = document.getElementById(paginationWrapId);
-    const paginationControls = document.getElementById(paginationControlsId);
-    const pageStart = document.getElementById(pageStartId);
-    const pageEnd = document.getElementById(totalId); // Corrected: Should be pageEndId
-    const total = document.getElementById(totalId);
-    let currentPage = 1;
-    let filteredRows = [...allRows];
-
-    function render() {
-        const n = filteredRows.length;
-        const pages = Math.ceil(n / itemsPerPage);
-        allRows.forEach(r => r.style.display = 'none');
-
-        if (n === 0) {
-            if (noResults) noResults.style.display = 'block';
-            if (body) body.style.display = 'none';
-            if (paginationWrap) paginationWrap.style.display = 'none';
-            return;
-        }
-        if (noResults) noResults.style.display = 'none';
-        if (body) body.style.display = '';
-
-        const s = (currentPage - 1) * itemsPerPage;
-        const e = Math.min(s + itemsPerPage, n);
-        for (let i = s; i < e; i++) filteredRows[i].style.display = '';
-
-        if (pageStart) pageStart.textContent = s + 1;
-        if (pageEnd) pageEnd.textContent = e;
-        if (total) total.textContent = n;
-
-        if (pages > 1) {
-            if(paginationWrap) paginationWrap.style.display = 'flex';
-            let html = `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><button class="page-link" onclick="window.__goPage_${bodyId}(${currentPage - 1})"><i class="fas fa-chevron-left small"></i></button></li>`;
-            for (let i = 1; i <= pages; i++) {
-                html += `<li class="page-item ${i === currentPage ? 'active' : ''}"><button class="page-link" onclick="window.__goPage_${bodyId}(${i})">${i}</button></li>`;
-            }
-            html += `<li class="page-item ${currentPage === pages ? 'disabled' : ''}"><button class="page-link" onclick="window.__goPage_${bodyId}(${currentPage + 1})"><i class="fas fa-chevron-right small"></i></button></li>`;
-            if(paginationControls) paginationControls.innerHTML = html;
-        } else {
-            if(paginationWrap) paginationWrap.style.display = 'none';
-        }
-    }
-
-    window[`__goPage_${bodyId}`] = (p) => { if(p >= 1 && p <= Math.ceil(filteredRows.length/itemsPerPage)) { currentPage = p; render(); } };
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const q = this.value.toLowerCase().trim();
-            filteredRows = allRows.filter(r => searchTargets.some(cls => r.querySelector('.' + cls)?.textContent.toLowerCase().includes(q)));
-            currentPage = 1; render();
-        });
-    }
-    render();
-}
-
-function setupLayoutToggles() {
-    const config = [
-        ['.task-layout-btn', 'moduleTaskContainer', 'moduleTaskLayout', 'task-list-view', 'task-grid-view'],
-        ['.sub-layout-btn', 'moduleSubContainer', 'moduleSubLayout', 'sub-list-view', 'sub-grid-view']
-    ];
-    config.forEach(([btnSel, contId, key, listCl, gridCl]) => {
-        const btns = document.querySelectorAll(btnSel);
-        const cont = document.getElementById(contId);
-        if (!cont || btns.length === 0) return;
-        const setL = (l) => {
-            btns.forEach(b => b.classList.toggle('active', b.dataset.layout === l));
-            cont.classList.toggle(listCl, l === 'list');
-            cont.classList.toggle(gridCl, l === 'grid');
-            localStorage.setItem(key, l);
-        };
-        setL(localStorage.getItem(key) || 'list');
-        btns.forEach(b => b.addEventListener('click', () => setL(b.dataset.layout)));
+    /* Tabs */
+    const tabs = Array.from(document.querySelectorAll('[data-md-tab]'));
+    function pick(b) { tabs.forEach(t => { const on = t === b; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; document.getElementById(t.dataset.mdTab).hidden = !on; }); try { sessionStorage.setItem('wt-md-tab-{{ module.slug }}', b.dataset.mdTab); } catch (e) {} }
+    tabs.forEach((b, i) => {
+        b.addEventListener('click', () => pick(b));
+        b.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; const fwd = (e.key === 'ArrowRight') !== isAr(); const n = tabs[(i + (fwd ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); pick(n); });
     });
-}
+    try { const saved = sessionStorage.getItem('wt-md-tab-{{ module.slug }}'); const b = tabs.find(t => t.dataset.mdTab === saved); if (b) pick(b); } catch (e) {}
 
-// ─── Feature specific ───
-window.switchTab = function(id, btn) {
-    ['tasks', 'submissions', 'correspondence', 'team'].forEach(t => {
-        const el = document.getElementById('tab-' + t);
-        if (el) el.style.display = 'none';
-    });
-    const target = document.getElementById('tab-' + id);
-    if (target) target.style.display = '';
-    document.querySelectorAll('.module-tab-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-};
+    /* Search inside each tab */
+    document.querySelectorAll('[data-md-search]').forEach(inp => inp.addEventListener('input', () => {
+        const pane = inp.closest('.wt-md-pane');
+        const q = inp.value.trim().toLowerCase();
+        let n = 0;
+        pane.querySelectorAll(`[data-md-list="${inp.dataset.mdSearch}"] > [data-q]`).forEach(r => { const hit = !q || r.dataset.q.includes(q); r.hidden = !hit; if (hit) n++; });
+        const none = pane.querySelector('.wt-md-nomatch'); if (none) none.hidden = n > 0;
+    }));
 
-// Team Modal & Instant Enrollment (No Page Reload)
-window.openEnrollUserModal = function() {
-    const modalEl = document.getElementById('enrollUserModal');
-    if (!modalEl) return;
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
-    setTimeout(() => {
-        const input = document.getElementById('modalUserSearchInput');
-        if (input) {
-            input.value = '';
-            input.focus();
-        }
-        filterAvailableUsers();
-    }, 200);
-};
-
-window.filterAvailableUsers = function() {
-    const input = document.getElementById('modalUserSearchInput');
-    const term = (input ? input.value : '').trim().toLowerCase();
-    const rows = document.querySelectorAll('#availableUsersList .avail-user-row');
-    let matched = 0;
-    rows.forEach(r => {
-        const text = (r.getAttribute('data-search-text') || r.textContent || '').toLowerCase();
-        const matches = !term || text.includes(term);
-        r.style.display = matches ? 'flex' : 'none';
-        if (matches) matched++;
-    });
-    const noResults = document.getElementById('noModalUserResults');
-    if (noResults) {
-        noResults.style.display = (matched === 0 && rows.length > 0) ? 'block' : 'none';
-    }
-};
-
-window.enrollUserAjax = function(userId, btn) {
-    if (!userId) return;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    
-    const formData = new FormData();
-    formData.append('user_id', userId);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-    
-    fetch("{% url 'module-add-user' module.slug %}", {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success && data.user) {
-            const userRow = document.querySelector(`.avail-user-row[data-user-id="${userId}"]`);
-            if (userRow) userRow.remove();
-            
-            const teamTable = document.getElementById('teamTableBody');
-            const emptyState = teamTable?.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-            
-            const u = data.user;
-            let roleBadge = '<span class="chip chip-success"><i class="fas fa-user"></i> Worker</span>';
-            if (u.role === 'super_admin') roleBadge = '<span class="chip chip-danger"><i class="fas fa-crown"></i> Administrator</span>';
-            else if (u.role === 'manager') roleBadge = '<span class="chip chip-indigo"><i class="fas fa-user-tie"></i> Manager</span>';
-            
-            const newRowHtml = `
-                <div class="task-item team-row" style="border-left: 5px solid var(--color-primary, #10b981) !important;">
-                    <div class="c-col" style="width: 35%;">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-accent, #34d399)); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(var(--wt-brand-rgb),0.2);">
-                                ${u.initial}
-                            </div>
-                            <div>
-                                <div class="fw-bold text-dark team-search-name" style="font-size: 1.05rem;">${u.name}</div>
-                                <div class="small text-muted">Active user profile</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="c-col d-flex flex-column justify-content-center align-items-start" style="width: 30%; gap: 0.2rem;">
-                        ${roleBadge}
-                        <span class="fw-semibold text-dark small team-search-email"><i class="fas fa-envelope text-muted me-1"></i> ${u.email}</span>
-                    </div>
-                    <div class="c-col d-flex flex-column justify-content-center" style="width: 25%;">
-                        <span class="grid-label d-block mb-1">Tasks Completed:</span>
-                        <div class="d-flex align-items-center gap-2">
-                            <div style="flex:1; height:6px; border-radius:99px; background:#f1f5f9; overflow:hidden;">
-                                <div style="height:100%; border-radius:99px; background: var(--color-primary, #10b981); width: 0%;"></div>
-                            </div>
-                            <small class="fw-bold text-muted">0 / ${u.tasks_total}</small>
-                        </div>
-                    </div>
-                    <div class="c-col d-flex flex-row gap-2 justify-content-end align-items-center" style="width: 10%; text-align: right;">
-                        <a href="/users/${u.id}/edit/" class="btn-pill" title="Edit Profile">
-                            <i class="fas fa-edit text-primary"></i>
-                        </a>
-                        <form id="removeUserForm-${u.id}" action="/module/{{ module.slug }}/remove-user/${u.id}/" method="POST" class="m-0 p-0">
-                            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                            <button type="button" onclick="confirmRemoveTeamMember(${u.id}, '${u.name}')" class="btn-pill" style="color: var(--wt-bad); border-color: rgba(192, 40, 58,0.2);" title="Remove User">
-                                <i class="fas fa-user-minus"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            `;
-            if (teamTable) {
-                teamTable.insertAdjacentHTML('afterbegin', newRowHtml);
-            }
-            
-            btn.innerHTML = '<i class="fas fa-check"></i> Added';
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-secondary');
-        } else {
-            alert(data.error || 'Failed to add user');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert('An error occurred while enrolling the user.');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    });
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Wire up Team Search
-    const teamSearch = document.getElementById('teamSearchInput');
-    if (teamSearch) {
-        teamSearch.addEventListener('input', function() {
-            const q = this.value.trim().toLowerCase();
-            const rows = document.querySelectorAll('#teamTableBody .team-row');
-            let matched = 0;
-            rows.forEach(r => {
-                const name = (r.querySelector('.team-search-name')?.textContent || '').toLowerCase();
-                const email = (r.querySelector('.team-search-email')?.textContent || '').toLowerCase();
-                const role = (r.querySelector('.chip')?.textContent || '').toLowerCase();
-                const hit = !q || name.includes(q) || email.includes(q) || role.includes(q);
-                r.style.display = hit ? 'flex' : 'none';
-                if (hit) matched++;
-            });
-            const noRes = document.getElementById('noTeamResults');
-            if (noRes) noRes.style.display = (matched === 0 && q) ? 'block' : 'none';
-        });
-    }
-});
-
-let dashboardTodoFiles = [];
-
-window.updateFileCountDash = function(input, feedbackId) {
-    const feedback = document.querySelector(feedbackId);
-    if (!feedback) return;
-    
-    for (let i = 0; i < input.files.length; i++) {
-        dashboardTodoFiles.push(input.files[i]);
-    }
-    input.value = '';
-    renderDashboardTodoFiles(feedback);
-};
-
-window.removeDashboardTodoFile = function(index, feedbackId) {
-    dashboardTodoFiles.splice(index, 1);
-    const feedback = document.querySelector(feedbackId);
-    if (feedback) renderDashboardTodoFiles(feedback);
-};
-
-function renderDashboardTodoFiles(container) {
-    if (dashboardTodoFiles.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
-    
-    let html = '<div class="d-flex flex-column gap-2 mt-3 text-start">';
-    dashboardTodoFiles.forEach((file, index) => {
-        html += `
-            <div class="d-flex align-items-center justify-content-between bg-white border rounded p-2 shadow-sm">
-                <div class="d-flex align-items-center gap-2 overflow-hidden">
-                    <i class="fas fa-file-alt text-indigo"></i>
-                    <span class="small text-truncate fw-bold text-dark" style="max-width: 200px;">${file.name}</span>
-                    <span class="x-small text-muted">(${(file.size / 1024).toFixed(1)} KB)</span>
-                </div>
-                <button type="button" class="btn btn-sm btn-light text-danger py-0 px-2 rounded" onclick="removeDashboardTodoFile(${index}, '#${container.id}')" title="Remove file">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.quickAddTodo = function() {
-    const m = document.getElementById('createTodoModal');
-    if (m) {
-        if (m.parentElement !== document.body) document.body.appendChild(m);
-        bootstrap.Modal.getOrCreateInstance(m).show();
-    }
-};
-
-window.viewTodoHTML = function (id, title, encodedDesc, priority, due) {
-    const isAr = window.__isArabic === true;
-    document.getElementById('viewTodoModalTitle').innerText = title;
-    try { 
-        let decoded = decodeURIComponent(encodedDesc);
-        let noDesc = isAr ? '<em class="text-muted">لا يوجد وصف.</em>' : '<em class="text-muted">No description provided.</em>';
-        document.getElementById('viewTodoModalDesc').innerHTML = decoded || noDesc;
-    } catch(e) { 
-        let noDesc = isAr ? '<em class="text-muted">لا يوجد وصف.</em>' : '<em class="text-muted">No description provided.</em>';
-        document.getElementById('viewTodoModalDesc').innerHTML = encodedDesc || noDesc;
-    }
-    
-    let prioBadge = isAr ? '<span class="badge bg-secondary">غير معروف</span>' : '<span class="badge bg-secondary">Unknown</span>';
-    if (priority === 'high') prioBadge = isAr ? '<span class="badge bg-danger">أولوية عالية</span>' : '<span class="badge bg-danger">High Priority</span>';
-    else if (priority === 'medium') prioBadge = isAr ? '<span class="badge bg-warning text-dark">أولوية متوسطة</span>' : '<span class="badge bg-warning text-dark">Medium Priority</span>';
-    else if (priority === 'low') prioBadge = isAr ? '<span class="badge bg-success">أولوية منخفضة</span>' : '<span class="badge bg-success">Low Priority</span>';
-    
-    let noDateLabel = isAr ? 'لا يوجد تاريخ' : 'No Target Date';
-    let activeLabel = isAr ? 'نشط' : 'Active';
-    let dateHtml = due ? `<i class="far fa-calendar-alt me-1"></i> ${due}` : noDateLabel;
-    
-    document.getElementById('viewTodoModalMeta').innerHTML = `
-        ${prioBadge}
-        <span class="badge bg-light text-dark border"><i class="fas fa-clock me-1"></i> ${activeLabel}</span>
-        <span class="badge bg-light text-dark border">${dateHtml}</span>
-    `;
-
-    const m = document.getElementById('viewTodoModal');
-    if (m) {
-        if (m.parentElement !== document.body) document.body.appendChild(m);
-        bootstrap.Modal.getOrCreateInstance(m).show();
-    }
-};
-
-window.submitNewTodo = function(e) {
-    e.preventDefault();
-    const isAr = window.__isArabic === true;
-    const btn = e.target.querySelector('button[type="submit"]');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>' + (isAr ? ' جاري الإنشاء...' : ' Creating...'); }
-    
-    const fd = new FormData(e.target);
-    fd.delete('files');
-    dashboardTodoFiles.forEach(file => fd.append('files', file));
-    
-    fetch("{% url 'module-todo-add' module.slug %}", {
-        method: 'POST',
-        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-        body: fd
-    }).then(r => r.json()).then(d => {
-        if (d.status === 'success') location.reload();
-        else {
-            alert(d.message);
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus me-1"></i>' + (isAr ? ' إنشاء الإجراء' : ' Create Action'); }
-        }
-    }).catch(err => {
-        console.error(err);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus me-1"></i>' + (isAr ? ' إنشاء الإجراء' : ' Create Action'); }
-    });
-};
-
-document.getElementById('createTodoModal')?.addEventListener('hidden.bs.modal', function () {
-    dashboardTodoFiles = [];
-    const feedback = document.getElementById('addFileFeedbackDash');
-    if (feedback) feedback.innerHTML = '';
-    document.getElementById('createTodoForm').reset();
-});
-
-window.deleteTask = async (id) => {
-    if (await amazingConfirm({ title: 'Delete Task?', text: 'This action cannot be undone.', confirmButtonText: 'Yes, Delete' })) {
-        const f = document.createElement('form'); f.method = 'POST';
-        f.action = "{% url 'task-delete' 0 %}".replace('0', id);
-        f.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
-        document.body.appendChild(f); f.submit();
-    }
-};
-
-let hideCompletedMode = false;
-window.toggleHideCompleted = () => {
-    hideCompletedMode = !hideCompletedMode;
-    const btn = document.getElementById('filter-completed-btn');
-    document.querySelectorAll('.todo-card').forEach(c => c.classList.toggle('hide-completed-mode', hideCompletedMode));
-    if (btn) {
-        btn.classList.toggle('btn-indigo', hideCompletedMode);
-        btn.classList.toggle('btn-light', !hideCompletedMode);
-        btn.querySelector('i').className = hideCompletedMode ? "fas fa-filter-circle-xmark" : "fas fa-filter";
-    }
-    if (typeof window.renderTodoPagination === 'function') window.renderTodoPagination();
-};
-
-window.toggleTodoStatus = (id) => {
-    fetch("{% url 'module-todo-toggle' 0 %}".replace('0', id), { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' } })
-    .then(r => r.json()).then(d => d.status === 'success' && location.reload());
-};
-
-document.addEventListener('click', (e) => {
-    const tBtn = e.target.closest('.action-toggle-todo');
-    if (tBtn) toggleTodoStatus(tBtn.dataset.todoId);
-    const dBtn = e.target.closest('.action-delete-todo');
-    if (dBtn) {
-        amazingConfirm('Delete this item?').then(confirmed => {
-            if (confirmed) {
-                fetch("{% url 'module-todo-delete' 0 %}".replace('0', dBtn.dataset.todoId), { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' } })
-                .then(r => r.json()).then(d => d.status === 'success' && location.reload());
-            }
-        });
-    }
-});
-
-// ─── Share Logic ───
-let shareContacts = [];
-const shareSelected = new Set();
-function setupShareFeature() {
-    const inp = document.getElementById('share-search-input');
-    if (inp) inp.addEventListener('input', (e) => renderShareContacts(e.target.value));
-    
-    document.getElementById('confirm-share-btn')?.addEventListener('click', async function() {
-        if (shareSelected.size === 0) return;
-        this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        const content = `Shared Module: {{ module.name|escapejs }} - ${window.location.origin + window.location.pathname}`;
-        const promises = Array.from(shareSelected).map(rid => {
-            const fd = new FormData(); fd.append('recipient_id', rid); fd.append('content', content);
-            return fetch("{% url 'messaging:api-send-message' %}", { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: fd });
-        });
-        
-        try {
-            const responses = await Promise.all(promises);
-            let hasError = false;
-            for (let r of responses) {
-                if (!r.ok) {
-                    hasError = true;
-                    const data = await r.json().catch(() => ({}));
-                    alert(data.error || data.message || "Failed to share due to system security quota policy.");
-                    break;
-                }
-            }
-            if (!hasError) {
-                bootstrap.Modal.getInstance(document.getElementById('shareModuleModal'))?.hide();
-                alert("Shared successfully!");
-            }
-        } catch(e) { alert("Failed to share."); }
-        this.disabled = false; this.innerHTML = 'Send';
-    });
-}
-
-window.openShareModuleModal = () => {
-    shareSelected.clear();
-    const btn = document.getElementById('confirm-share-btn'); if(btn) btn.disabled = true;
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('shareModuleModal')).show();
-    fetch("{% url 'messaging:api-get-contacts' %}")
-        .then(r => r.json()).then(d => { shareContacts = d.contacts; renderShareContacts(); });
-};
-
-function renderShareContacts(q = '') {
-    const list = document.getElementById('share-contacts-list'); if (!list) return;
-    list.innerHTML = '';
-    const filtered = shareContacts.filter(c => c.full_name.toLowerCase().includes(q.toLowerCase()));
-    filtered.forEach(c => {
-        const item = document.createElement('div');
-        const isS = shareSelected.has(c.id);
-        item.className = `p-2 mb-1 rounded-3 d-flex align-items-center gap-2 ${isS ? 'bg-primary-subtle' : ''}`;
-        item.style.cursor = 'pointer';
-        item.innerHTML = `
-            <div class="avatar-sm rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:28px; height:28px; font-size:0.75rem;">${c.initial}</div>
-            <div class="flex-grow-1 small fw-bold">${c.full_name}</div>
-            <input type="checkbox" class="form-check-input" ${isS ? 'checked' : ''}>
-        `;
-        item.onclick = () => {
-            if(shareSelected.has(c.id)) shareSelected.delete(c.id); else shareSelected.add(c.id);
-            const btn = document.getElementById('confirm-share-btn'); if(btn) btn.disabled = shareSelected.size === 0;
-            renderShareContacts(q);
-        };
-        list.appendChild(item);
-    });
-}
-</script>
-<script>
-// --- Pagination and Sorting Logic ---
-let currentTodoPage = 1;
-const TODOS_PER_PAGE = 5;
-
-window.renderTodoPagination = function() {
-    const visible = Array.from(document.querySelectorAll('#todo-grid-container .todo-card')).filter(c => !c.classList.contains('hide-completed-mode'));
-    const total = visible.length;
-    const totalPages = Math.ceil(total / TODOS_PER_PAGE);
-    
-    if (currentTodoPage > totalPages) currentTodoPage = totalPages || 1;
-    
-    const startIdx = (currentTodoPage - 1) * TODOS_PER_PAGE;
-    const endIdx = startIdx + TODOS_PER_PAGE;
-    
-    visible.forEach((card, idx) => {
-        if (idx >= startIdx && idx < endIdx) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-    
-    const wrap = document.getElementById('todoPaginationWrap');
-    const ul = document.getElementById('todoPaginationControls');
-    if (!wrap || !ul) return;
-    
-    if (totalPages <= 1) {
-        wrap.style.display = 'none';
-        return;
-    }
-    
-    wrap.style.display = 'block';
-    let html = '';
-    
-    html += `<li class="page-item ${currentTodoPage === 1 ? 'disabled' : ''}"><a class="page-link shadow-sm border-0" href="#" onclick="changeTodoPage(${currentTodoPage - 1}); return false;"><i class="fas fa-chevron-left"></i></a></li>`;
-    for(let i=1; i<=totalPages; i++) {
-        html += `<li class="page-item ${currentTodoPage === i ? 'active' : ''}"><a class="page-link shadow-sm border-0" href="#" onclick="changeTodoPage(${i}); return false;">${i}</a></li>`;
-    }
-    html += `<li class="page-item ${currentTodoPage === totalPages ? 'disabled' : ''}"><a class="page-link shadow-sm border-0" href="#" onclick="changeTodoPage(${currentTodoPage + 1}); return false;"><i class="fas fa-chevron-right"></i></a></li>`;
-    
-    ul.innerHTML = html;
-};
-
-window.changeTodoPage = function(page) {
-    currentTodoPage = page;
-    renderTodoPagination();
-};
-
-window.sortAccordionTodos = function(type) {
-    const container = document.querySelector('#todo-grid-container .todo-list');
-    if (!container) return;
-    
-    const cards = Array.from(container.querySelectorAll('.todo-card'));
-    cards.sort((a, b) => {
-        if (type === 'priority') {
-            return parseInt(b.dataset.priority) - parseInt(a.dataset.priority);
-        } else if (type === 'due') {
-            return a.dataset.due.localeCompare(b.dataset.due);
-        } else if (type === 'newest') {
-            return parseInt(b.dataset.created) - parseInt(a.dataset.created);
-        }
-        return 0;
-    });
-    
-    const addBtn = container.querySelector('.todo-list-add');
-    const emptyMsg = container.querySelector('.todo-empty');
-    container.innerHTML = '';
-    if (addBtn) container.appendChild(addBtn);
-    cards.forEach(c => container.appendChild(c));
-    if (emptyMsg) container.appendChild(emptyMsg);
-    
-    currentTodoPage = 1;
-    renderTodoPagination();
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait slightly to let other filters establish themselves
-    setTimeout(() => renderTodoPagination(), 100);
-});
-
-function confirmLeave(slug) {
-    Swal.fire({
-        title: 'Leave Module?',
-        text: "Are you sure you want to completely leave this module? All active task submissions and assignments will be erased.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Yes, Leave Module'
-    }).then((result) => {
-        if (result.isConfirmed) {
+    /* Confirmations */
+    window.confirmLeave = async slug => {
+        if (await amazingConfirm({ title: T('Leave this module?', 'مغادرة هذه الوحدة؟'), text: T('Your assignments and submissions in this module will be removed. This cannot be undone.', 'ستُزال مهامك وتسليماتك في هذه الوحدة. لا يمكن التراجع عن ذلك.'), confirmButtonText: T('Leave', 'مغادرة') }))
             document.getElementById('leaveForm-' + slug).submit();
-        }
-    })
-}
+    };
+    window.confirmRemoveTeamMember = async (id, name) => {
+        if (await amazingConfirm({ title: T(`Remove ${name}?`, `إزالة ${name}؟`), text: T('They leave this module and its tasks, and their submissions here are deleted. This cannot be undone.', 'سيُزال من هذه الوحدة ومهامها وتُحذف تسليماته فيها. لا يمكن التراجع عن ذلك.'), confirmButtonText: T('Remove', 'إزالة') }))
+            document.getElementById('removeUserForm-' + id).submit();
+    };
+    window.deleteTask = async id => {
+        if (!(await amazingConfirm({ title: T('Delete this task?', 'حذف هذه المهمة؟'), text: T('The task and all its submissions are removed for good.', 'تُحذف المهمة وكل تسليماتها نهائيًا.'), confirmButtonText: T('Delete', 'حذف') }))) return;
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = "{% url 'task-delete' 999999999 %}".replace('999999999', id);
+        f.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="${CSRF}">`;
+        document.body.appendChild(f); f.submit();
+    };
 
-function confirmRemoveTeamMember(userId, userName) {
-    Swal.fire({
-        title: 'Remove User?',
-        text: `Are you sure you want to completely unenroll ${userName} from this module and all its tasks? Their submissions will be deleted.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Yes, Remove ' + userName
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('removeUserForm-' + userId).submit();
-        }
-    })
-}
+    /* Add people */
+    let added = 0;
+    const search = document.getElementById('modalUserSearchInput');
+    if (search) search.addEventListener('input', () => { const q = search.value.trim().toLowerCase(); document.querySelectorAll('.avail-user-row').forEach(r => { r.hidden = !!q && !r.dataset.q.includes(q); }); });
+    window.enrollUserAjax = async (userId, btn) => {
+        btn.disabled = true;
+        const fd = new FormData(); fd.append('user_id', userId); fd.append('csrfmiddlewaretoken', CSRF);
+        try {
+            const r = await fetch("{% url 'module-add-user' module.slug %}", { method: 'POST', credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }, body: fd });
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error || '');
+            added++;
+            btn.outerHTML = `<span class="wt-chip is-ok"><i class="fas fa-check" aria-hidden="true"></i> ${T('Added', 'أُضيف')}</span>`;
+            const c = document.getElementById('md-team-count'); if (c) c.textContent = (+c.textContent || 0) + 1;
+        } catch (e) { btn.disabled = false; if (window.showToast) showToast(e.message || T('Could not add this person.', 'تعذّرت إضافة هذا الشخص.'), 'error'); }
+    };
+    const modal = document.getElementById('enrollUserModal');
+    if (modal) modal.addEventListener('hidden.bs.modal', () => { if (added) { try { sessionStorage.setItem('wt-md-tab-{{ module.slug }}', 'tab-team'); } catch (e) {} location.reload(); } });
+})();
 </script>
 {% endblock %}

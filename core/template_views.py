@@ -924,7 +924,7 @@ def module_dashboard(request, module_slug):
         'recurring': all_standard.filter(is_recurring=True).count(),
         'pending': all_standard.filter(status='pending').count(),
         'in_progress': all_standard.filter(status='in_progress').count(),
-        'completed': all_standard.filter(status='completed').count(),
+        'completed': all_standard.filter(status__in=['completed', 'approved']).count(),
         'correspondence': corr_count,
     }
     
@@ -1005,7 +1005,55 @@ def module_dashboard(request, module_slug):
     # Find active users not already enrolled
     available_users = User.objects.filter(is_active=True).exclude(id__in=enrolled_team).order_by('first_name', 'last_name')
 
+    # Task timeline (read-only): each task as a bar from its start (or creation) to its deadline
+    today = timezone.localdate()
+    tl_tasks = list(module_tasks.annotate(
+        wt_reviews=Count('submissions', filter=Q(submissions__status__in=['submitted', 'under_review']), distinct=True)
+    ).prefetch_related('assigned_to').order_by('deadline', 'id'))
+    def _start(t):
+        return t.start_date or timezone.localtime(t.created_at).date()
+    def _end(t):
+        return timezone.localtime(t.deadline).date() if t.deadline else _start(t)
+    timeline = None
+    if tl_tasks:
+        lo = min([_start(t) for t in tl_tasks] + ([module.start_date] if module.start_date else []) + [today])
+        hi = max([_end(t) for t in tl_tasks] + ([module.deadline] if module.deadline else []) + [today])
+        span = max((hi - lo).days, 27) + 1
+        hi = lo + datetime.timedelta(days=span - 1)
+        pct = lambda d: round((d - lo).days * 100.0 / span, 2)
+        ticks = []
+        if span > 120:
+            d = lo.replace(day=1)
+            while d <= hi:
+                if d >= lo:
+                    ticks.append({'pct': pct(d), 'en': d.strftime('%b'), 'ar': _AR_MONTHS[d.month - 1], 'year': d.year if d.month == 1 else None})
+                d = (d.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        else:
+            d = lo + datetime.timedelta(days=(7 - lo.weekday()) % 7)
+            while d <= hi:
+                ticks.append({'pct': pct(d), 'en': f'{d.day} {d.strftime("%b")}', 'ar': f'{d.day} {_AR_MONTHS[d.month - 1]}', 'year': None})
+                d += datetime.timedelta(days=7)
+        rows = []
+        for t in tl_tasks:
+            s, e = _start(t), _end(t)
+            if e < s:
+                s, e = e, s
+            done = t.status in ('approved', 'completed')
+            rows.append({
+                'task': t,
+                'left': pct(s),
+                'width': max(round(((e - s).days + 1) * 100.0 / span, 2), 1.5),
+                'overdue': bool(t.deadline and t.deadline < timezone.now() and not done),
+                'done': done,
+                'reviews': t.wt_reviews,
+            })
+        timeline = {'rows': rows, 'ticks': ticks, 'today': pct(today) + 50.0 / span, 'start': lo, 'end': hi}
+    overdue_n = sum(1 for r in (timeline['rows'] if timeline else []) if r['overdue'])
+
     context = {
+        'wt_timeline': timeline,
+        'wt_overdue': overdue_n,
+        'wt_reviews': sum(r['reviews'] for r in (timeline['rows'] if timeline else [])),
         'module': module,
         'module_name': module.slug,
         'module_label': module.name,
