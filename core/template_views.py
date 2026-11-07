@@ -5053,79 +5053,128 @@ def submission_submit(request, submission_id):
 
 # ============= Notifications Views =============
 
+# Notification types: (key, English, Arabic, Font Awesome icon)
+WT_NOTIF_TYPES = [
+    ('task_assigned', 'Task assigned', 'مهمة مسندة', 'fa-list-check'),
+    ('task_created', 'Task created', 'مهمة جديدة', 'fa-plus'),
+    ('deadline_reminder', 'Deadline reminder', 'تذكير بموعد', 'fa-clock'),
+    ('submission_received', 'Submission received', 'تسليم وارد', 'fa-inbox'),
+    ('submission_approved', 'Submission approved', 'تسليم معتمد', 'fa-circle-check'),
+    ('submission_rejected', 'Sent back', 'تسليم مُعاد', 'fa-rotate-left'),
+    ('feedback_received', 'Feedback', 'ملاحظات', 'fa-comment'),
+    ('correspondence_issued', 'Correspondence', 'مراسلة', 'fa-envelope-open-text'),
+    ('kpi_updated', 'Score updated', 'تحديث النتيجة', 'fa-chart-line'),
+]
+
+
+def _notification_url(n):
+    """Where a notification leads: its task, submission or correspondence (None when unknown)."""
+    from django.urls import reverse, NoReverseMatch
+    kind = (n.related_object_type or '').lower()
+    names = {'task': 'task-detail', 'submission': 'submission-detail', 'correspondence': 'correspondence-detail'}
+    if kind not in names or not n.related_object_id:
+        return None
+    try:
+        return reverse(names[kind], args=[n.related_object_id])
+    except NoReverseMatch:
+        return None
+
+
 @login_required(login_url='login')
 @require_http_methods(["GET"])
 def notifications_list(request):
-    """Notifications list view."""
-    notifications = Notification.objects.filter(recipient=request.user)
-    
-    # Filters
-    search = request.GET.get('search', '')
+    """Notifications: filter bar, then the list grouped by day, newest first, with server-side pages."""
+    from django.core.paginator import Paginator
+
+    mine = Notification.objects.filter(recipient=request.user)
+    search = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '')
     type_filter = request.GET.get('type', '')
-    
+    valid_types = {t[0] for t in WT_NOTIF_TYPES}
+
+    qs = mine
     if search:
-        notifications = notifications.filter(
-            Q(title__icontains=search) | Q(message__icontains=search)
-        )
-    
+        qs = qs.filter(Q(title__icontains=search) | Q(message__icontains=search))
     if status_filter == 'unread':
-        notifications = notifications.filter(is_read=False)
+        qs = qs.filter(is_read=False)
     elif status_filter == 'read':
-        notifications = notifications.filter(is_read=True)
-    
-    if type_filter:
-        notifications = notifications.filter(type=type_filter)
-    
-    notifications = notifications.order_by('-created_at')
-    
-    # Get stats
-    total_notifications = Notification.objects.filter(recipient=request.user).count()
-    unread_count = Notification.objects.filter(recipient=request.user, is_read=False).count()
-    today_count = Notification.objects.filter(
-        recipient=request.user,
-        created_at__date=timezone.now().date()
-    ).count()
-    week_count = Notification.objects.filter(
-        recipient=request.user,
-        created_at__gte=timezone.now() - timezone.timedelta(days=7)
-    ).count()
-    
+        qs = qs.filter(is_read=True)
+    else:
+        status_filter = ''
+    if type_filter in valid_types:
+        qs = qs.filter(notification_type=type_filter)
+    else:
+        type_filter = ''
+    qs = qs.order_by('-created_at')
+
+    page = Paginator(qs, 30).get_page(request.GET.get('page'))
+    meta = {t[0]: t for t in WT_NOTIF_TYPES}
+    today = timezone.localdate()
+    groups, current = [], None
+    for n in page.object_list:
+        day = timezone.localtime(n.created_at).date()
+        delta = (today - day).days
+        if delta <= 0:
+            key, en, ar = 'today', 'Today', 'اليوم'
+        elif delta == 1:
+            key, en, ar = 'yesterday', 'Yesterday', 'أمس'
+        elif delta < 7:
+            key, en, ar = 'week', 'Earlier this week', 'في وقت سابق هذا الأسبوع'
+        else:
+            key, en, ar = 'older', 'Older', 'أقدم'
+        if current is None or current['key'] != key:
+            current = {'key': key, 'en': en, 'ar': ar, 'items': []}
+            groups.append(current)
+        t = meta.get(n.notification_type, (n.notification_type, n.get_notification_type_display(), n.get_notification_type_display(), 'fa-bell'))
+        n.wt_type_en, n.wt_type_ar, n.wt_icon = t[1], t[2], t[3]
+        n.wt_url = _notification_url(n)
+        n.wt_kind = n.notification_type
+        current['items'].append(n)
+
+    params = request.GET.copy()
+    params.pop('page', None)
     context = {
-        'notifications': notifications,
-        'total_notifications': total_notifications,
-        'unread_count': unread_count,
-        'today_count': today_count,
-        'week_count': week_count,
+        'page': page,
+        'groups': groups,
+        'total_notifications': mine.count(),
+        'unread_count': mine.filter(is_read=False).count(),
+        'result_count': page.paginator.count,
         'search': search,
         'status': status_filter,
         'type': type_filter,
+        'wt_filtered': bool(search or status_filter or type_filter),
+        'wt_qs': params.urlencode(),
+        'wt_notif_types': WT_NOTIF_TYPES,
     }
-    
     return render(request, 'pages/notifications.html', context)
+
+
+def _wants_json(request):
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def notification_mark_as_read(request, notification_id):
-    """Mark notification as read."""
+    """Mark one notification read (JSON for the page script, redirect otherwise)."""
     notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-    notification.is_read = True
-    notification.save()
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'success'})
-    
+    if not notification.is_read:
+        notification.is_read = True
+        notification.read_at = timezone.now()
+        notification.save(update_fields=['is_read', 'read_at'])
+    if _wants_json(request):
+        return JsonResponse({'status': 'success', 'unread_count': Notification.objects.filter(recipient=request.user, is_read=False).count()})
     return redirect('notifications-list')
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def notification_delete(request, notification_id):
-    """Delete notification."""
+    """Delete one notification."""
     notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
     notification.delete()
-    
+    if _wants_json(request):
+        return JsonResponse({'status': 'success', 'unread_count': Notification.objects.filter(recipient=request.user, is_read=False).count()})
     messages.success(request, 'Notification deleted.')
     return redirect('notifications-list')
 
@@ -5133,110 +5182,113 @@ def notification_delete(request, notification_id):
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def notification_mark_all_as_read(request):
-    """Mark all notifications as read."""
-    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
-    
+    """Mark all notifications read."""
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True, read_at=timezone.now())
     messages.success(request, 'All notifications marked as read.')
     return redirect('notifications-list')
 
 
 # ============= Profile Views =============
 
+def _say(request, en, ar):
+    """Pick the message in the viewer's language (toasts are text only)."""
+    from core.context_processors import _wt_lang
+    return ar if _wt_lang(request) == 'ar' else en
+
+
 @login_required(login_url='login')
 @require_http_methods(["GET"])
 def profile(request):
-    """User profile view."""
+    """Profile: identity card, personal details, password, email notifications, recent sign-ins."""
     user = request.user
-    login_history = ActivityLog.objects.filter(
-        user=user, 
-        action='login'
-    ).order_by('-created_at')[:10]
-    
-    context = {
+    profile_obj, _ = UserProfile.objects.get_or_create(user=user)
+    login_history = ActivityLog.objects.filter(user=user, action='login').order_by('-created_at')[:8]
+    open_tasks = Task.objects.filter(assigned_to=user, work_module__is_archived=False).exclude(status__in=['approved', 'completed']).count()
+    approved = Submission.objects.filter(worker=user, status='approved').count()
+    return render(request, 'pages/profile.html', {
         'user': user,
+        'profile_obj': profile_obj,
         'login_history': login_history,
-    }
-    
-    return render(request, 'pages/profile.html', context)
+        'pf_open_tasks': open_tasks,
+        'pf_approved': approved,
+        'pf_errors': request.session.pop('pf_errors', {}),
+        'pf_section': request.session.pop('pf_section', ''),
+    })
+
+
+def _profile_back(request, section, errors=None):
+    from django.urls import reverse
+    if errors:
+        request.session['pf_errors'] = errors
+    request.session['pf_section'] = section
+    return redirect(reverse('profile') + f'#{section}')
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def profile_update(request):
-    """Update profile information."""
+    """Update name, position, phone and bio."""
     user = request.user
-    user.first_name = request.POST.get('first_name', user.first_name)
-    user.last_name = request.POST.get('last_name', user.last_name)
-    
-    # Save custom fields if they exist
-    if hasattr(user, 'phone'):
-        user.phone = request.POST.get('phone', '')
-    if hasattr(user, 'bio'):
-        user.bio = request.POST.get('bio', '')
-    
-    user.save()
-    
-    # Save UserProfile details and avatar
+    first = (request.POST.get('first_name') or '').strip()
+    last = (request.POST.get('last_name') or '').strip()
+    if not first:
+        return _profile_back(request, 'pf-details', {'first_name': _say(request, 'Enter your first name.', 'أدخل اسمك الأول.')})
+    user.first_name, user.last_name = first[:150], last[:150]
+    user.save(update_fields=['first_name', 'last_name', 'updated_at'])
+
     profile_obj, _ = UserProfile.objects.get_or_create(user=user)
-    if 'position' in request.POST:
-        profile_obj.position = request.POST.get('position')
-    if 'phone' in request.POST:
-        profile_obj.phone = request.POST.get('phone')
-    if 'bio' in request.POST:
-        profile_obj.bio = request.POST.get('bio')
-    if 'avatar' in request.FILES:
-        if profile_obj.avatar:
-            try: profile_obj.avatar.delete(save=False)
-            except Exception: pass
-        profile_obj.avatar = request.FILES['avatar']
+    profile_obj.position = (request.POST.get('position') or '').strip()[:255]
+    profile_obj.phone = (request.POST.get('phone') or '').strip()[:20]
+    profile_obj.bio = (request.POST.get('bio') or '').strip()[:2000]
     profile_obj.save()
-    
-    messages.success(request, 'Profile updated successfully.')
-    return redirect('profile')
+    messages.success(request, _say(request, 'Profile saved.', 'تم حفظ الملف الشخصي.'))
+    return _profile_back(request, 'pf-details')
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def profile_preferences(request):
-    """Update user preferences (notifications, theme, language)."""
+    """Email notification switches."""
     user = request.user
-    
-    # Notification preferences
     user.email_notifications = 'email_notifications' in request.POST
     user.task_notifications = 'task_notifications' in request.POST
     user.submission_notifications = 'submission_notifications' in request.POST
-    
-    # Display settings
-    user.theme = request.POST.get('theme', user.theme)
-    user.language = request.POST.get('language', user.language)
-    
-    user.save()
-    
-    messages.success(request, 'Preferences updated successfully.')
-    return redirect('profile')
+    user.save(update_fields=['email_notifications', 'task_notifications', 'submission_notifications', 'updated_at'])
+    messages.success(request, _say(request, 'Notification settings saved.', 'تم حفظ إعدادات الإشعارات.'))
+    return _profile_back(request, 'pf-notify')
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def profile_change_password(request):
-    """Change user password."""
+    """Change password with Django's validators; keeps the current session signed in."""
+    from django.contrib.auth import update_session_auth_hash
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+
     user = request.user
-    current_password = request.POST.get('current_password')
-    new_password1 = request.POST.get('new_password1')
-    new_password2 = request.POST.get('new_password2')
-    
-    if not user.check_password(current_password):
-        messages.error(request, 'Current password is incorrect.')
-    elif new_password1 != new_password2:
-        messages.error(request, 'New passwords do not match.')
-    elif len(new_password1) < 8:
-        messages.error(request, 'New password must be at least 8 characters.')
+    current = request.POST.get('current_password') or ''
+    new1 = request.POST.get('new_password1') or ''
+    new2 = request.POST.get('new_password2') or ''
+    errors = {}
+    if not user.check_password(current):
+        errors['current_password'] = _say(request, 'Your current password is not correct.', 'كلمة المرور الحالية غير صحيحة.')
+    elif new1 != new2:
+        errors['new_password2'] = _say(request, 'The two new passwords do not match.', 'كلمتا المرور الجديدتان غير متطابقتين.')
     else:
-        user.set_password(new_password1)
-        user.save()
-        messages.success(request, 'Password changed successfully.')
-    
-    return redirect('profile')
+        try:
+            validate_password(new1, user)
+        except ValidationError as e:
+            errors['new_password1'] = _say(
+                request, ' '.join(e.messages),
+                'كلمة المرور ضعيفة: استخدم 8 أحرف على الأقل، وتجنّب الكلمات الشائعة والأرقام وحدها والتشابه مع اسمك أو بريدك.')
+    if errors:
+        return _profile_back(request, 'pf-password', errors)
+    user.set_password(new1)
+    user.save()
+    update_session_auth_hash(request, user)
+    messages.success(request, _say(request, 'Password changed.', 'تم تغيير كلمة المرور.'))
+    return _profile_back(request, 'pf-password')
 
 
 # ============= Admin Dashboard Views =============
@@ -6569,88 +6621,94 @@ def export_performance_report_csv(request):
 
 @login_required(login_url='login')
 def worker_performance(request):
+    """My score: this month's KPI score from the KPI engine, how it is made up, six months of history,
+    the work behind it and recent reviews. Managers may open the people they work with (?user_id=);
+    super admins anyone."""
     from attendance.models import AttendanceRecord
-    from django.db.models import Sum
-    target_user = request.user
-    worker_id = request.GET.get('user_id')
-    if worker_id and request.user.role in ['manager', 'super_admin']:
-        target_user = get_object_or_404(User, id=worker_id)
-    now = timezone.now()
+    from django.db.models import Sum, Avg
+    from kpi.engine import KPICalculationEngine
+    from kpi.models import KPIWeight
+
+    viewer = request.user
+    target_user = viewer
+    people = None
+    if viewer.role in ('manager', 'super_admin'):
+        people = (User.objects.filter(is_active=True) if viewer.role == 'super_admin' or viewer.is_superuser
+                  else viewer.get_teammates()).exclude(role='super_admin').order_by('first_name', 'last_name', 'email')
+        wanted = request.GET.get('user_id')
+        if wanted and str(wanted).isdigit():
+            target_user = get_object_or_404(people, id=int(wanted)) if int(wanted) != viewer.id else viewer
+    is_self = target_user.id == viewer.id
+
+    # ── this month and the five before it (calendar months) ──
+    today = timezone.localdate()
+    months = []
+    y, m = today.year, today.month
+    for _ in range(6):
+        months.append(_dt.date(y, m, 1))
+        y, m = (y - 1, 12) if m == 1 else (y, m - 1)
+    months.reverse()
+
+    w = KPIWeight.get_weights()
+    parts_def = [
+        ('completion', 'Tasks completed', 'إنجاز المهام', w.completion_rate_weight, 'calculate_completion_rate'),
+        ('on_time', 'On time', 'الالتزام بالمواعيد', w.on_time_rate_weight, 'calculate_on_time_rate'),
+        ('quality', 'Quality (review score)', 'الجودة (درجة المراجعة)', w.quality_score_weight, 'calculate_quality_score'),
+        ('productivity', 'Output (approved work)', 'حجم العمل المعتمد', w.productivity_score_weight, 'calculate_productivity_score'),
+    ]
+    history = []
+    current_parts = []
+    for i, month in enumerate(months):
+        engine = KPICalculationEngine(target_user, month)
+        values = {key: max(0.0, min(100.0, float(getattr(engine, fn)() or 0))) for key, _, _, _, fn in parts_def}
+        total = round(min(100.0, sum(values[key] * weight for key, _, _, weight, _ in parts_def)), 1)
+        history.append({'month': month, 'label_en': month.strftime('%b'), 'label_ar': _AR_MONTHS[month.month - 1],
+                        'score': total, 'is_current': i == len(months) - 1})
+        if i == len(months) - 1:
+            for key, en, ar, weight, _ in parts_def:
+                current_parts.append({'key': key, 'en': en, 'ar': ar, 'value': round(values[key], 1),
+                                      'weight': round(weight * 100), 'points': round(values[key] * weight, 1)})
+    score = history[-1]['score']
+    previous = history[-2]['score'] if len(history) > 1 else None
+    change = round(score - previous, 1) if previous is not None else None
+    best = max(history, key=lambda h: h['score'])
+
+    # ── the work behind the score ──
     assigned = Task.objects.filter(assigned_to=target_user, work_module__is_archived=False)
-    total_tasks = assigned.count()
-    completed_tasks = assigned.filter(status__in=['approved','completed']).count()
-    pending_tasks_count = assigned.filter(status='pending').count()
-    overdue_tasks = assigned.filter(status='overdue').count()
-    completion_rate = round((completed_tasks / total_tasks * 100) if total_tasks else 0, 1)
     subs = Submission.objects.filter(worker=target_user, task__work_module__is_archived=False)
-    total_subs = subs.count()
-    approved_subs = subs.filter(status='approved').count()
-    rejected_subs = subs.filter(status='rejected').count()
-    scored = subs.filter(score__isnull=False)
-    avg_score = round(sum(s.score for s in scored) / scored.count(), 1) if scored.exists() else None
-    
-    on_time = subs.filter(submitted_at__isnull=False, submitted_at__lte=_F('task__deadline')).count()
-    compliance_rate = round((on_time / total_subs * 100) if total_subs else 0, 1)
-    
-    recent_submissions = subs.select_related('task').order_by('-created_at')[:10]
-    recent_tasks = assigned.order_by('-created_at')[:10]
-
-    # ── Attendance Stats (Last 30 Days) ────────────────────
-    thirty_days_ago = now - _dt.timedelta(days=30)
-    recent_attendance = AttendanceRecord.objects.filter(user=target_user, date__gte=thirty_days_ago.date())
-    days_present = recent_attendance.filter(status__in=['present', 'late']).count()
-    total_hours_worked = recent_attendance.aggregate(Sum('total_hours'))['total_hours__sum'] or 0
-    total_hours = round(total_hours_worked, 1)
-    
-    # ── Trend Analysis (6 Months) ──────────────────────────
-    trend_data = []
-    for i in range(5, -1, -1):
-        ms = (now.replace(day=1) - _dt.timedelta(days=30*i)).replace(day=1)
-        if ms.month == 12:
-            me = ms.replace(year=ms.year+1, month=1)
-        else:
-            me = ms.replace(month=ms.month+1)
-        
-        m_subs = subs.filter(created_at__gte=ms, created_at__lt=me)
-        m_total = m_subs.count()
-        m_approved = m_subs.filter(status='approved').count()
-        m_on_time = m_subs.filter(submitted_at__isnull=False, submitted_at__lte=_F('task__deadline'), created_at__gte=ms, created_at__lt=me).count()
-        
-        m_att = AttendanceRecord.objects.filter(user=target_user, date__gte=ms.date(), date__lt=me.date())
-        m_days_present = m_att.filter(status__in=['present', 'late']).count()
-
-        trend_data.append({
-            'label': ms.strftime('%b %Y'),
-            'completion': round((m_approved / m_total * 100) if m_total else 0, 1),
-            'compliance': round((m_on_time / m_total * 100) if m_total else 0, 1),
-            'count': m_approved, # Task Output
-            'attendance_days': m_days_present, # Attendance Output
-            'pending_count': m_total - m_approved,
-            'total_subs': m_total
-        })
-    
-    # ── Skills Radar Data (0-100 scale) ────────────────────
-    radar_data = {
-        'labels': ['Speed', 'Quality', 'Consistency', 'Volume', 'Reliability'],
-        'values': [
-            compliance_rate, # Speed (On-time)
-            avg_score or 0, # Quality (Score)
-            completion_rate, # Consistency (Completion)
-            min((approved_subs / 10) * 100, 100), # Volume (10+ approved = 100%)
-            max(0, 100 - (rejected_subs / (total_subs or 1) * 100)) # Reliability (Low rejection)
-        ]
+    now = timezone.now()
+    open_tasks = assigned.exclude(status__in=['approved', 'completed'])
+    reviewed = subs.filter(score__isnull=False)
+    att = AttendanceRecord.objects.filter(user=target_user, date__gte=today - _dt.timedelta(days=30))
+    facts = {
+        'open': open_tasks.count(),
+        'overdue': open_tasks.filter(deadline__lt=now).count(),
+        'waiting': subs.filter(status__in=['submitted', 'under_review']).count(),
+        'approved': subs.filter(status='approved').count(),
+        'sent_back': subs.filter(status='rejected').count(),
+        'avg_review': round(reviewed.aggregate(a=Avg('score'))['a'] or 0, 1) if reviewed.exists() else None,
+        'days_present': att.filter(status__in=['present', 'late']).count(),
+        'hours': round(att.aggregate(h=Sum('total_hours'))['h'] or 0, 1),
     }
+    # Reviewed = has a review date, a score, or a final status (older rows lack reviewed_at).
+    from django.db.models.functions import Coalesce
+    recent_reviews = (subs.filter(Q(reviewed_at__isnull=False) | Q(score__isnull=False) | Q(status__in=['approved', 'rejected']))
+                      .select_related('task', 'task__work_module')
+                      .annotate(wt_reviewed=Coalesce('reviewed_at', 'updated_at')).order_by('-wt_reviewed')[:8])
 
     context = {
-        'target_user': target_user, 'total_tasks': total_tasks, 'completed_tasks': completed_tasks,
-        'pending_tasks': pending_tasks_count, 'overdue_tasks': overdue_tasks, 'completion_rate': completion_rate,
-        'total_subs': total_subs, 'approved_subs': approved_subs, 'rejected_subs': rejected_subs,
-        'avg_score': avg_score, 'compliance_rate': compliance_rate,
-        'recent_submissions': recent_submissions, 'recent_tasks': recent_tasks,
-        'days_present': days_present, 'total_hours': total_hours,
-        'trend_data_json': script_json(trend_data),
-        'radar_data_json': script_json(radar_data),
-        'monthly_data': json.dumps(trend_data), # Map trend_data for backward compatibility
+        'target_user': target_user,
+        'is_self': is_self,
+        'people': people,
+        'score': score,
+        'score_change': change,
+        'best_month': best,
+        'parts': current_parts,
+        'history': history,
+        'facts': facts,
+        'recent_reviews': recent_reviews,
+        'month_en': today.strftime('%B %Y'),
+        'month_ar': f'{_AR_MONTHS[today.month - 1]} {today.year}',
     }
     return render(request, 'pages/worker_performance.html', context)
 
@@ -6712,25 +6770,40 @@ def manager_analytics(request):
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def profile_avatar_upload(request):
-    import imghdr
+    """Replace or remove the profile photo (JPEG, PNG, GIF or WebP, up to 5 MB)."""
+    profile_obj, _ = UserProfile.objects.get_or_create(user=request.user)
+    if request.POST.get('remove') == '1':
+        if profile_obj.avatar:
+            try: profile_obj.avatar.delete(save=False)
+            except Exception: pass
+            profile_obj.avatar = None
+            profile_obj.save()
+        messages.success(request, _say(request, 'Photo removed.', 'تمت إزالة الصورة.'))
+        return redirect('profile')
     avatar_file = request.FILES.get('avatar')
     if not avatar_file:
-        messages.error(request, 'No image file provided.')
-        return redirect('profile')
-    img_type = imghdr.what(avatar_file)
-    if img_type not in ['jpeg','png','gif','webp']:
-        messages.error(request, 'Invalid image. Use JPEG, PNG, GIF or WEBP.')
+        messages.error(request, _say(request, 'Choose an image first.', 'اختر صورة أولًا.'))
         return redirect('profile')
     if avatar_file.size > 5 * 1024 * 1024:
-        messages.error(request, 'Avatar must be under 5 MB.')
+        messages.error(request, _say(request, 'The photo must be under 5 MB.', 'يجب أن يكون حجم الصورة أقل من 5 ميغابايت.'))
         return redirect('profile')
-    profile_obj, _ = UserProfile.objects.get_or_create(user=request.user)
+    try:
+        from PIL import Image
+        with Image.open(avatar_file) as im:
+            fmt = (im.format or '').upper()
+            im.verify()
+        avatar_file.seek(0)
+    except Exception:
+        fmt = ''
+    if fmt not in ('JPEG', 'PNG', 'GIF', 'WEBP'):
+        messages.error(request, _say(request, 'Use a JPEG, PNG, GIF or WebP image.', 'استخدم صورة بصيغة JPEG أو PNG أو GIF أو WebP.'))
+        return redirect('profile')
     if profile_obj.avatar:
         try: profile_obj.avatar.delete(save=False)
         except Exception: pass
     profile_obj.avatar = avatar_file
     profile_obj.save()
-    messages.success(request, 'Avatar updated successfully.')
+    messages.success(request, _say(request, 'Photo updated.', 'تم تحديث الصورة.'))
     return redirect('profile')
 
 

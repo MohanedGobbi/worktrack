@@ -29,7 +29,7 @@ class ProfilePreferencesTest(TestCase):
         response = self.client.post(url, data)
         
         # Check redirect
-        self.assertRedirects(response, reverse('profile'))
+        self.assertRedirects(response, reverse('profile') + '#pf-notify')
         
         # Refresh user from DB
         self.user.refresh_from_db()
@@ -38,8 +38,7 @@ class ProfilePreferencesTest(TestCase):
         self.assertTrue(self.user.email_notifications)
         self.assertTrue(self.user.task_notifications)
         self.assertFalse(self.user.submission_notifications)
-        self.assertEqual(self.user.theme, 'dark')
-        self.assertEqual(self.user.language, 'fr')
+        # Theme and language are no longer profile settings (no dark theme; language comes from the switcher).
 
     def test_save_preferences_all_off(self):
         url = reverse('profile-preferences')
@@ -54,5 +53,3 @@ class ProfilePreferencesTest(TestCase):
         self.assertFalse(self.user.email_notifications)
         self.assertFalse(self.user.task_notifications)
         self.assertFalse(self.user.submission_notifications)
-        self.assertEqual(self.user.theme, 'light')
-        self.assertEqual(self.user.language, 'en')

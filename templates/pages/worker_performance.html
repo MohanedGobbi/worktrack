@@ -1,650 +1,124 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Performance — {{ target_user.get_full_name }} · WorkTrack Pro{% endblock %}
 
-{% block extra_css %}
-<style>
-    :root {
-        --premium-indigo: #6366f1;
-        --premium-emerald: var(--color-primary, #10b981);
-        --premium-amber: #f59e0b;
-        --premium-rose: #f43f5e;
-        --glass-bg: rgba(255, 255, 255, 0.8);
-    }
+{% block title %}{% if is_self %}{% if wt_lang == 'ar' %}نتيجتي{% else %}My score{% endif %}{% else %}{{ target_user.get_full_name|default:target_user.email }}{% endif %} · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
-    /* ── MASTER GREEN HERO BANNER ── */
-    .hero-banner-premium {
-        background: var(--wt-hero-bg) !important;
-        border-radius: 20px;
-        padding: 2.25rem 2.5rem;
-        color: white;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent) !important;
-    }
-
-
-    
-    .btn-export-3d {
-        transform: translateZ(50px);
-        transition: all 0.3s;
-        border: 1px solid rgba(255,255,255,0.3);
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        color: white;
-    }
-    
-    .btn-export-3d:hover {
-        background: white;
-        color: #1e3a8a;
-        transform: translateZ(70px) scale(1.05);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    }
-
-    /* ── KPI CARDS (GLASSMORPHISM) ── */
-    .kpi-card-wow {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: 24px;
-        padding: 1.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-        transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-        text-align: center;
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .kpi-card-wow::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 4px;
-        background: var(--kpi-color, #cbd5e1);
-        opacity: 0.8;
-    }
-
-    .kpi-card-wow:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
-        border-color: var(--kpi-color, #cbd5e1);
-    }
-
-    .kpi-icon-box {
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.25rem;
-        font-size: 1.5rem;
-        background: rgba(255,255,255,0.5);
-        border: 1px solid rgba(255,255,255,0.8);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.05);
-        color: var(--kpi-color, #475569);
-        transition: all 0.3s bounce;
-    }
-    
-    .kpi-card-wow:hover .kpi-icon-box {
-        transform: scale(1.15) rotate(5deg);
-        box-shadow: 0 12px 24px var(--kpi-glow, rgba(0,0,0,0.1));
-    }
-
-    .kpi-value-wow {
-        font-size: 2.25rem;
-        font-weight: 900;
-        letter-spacing: -1px;
-        margin-bottom: 0.35rem;
-        line-height: 1;
-        color: #0f172a;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .kpi-label-wow {
-        font-size: 0.8rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #64748b;
-    }
-
-    .chart-container-wow {
-        background: white;
-        border-radius: 24px;
-        padding: 2rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        border: 1px solid rgba(0,0,0,0.03);
-        height: 100%;
-        transition: all 0.3s ease;
-    }
-    
-    .chart-container-wow:hover {
-        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-    }
-
-    .table-wow {
-        border-collapse: separate;
-        border-spacing: 0 0.75rem;
-    }
-
-    .table-wow tr {
-        background: white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-        transition: all 0.2s;
-    }
-
-    .table-wow tr:hover {
-        transform: scale(1.01);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        z-index: 1;
-        position: relative;
-    }
-
-    .table-wow td {
-        padding: 1rem 1.25rem;
-        border: none !important;
-    }
-
-    .table-wow td:first-child { border-radius: 16px 0 0 16px; border-left: 3px solid #e2e8f0; transition: all 0.3s; }
-    .table-wow tr:hover td:first-child { border-left-color: #6366f1; }
-    .table-wow td:last-child { border-radius: 0 16px 16px 0; }
-
-    [data-theme="dark"] .kpi-card-wow,
-    [data-theme="dark"] .chart-container-wow,
-    [data-theme="dark"] .table-wow tr {
-        background: #1e293b;
-        border-color: #334155;
-    }
-    
-    [data-theme="dark"] .kpi-card-wow {
-        background: rgba(30, 41, 59, 0.7);
-        border-color: rgba(255,255,255,0.05);
-    }
-
-    /* ── RTL OVERRIDES ── */
-    body.rtl-mode .hero-orb {
-        right: auto;
-        left: -50px;
-    }
-    body.rtl-mode .table-wow td:first-child {
-        border-radius: 0 16px 16px 0;
-        border-left: none !important;
-        border-right: 3px solid #e2e8f0;
-    }
-    body.rtl-mode .table-wow tr:hover td:first-child {
-        border-right-color: #6366f1;
-    }
-    body.rtl-mode .table-wow td:last-child {
-        border-radius: 16px 0 0 16px;
-    }
-</style>
+{% block breadcrumb_trail %}
+<li class="breadcrumb-item active" aria-current="page">{% if is_self %}<span class="lang-en">My score</span><span class="lang-ar">نتيجتي</span>{% else %}<span class="lang-en">Score</span><span class="lang-ar">النتيجة</span>{% endif %}</li>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <!-- Hero Banner -->
-    <!-- Master Green Minimal Hero Banner -->
-    <div class="hero-banner-premium">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                <h1 class="fw-bold mb-0 text-white" style="font-size: clamp(2rem, 3.5vw, 2.75rem); letter-spacing: -0.02em;">
-                    <span class="lang-en">Performance Analytics</span><span class="lang-ar">تحليلات الأداء والإنجاز</span>
-                </h1>
-            </div>
-            <div>
-                <a href="{% url 'export-performance-csv' %}?user_id={{ target_user.id }}" class="btn btn-outline-light rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 border-white border-opacity-25 text-white" style="background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);">
-                    <i class="fas fa-file-export"></i>
-                    <span class="lang-en">Export Data</span><span class="lang-ar">تصدير البيانات</span>
-                </a>
-            </div>
+{% comment %}
+  My score ("Score first"): this month's KPI score and how the install's weights build it, six months of history,
+  the work behind it and recent reviews. Numbers come from kpi.engine.KPICalculationEngine, the same engine and
+  weights the landing page shows. No chart library: bars are CSS. Data: core.template_views.worker_performance.
+{% endcomment %}
+<div class="wt-home wt-ks">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1>{% if is_self %}<span class="lang-en">My score</span><span class="lang-ar">نتيجتي</span>{% else %}<span dir="auto" translate="no">{{ target_user.get_full_name|default:target_user.email }}</span>{% endif %}</h1>
+            <p><span class="lang-en">{{ month_en }} so far. The score updates as work is reviewed.</span><span class="lang-ar">{{ month_ar }} حتى الآن. تتحدّث النتيجة كلما رُوجع عمل.</span></p>
         </div>
-    </div>
+        {% if people %}
+        <form class="wt-home-actions wt-ks-pick" method="get" action="{% url 'worker-performance' %}">
+            <label class="wt-filter">
+                <span class="wt-filter-label"><span class="lang-en">Person</span><span class="lang-ar">الشخص</span></span>
+                <select class="form-select" name="user_id" onchange="this.form.submit()">
+                    <option value="{{ request.user.id }}"{% if is_self %} selected{% endif %}>{% if wt_lang == 'ar' %}أنا{% else %}Me{% endif %}</option>
+                    {% for p in people %}{% if p.id != request.user.id %}<option value="{{ p.id }}"{% if p.id == target_user.id %} selected{% endif %}>{{ p.get_full_name|default:p.email }}</option>{% endif %}{% endfor %}
+                </select>
+            </label>
+            <noscript><button type="submit" class="btn btn-light"><span class="lang-en">Show</span><span class="lang-ar">عرض</span></button></noscript>
+        </form>
+        {% endif %}
+    </header>
 
-    <!-- KPI Row -->
-    <div class="row g-4 mb-5">
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #3b82f6; --kpi-glow: rgba(59, 130, 246, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-check-double"></i>
-                </div>
-                <div class="kpi-value-wow">{{ completed_tasks }}</div>
-                <div class="kpi-label-wow">Tasks Completed</div>
+    <div class="wt-ks-top">
+        {# ── This month ── #}
+        <section class="wt-panel wt-ks-score" aria-labelledby="ks-score-title">
+            <div class="wt-panel-head">
+                <h2 id="ks-score-title"><span class="lang-en">This month</span><span class="lang-ar">هذا الشهر</span></h2>
+                {% if score_change is not None and score_change != 0 %}
+                <span class="wt-chip {% if score_change > 0 %}is-ok{% else %}is-alert{% endif %}"><i class="fas {% if score_change > 0 %}fa-arrow-trend-up{% else %}fa-arrow-trend-down{% endif %}" aria-hidden="true"></i><span class="wt-num" dir="ltr">{% if score_change > 0 %}+{% endif %}{{ score_change }}</span> <span class="lang-en">vs last month</span><span class="lang-ar">عن الشهر الماضي</span></span>
+                {% endif %}
             </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #eab308; --kpi-glow: rgba(234, 179, 8, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="kpi-value-wow">{{ pending_tasks }}</div>
-                <div class="kpi-label-wow">Pending Tasks</div>
+            <div class="wt-ks-hero">
+                <p class="wt-ks-big"><bdi dir="ltr"><span class="wt-num">{{ score|floatformat:"-1" }}</span><small class="wt-num">&#8202;/ 100</small></bdi></p>
+                <p class="wt-ks-formula" dir="ltr" translate="no">score = {% for p in parts %}{{ p.weight }}%&#8239;×&#8239;{{ p.key|cut:"_" }}{% if not forloop.last %} + {% endif %}{% endfor %}</p>
             </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #6366f1; --kpi-glow: rgba(99, 102, 241, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div class="kpi-value-wow">{{ days_present }}</div>
-                <div class="kpi-label-wow">Days Present</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: var(--color-primary, #10b981); --kpi-glow: color-mix(in srgb, var(--color-primary, #10b981) 45%, transparent);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="kpi-value-wow">{{ total_hours }}</div>
-                <div class="kpi-label-wow">Hours Worked</div>
-            </div>
-        </div>
-        
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: var(--wt-brand); --kpi-glow: rgba(var(--wt-brand-rgb), 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-exclamation-circle"></i>
-                </div>
-                <div class="kpi-value-wow">{{ overdue_tasks }}</div>
-                <div class="kpi-label-wow">Overdue Tasks</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #8b5cf6; --kpi-glow: rgba(139, 92, 246, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-percentage"></i>
-                </div>
-                <div class="kpi-value-wow text-indigo">{{ completion_rate }}<small style="font-size: 1rem;">%</small></div>
-                <div class="kpi-label-wow">Completion Rate</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #f43f5e; --kpi-glow: rgba(244, 63, 94, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-bullseye"></i>
-                </div>
-                <div class="kpi-value-wow">{{ compliance_rate }}<small style="font-size: 1rem;">%</small></div>
-                <div class="kpi-label-wow">On-Time Comp.</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3 col-lg-3">
-            <div class="kpi-card-wow" style="--kpi-color: #14b8a6; --kpi-glow: rgba(20, 184, 166, 0.4);">
-                <div class="kpi-icon-box">
-                    <i class="fas fa-award"></i>
-                </div>
-                <div class="kpi-value-wow">{% if avg_score %}{{ avg_score }}{% else %}0{% endif %}</div>
-                <div class="kpi-label-wow">Avg Quality Score</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="row g-4 mb-5">
-        <div class="col-lg-8">
-            <div class="chart-container-wow">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h5 class="fw-bold mb-1">Task vs Attendance Correlation</h5>
-                        <p class="text-muted small mb-0">6-Month overlap analysis of presence vs task completion.</p>
+            <ul class="wt-ks-parts">
+                {% for p in parts %}
+                <li>
+                    <div class="wt-ks-part-head">
+                        <b><span class="lang-en">{{ p.en }}</span><span class="lang-ar">{{ p.ar }}</span></b>
+                        <span class="wt-ks-weight"><span class="lang-en">weight</span><span class="lang-ar">الوزن</span> <span class="wt-num">{{ p.weight }}%</span></span>
                     </div>
-                </div>
-                <canvas id="mixedChart" style="max-height: 340px;"></canvas>
+                    <span class="wt-ks-bar" role="img" aria-label="{{ p.value }}%"><i style="--p: {{ p.value|stringformat:'s' }}%;"></i></span>
+                    <span class="wt-ks-part-val"><span class="wt-num">{{ p.value|floatformat:"-1" }}%</span> <small><span class="lang-en">adds</span><span class="lang-ar">تضيف</span> <span class="wt-num">{{ p.points|floatformat:"-1" }}</span></small></span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if not score %}
+            <p class="wt-ks-note"><span class="lang-en">Nothing counted yet this month. Your score appears once work you submitted is reviewed.</span><span class="lang-ar">لا شيء محتسب بعد هذا الشهر. تظهر النتيجة بعد مراجعة عمل سلّمته.</span></p>
+            {% endif %}
+        </section>
+
+        {# ── Six months ── #}
+        <section class="wt-panel wt-ks-trend" aria-labelledby="ks-trend-title">
+            <div class="wt-panel-head">
+                <h2 id="ks-trend-title"><span class="lang-en">Last 6 months</span><span class="lang-ar">آخر 6 أشهر</span></h2>
+                {% if best_month.score %}<span class="wt-panel-meta"><span class="lang-en">Best: {{ best_month.label_en }}</span><span class="lang-ar">الأفضل: {{ best_month.label_ar }}</span> <span class="wt-num">{{ best_month.score|floatformat:"-1" }}</span></span>{% endif %}
             </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="chart-container-wow d-flex flex-column">
-                <h5 class="fw-bold mb-1">Task Breakdown</h5>
-                <p class="text-muted small mb-4">Current task status distribution.</p>
-                <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="position: relative;">
-                    <canvas id="doughnutChart" style="max-height: 280px;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Radar Row -->
-    <div class="row g-4 mb-5">
-        <div class="col-lg-6 mx-auto">
-            <div class="chart-container-wow text-center">
-                <h5 class="fw-bold mb-1">Competency Radar</h5>
-                <p class="text-muted small mb-4">Holistic view of worker skills and performance.</p>
-                <div style="height: 340px; display: flex; align-items: center; justify-content: center;">
-                    <canvas id="radarChart"></canvas>
-                </div>
-            </div>
-        </div>
+            <ol class="wt-ks-cols">
+                {% for h in history %}
+                <li class="{% if h.is_current %}is-current{% endif %}">
+                    <span class="wt-ks-col-val wt-num">{{ h.score|floatformat:"0" }}</span>
+                    <span class="wt-ks-col" aria-hidden="true"><i style="--p: {{ h.score|stringformat:'s' }}%;"></i></span>
+                    <span class="wt-ks-col-label"><span class="lang-en">{{ h.label_en }}</span><span class="lang-ar">{{ h.label_ar }}</span></span>
+                </li>
+                {% endfor %}
+            </ol>
+        </section>
     </div>
 
-    <!-- Recent Activity & Submissions -->
-    <div class="row g-4">
-        <div class="col-lg-12">
-            <div class="chart-container-wow">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0">Recent Submissions History</h5>
-                    <a href="{% url 'submission-list' %}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3">View All</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-wow align-middle mb-0">
-                        <thead class="text-muted small text-uppercase fw-bold border-bottom">
-                            <tr>
-                                <th class="ps-4">Task Title</th>
-                                <th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
-                                <th>Score</th>
-                                <th>Submission Date</th>
-                                <th class="text-end pe-4"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in recent_submissions %}
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold text-dark">{{ s.task.title }}</div>
-                                    <div class="small fw-semibold mt-1" style="color: #6366f1;">{{ s.task.work_module.name }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge rounded-pill px-3 py-2 fw-bold
-                                        {% if s.status == 'approved' %}bg-success bg-opacity-10 text-success border border-success border-opacity-25
-                                        {% elif s.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25
-                                        {% elif s.status == 'submitted' %}bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25
-                                        {% else %}bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25{% endif %}">
-                                        <i class="fas fa-circle me-1" style="font-size:0.5rem;vertical-align:middle;"></i>{{ s.get_status_display|upper }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if s.score is not None %}
-                                        <div class="fw-bold text-dark mb-1 h5 mb-0">{{ s.score }}</div>
-                                        <div class="progress" style="height: 6px; width: 80px; border-radius: 10px; background: #e2e8f0;">
-                                            <div class="progress-bar bg-success" style="--score-pct: {{ s.score }}%; width: var(--score-pct); border-radius: 10px;"></div>
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted fw-bold bg-light px-2 py-1 rounded small">—</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="text-dark fw-semibold">{{ s.submitted_at|date:"M d, Y" }}</div>
-                                    <div class="small text-muted">{{ s.submitted_at|time:"H:i A" }}</div>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <a href="{% url 'submission-detail' s.id %}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                                        <i class="fas fa-chevron-right text-primary"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center py-5 text-muted fw-semibold">
-                                    <i class="fas fa-folder-open h2 d-block text-black-50 mb-3"></i>
-                                    No recent submissions found.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <div class="wt-ks-bottom">
+        {# ── The work behind it ── #}
+        <section class="wt-panel wt-today" aria-labelledby="ks-facts-title">
+            <div class="wt-panel-head"><h2 id="ks-facts-title"><span class="lang-en">The work behind it</span><span class="lang-ar">العمل وراء النتيجة</span></h2></div>
+            <dl class="wt-today-list">
+                <div><dt><span class="lang-en">Open tasks</span><span class="lang-ar">مهام مفتوحة</span></dt><dd class="wt-num">{{ facts.open }}</dd></div>
+                <div><dt><span class="lang-en">Overdue</span><span class="lang-ar">متأخرة</span></dt><dd class="wt-num{% if facts.overdue %} is-alert{% endif %}">{{ facts.overdue }}</dd></div>
+                <div><dt><span class="lang-en">Waiting for review</span><span class="lang-ar">بانتظار المراجعة</span></dt><dd class="wt-num">{{ facts.waiting }}</dd></div>
+                <div><dt><span class="lang-en">Approved / sent back</span><span class="lang-ar">معتمدة / مُعادة</span></dt><dd class="wt-num" dir="ltr">{{ facts.approved }} / {{ facts.sent_back }}</dd></div>
+                <div><dt><span class="lang-en">Average review score</span><span class="lang-ar">متوسط درجة المراجعة</span></dt><dd class="wt-num">{% if facts.avg_review is not None %}{{ facts.avg_review|floatformat:"-1" }}{% else %}–{% endif %}</dd></div>
+                <div><dt><span class="lang-en">Days present (30 days)</span><span class="lang-ar">أيام الحضور (30 يومًا)</span> <small class="wt-num">{{ facts.hours|floatformat:"-1" }} h</small></dt><dd class="wt-num">{{ facts.days_present }}</dd></div>
+            </dl>
+        </section>
+
+        {# ── Recent reviews ── #}
+        <section class="wt-panel" aria-labelledby="ks-reviews-title">
+            <div class="wt-panel-head">
+                <h2 id="ks-reviews-title"><span class="lang-en">Recent reviews</span><span class="lang-ar">آخر المراجعات</span></h2>
+                {% if is_self %}<span class="wt-panel-meta"><a href="{% url 'submission-list' %}"><span class="lang-en">All submissions</span><span class="lang-ar">كل التسليمات</span></a></span>{% endif %}
             </div>
-        </div>
+            {% if recent_reviews %}
+            <ul class="wt-ks-reviews">
+                {% for s in recent_reviews %}
+                <li>
+                    <span class="wt-up-dot" style="--mc: {{ s.task.work_module.color|default:'var(--wt-brand)' }};" aria-hidden="true"></span>
+                    <span class="wt-ks-rv-main">
+                        <a class="wt-cell-link" href="{% url 'submission-detail' s.id %}" dir="auto" translate="no">{{ s.task.title }}</a>
+                        <small><span class="wt-num">{{ s.wt_reviewed|date:"j/n/Y" }}</span>{% if s.task.work_module %} · <span dir="auto" translate="no">{{ s.task.work_module.name }}</span>{% endif %}</small>
+                    </span>
+                    <span class="wt-chip {% if s.status == 'approved' %}is-ok{% elif s.status == 'rejected' %}is-alert{% else %}is-muted{% endif %}">{% if s.status == 'approved' %}<span class="lang-en">Approved</span><span class="lang-ar">معتمد</span>{% elif s.status == 'rejected' %}<span class="lang-en">Sent back</span><span class="lang-ar">أُعيد</span>{% else %}<span class="lang-en">Reviewed</span><span class="lang-ar">رُوجع</span>{% endif %}</span>
+                    <span class="wt-ks-rv-score wt-num">{% if s.score is not None %}{{ s.score|floatformat:"-1" }}{% else %}–{% endif %}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="wt-side-empty"><span class="lang-en">No reviewed work yet.</span><span class="lang-ar">لا يوجد عمل تمت مراجعته بعد.</span></p>
+            {% endif %}
+        </section>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
-
-<!-- Inject safely -->
-<script id="trend-data" type="application/json">{{ trend_data_json|safe }}</script>
-<script id="radar-data" type="application/json">{{ radar_data_json|safe }}</script>
-<!-- For Doughnut Chart -->
-<script id="tasks-data" type="application/json">
-    {"completed": {{ completed_tasks }}, "pending": {{ pending_tasks }}, "overdue": {{ overdue_tasks }}}
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Default Chart Config for modern styling
-    Chart.defaults.font.family = "'Inter', 'Nunito', sans-serif";
-    Chart.defaults.color = "#64748b";
-    
-    // ── Mixed Chart (Task vs Attendance) ────────────────────
-    const trendData = JSON.parse(document.getElementById('trend-data').textContent);
-    const mixedCtx = document.getElementById('mixedChart');
-    
-    if (mixedCtx) {
-        new Chart(mixedCtx, {
-            type: 'bar', // Mixed needs a base type
-            data: {
-                labels: trendData.map(d => {
-                    if (window.__isArabic) {
-                        // Translate e.g., 'Jul 2026' -> 'جويلية 2026' or keep as is if no match, let's maps common months
-                        const months = {
-                            'Jan': 'جانفي', 'Feb': 'فيفري', 'Mar': 'مارس', 'Apr': 'أفريل', 'May': 'ماي', 'Jun': 'جوان',
-                            'Jul': 'جويلية', 'Aug': 'أوت', 'Sep': 'سبتمبر', 'Oct': 'أكتوبر', 'Nov': 'نوفمبر', 'Dec': 'ديسمبر'
-                        };
-                        let parts = d.label.split(' ');
-                        if (parts.length > 0 && months[parts[0]]) {
-                            parts[0] = months[parts[0]];
-                        }
-                        return parts.join(' ');
-                    }
-                    return d.label;
-                }),
-                datasets: [
-                    {
-                        type: 'line',
-                        label: window.__isArabic ? 'المهام المكتملة' : 'Tasks Completed',
-                        data: trendData.map(d => d.count),
-                        borderColor: '#6366f1',
-                        backgroundColor: '#6366f1',
-                        borderWidth: 4,
-                        tension: 0.4,
-                        pointRadius: 6,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#6366f1',
-                        pointBorderWidth: 3,
-                        yAxisID: 'y'
-                    },
-                    {
-                        type: 'bar',
-                        label: window.__isArabic ? 'أيام الحضور' : 'Days Present',
-                        data: trendData.map(d => d.attendance_days),
-                        backgroundColor: 'color-mix(in srgb, var(--color-primary, #10b981) 28%, transparent)',
-                        borderColor: 'var(--color-primary, #10b981)',
-                        borderWidth: 2,
-                        borderRadius: 8,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: { 
-                        position: 'top', 
-                        labels: { usePointStyle: true, padding: 20, font: { weight: 'bold' } }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: true
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: window.__isArabic ? 'المهام' : 'Tasks', font: { weight: 'bold' } },
-                        grid: { borderDash: [5, 5], color: 'rgba(0,0,0,0.05)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: { display: true, text: window.__isArabic ? 'أيام الحضور' : 'Days Present', font: { weight: 'bold' } },
-                        beginAtZero: true,
-                        max: 31,
-                        grid: { drawOnChartArea: false }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-    }
-
-    // ── Doughnut Chart (Task Breakdown) ───────────────────
-    const tasksData = JSON.parse(document.getElementById('tasks-data').textContent);
-    const doughnutCtx = document.getElementById('doughnutChart');
-    
-    if (doughnutCtx) {
-        new Chart(doughnutCtx, {
-            type: 'doughnut',
-            data: {
-                labels: window.__isArabic ? ['مكتملة', 'معلقة', 'متأخرة'] : ['Completed', 'Pending', 'Overdue'],
-                datasets: [{
-                    data: [tasksData.completed, tasksData.pending, tasksData.overdue],
-                    backgroundColor: [
-                        'var(--color-primary, #10b981)', // Emerald
-                        '#eab308', // Amber
-                        '#10b981'  // Emerald Primary
-                    ],
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { usePointStyle: true, padding: 20, font: { weight: 'bold' } }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#0f172a',
-                        bodyColor: '#0f172a',
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        boxPadding: 6,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed !== null) { label += context.parsed; }
-                                return label;
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [{
-                id: 'centerTextPlugin',
-                beforeDraw: function(chart) {
-                    var width = chart.width,
-                        height = chart.height,
-                        ctx = chart.ctx;
-
-                    ctx.restore();
-                    var fontSize = (height / 114).toFixed(2);
-                    ctx.font = "bold " + fontSize + "em Inter";
-                    ctx.textBaseline = "middle";
-                    ctx.textAlign = "center";
-                    ctx.fillStyle = "#0f172a";
-
-                    var total = tasksData.completed + tasksData.pending + tasksData.overdue;
-                    var text = total.toString(),
-                        textX = width / 2,
-                        textY = height / 2 - 10;
-
-                    ctx.fillText(text, textX, textY);
-                    
-                    ctx.font = "bold " + (fontSize/3).toFixed(2) + "em Inter";
-                    ctx.fillStyle = "#64748b";
-                    ctx.fillText(window.__isArabic ? "الإجمالي" : "TOTAL", textX, textY + 25);
-                    ctx.save();
-                }
-            }]
-        });
-    }
-
-    // ── Radar Chart (Competency) ─────────────────────────
-    const radarData = JSON.parse(document.getElementById('radar-data').textContent);
-    const radarCtx = document.getElementById('radarChart');
-    
-    if (radarCtx) {
-        new Chart(radarCtx, {
-            type: 'radar',
-            data: {
-                labels: radarData.labels.map(l => {
-                    if (window.__isArabic) {
-                        const maps = {
-                            'Speed': 'السرعة',
-                            'Quality': 'الجودة',
-                            'Consistency': 'الاتساق',
-                            'Volume': 'الحجم',
-                            'Reliability': 'الموثوقية'
-                        };
-                        return maps[l] || l;
-                    }
-                    return l;
-                }),
-                datasets: [{
-                    label: window.__isArabic ? 'درجة الكفاءة' : 'Competency Score',
-                    data: radarData.values,
-                    backgroundColor: 'rgba(124, 58, 237, 0.2)', // Violet 600
-                    borderColor: '#7c3aed',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#7c3aed',
-                    pointBorderWidth: 3,
-                    pointHoverRadius: 8,
-                    pointHoverBackgroundColor: '#7c3aed'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 14, weight: 'bold' },
-                        padding: 12,
-                        displayColors: false
-                    }
-                },
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(0,0,0,0.1)' },
-                        grid: { color: 'rgba(0,0,0,0.1)', circular: true },
-                        pointLabels: {
-                            font: { size: 13, weight: 'bold', family: "'Inter', sans-serif" },
-                            color: '#334155'
-                        },
-                        suggestedMin: 0,
-                        suggestedMax: 100,
-                        ticks: { display: false, stepSize: 20 }
-                    }
-                }
-            }
-        });
-    }
-});
-</script>
 {% endblock %}
