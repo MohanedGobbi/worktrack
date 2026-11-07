@@ -1,0 +1,38 @@
+{
+  "name": "University of Example",
+  "name_ar": "جامعة المثال",
+  "logo": "logo.png",
+  "brand": "#7a1f2b",
+  "accent": "#f2b84b",
+  "on_brand": "#ffffff",
+  "language": "ar",
+  "allow_registration": false,
+
+  "contact": {
+    "email": "it@example.edu",
+    "phone": "+213 29 00 00 00",
+    "website": "https://www.example.edu",
+    "address": "Example Road, Example City",
+    "address_ar": "طريق المثال، مدينة المثال",
+    "footer": "University of Example · IT Directorate",
+    "footer_ar": "جامعة المثال · مديرية الإعلام الآلي"
+  },
+
+  "departments": [
+    {"name": "Rectorate", "description": "رئاسة الجامعة"},
+    {"name": "Faculty of Science", "description": "كلية العلوم"},
+    "Human Resources"
+  ],
+
+  "roles": [
+    {"name": "Head of Department", "name_ar": "رئيس القسم", "color": "#7a1f2b",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_modules", "view_analytics", "manage_correspondence"]},
+    {"name": "Staff", "name_ar": "موظف",
+     "privileges": ["view_dashboard", "complete_tasks", "access_messenger"]}
+  ],
+
+  "hide_sidebar": ["global_map", "org_intelligence"],
+
+  "admin": {"email": "admin@example.edu", "name": "Amina Benali"},
+  "admin_department": "Rectorate"
+}
