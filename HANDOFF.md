@@ -26,7 +26,7 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 ### Sprint 2: finish Phase 1
 `notifications`, `profile`, `worker_performance`, built from the existing parts, no layout questions.
 
-### Sprint 3: triage the ~37 remaining pages (owner picks the hide list first)
+### Sprint 3: remaining pages (follow the owner decisions below)
 - **Rebuild (about 8, daily manager use):** `manager_portal`, `kpi_dashboard` + `manager_analytics` (consider merging), correspondence list / detail / form, `attendance/*`, `admin_users` + `create_user`.
 - **Restyle with shared CSS only (about 15):** archives, `global_map`, template dashboard / form / builder, `translation_manager`, `host_management`, `audit_logs`, `offline_map_manager`, `version_data_archive`, groups, `todo_management`, `organizational_intelligence`, `roadmap`, `messaging/config`, `messaging/inspect_user`. Use one "legacy bridge" block in `app.css` that maps their old classes onto tokens, rather than rewriting their HTML.
 - **Hide for v1:** whatever the owner does not need yet. Hide through sidebar visibility (data, `SidebarVisibilityRule`), not by deleting code.
@@ -35,14 +35,17 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 ### Sprint 4: release
 - One independent review over everything rebuilt since the worker home (tasks, submissions, module page, messenger, Sprint 2 and 3 pages); fix what it finds.
 - Install checklist for cPanel/Passenger (subpath, cookies, static, media, backups, first admin) and a demo-data seed so the product demos well.
+- Delete the machine-made translation rows (see owner decisions).
 - Tag `v1.0`.
 
 ### After launch (not before)
 Glossary / terminology table, editable landing and sign-in copy, the University of Ghardaia theme and content, a full messenger rebuild on `wt-*` parts (it still uses the local Tailwind file), brand-derived Signal Blue.
 
-### Decisions waiting on the owner
-- The list of pages / features to hide for v1.
-- Yes / no on deleting the machine-made translation rows.
+### Owner decisions (2026-11-07)
+- **Hide for v1** (sidebar visibility only; keep the code so it can be switched back on): Global Map, Offline Maps, Organizational Intelligence, Roadmap (Gantt page), module templates (dashboard / form / builder), To-do management page, Version & Data Archive, Host management, Messenger config, Inspect user, Translation manager.
+- **Rebuild for v1:** dashboard (toolbar + table view), worker home (done), tasks (done), modules (done), submissions (done), correspondence (list / detail / form), messenger (hardened), notifications, profile, my score, team analytics + KPI (one page), manager portal, users + create user, Site Settings.
+- **Restyle only:** archived modules, module groups, audit log, attendance.
+- **Machine translations:** keep for now; delete the `auto.` `TranslationItem` rows in **Sprint 4**, after a quick scan of the restyle-only pages for labels that need real Arabic.
 
 ---
 
