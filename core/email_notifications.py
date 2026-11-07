@@ -11,9 +11,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from notifications.models import Notification, EmailTemplate, EmailStyle
-from django.template import Template, Context
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 import datetime
 import logging
 
@@ -47,7 +47,9 @@ def render_premium_email(n_type, title, body_content, recipient, extra_context=N
         notification_type=n_type,
         defaults={
             'subject': f'[WorkTrack Pro] {title}',
-            'body': body_content,
+            # Never store the first message as the template: it would freeze
+            # that text for every later email and treat user text as markup.
+            'body': 'Hello {recipient_name},\n\n{message}',
             'is_html': True
         }
     )
@@ -82,6 +84,7 @@ def render_premium_email(n_type, title, body_content, recipient, extra_context=N
         'recipient_name': recipient.get_full_name() or recipient.email,
         'user_name': recipient.get_full_name() or recipient.email,
         'task_title': title,
+        'message': body_content,
         'banner_image': _get_abs_url(s('logo_url')) if s('logo_url') else 'https://images.unsplash.com/photo-1454165833767-02a6e30aa576?q=80&w=1000',
     }
 
@@ -122,22 +125,28 @@ def render_premium_email(n_type, title, body_content, recipient, extra_context=N
         context_data['logo_url'] = context_data['banner_image']
 
     # 4. Replace placeholders like {placeholder}
-    def replace_placeholders(text, context):
+    # Values come from users (task titles, names, messages), so they are
+    # escaped for the HTML body and never compiled as template code. The
+    # admin-written template text itself is trusted and kept as written.
+    def replace_placeholders(text, context, html):
         if not text: return ""
         for key, value in context.items():
             if value is not None:
-                text = text.replace(f'{{{key}}}', str(value))
+                value = str(value)
+                if html:
+                    value = str(escape(value)).replace(chr(13), '').replace(chr(10), '<br>')
+                else:
+                    value = ' '.join(value.split())  # no header line breaks
+                text = text.replace(f'{{{key}}}', value)
         return text
 
-    rendered_subject = replace_placeholders(template_obj.subject, context_data)
-    rendered_body_inner = replace_placeholders(template_obj.body, context_data)
-    
-    # 5. Render inner body with Django Template for any {{ }} remains
-    t = Template(rendered_body_inner)
-    c = Context(context_data)
-    rendered_body = t.render(c)
-    
-    context_data['body'] = rendered_body
+    rendered_subject = replace_placeholders(template_obj.subject, context_data, html=False)
+    rendered_body = replace_placeholders(template_obj.body, context_data, html=True)
+    if '<' not in template_obj.body:
+        # Plain-text template: keep its line breaks in the HTML email.
+        rendered_body = rendered_body.replace('\r\n', '\n').replace('\n', '<br>\n')
+
+    context_data['body'] = mark_safe(rendered_body)
 
     # 6. Render base template
     html_content = render_to_string('notifications/base_email.html', context_data)

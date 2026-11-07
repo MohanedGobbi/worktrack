@@ -48,6 +48,12 @@
     <script src="{% static 'js/i18n.js' %}?v=3.2"></script>
 
     {% block extra_css %}{% endblock %}
+    <script>
+        // Escape a value before it goes into an HTML string (used by page scripts).
+        window.wtEsc = function(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        };
+    </script>
 </head>
 <body class="wt-app{% if wt_lang != 'en' %} rtl-mode{% endif %}" {% if user.is_authenticated %}data-user-authenticated="1"{% endif %} data-force-reload="{{ site_settings.force_language_reload|yesno:'true,false' }}">
     <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
@@ -318,13 +324,16 @@
             toast.innerHTML = `
                 <div class="toast-icon"><i class="fas ${icon}"></i></div>
                 <div class="toast-content">
-                    ${title ? `<div class="toast-title">${title}</div>` : ''}
-                    <p class="toast-message">${message}</p>
+                    ${title ? `<div class="toast-title" dir="auto"></div>` : ''}
+                    <p class="toast-message" dir="auto"></p>
                 </div>
                 <button class="toast-close" type="button" aria-label="Close"><i class="fas fa-times"></i></button>
                 <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
             `;
             
+            // Text only: messages often carry task titles and names.
+            if (title) toast.querySelector('.toast-title').textContent = String(title);
+            toast.querySelector('.toast-message').textContent = String(message ?? '');
             container.appendChild(toast);
             
             const isRTL = document.documentElement.dir === 'rtl' || document.body.classList.contains('rtl-mode');
@@ -523,9 +532,9 @@
                 html += '<div class="sr-section"><span class="lang-en">Tasks</span><span class="lang-ar">المهام</span></div>';
                 data.tasks.forEach(t => {
                     const statusColor = {pending:'var(--wt-warn)',in_progress:'var(--wt-signal)',approved:'var(--wt-ok)',overdue:'var(--wt-bad)'}[t.status] || 'var(--wt-muted)';
-                    html += `<a class="sr-item" href="${t.url}">
+                    html += `<a class="sr-item" href="${wtEsc(t.url)}">
                         <span class="sr-icon" style="background:color-mix(in oklab, ${statusColor} 14%, transparent);"><i class="fas fa-tasks" style="color:${statusColor};font-size:.8rem;"></i></span>
-                        <span>${t.title} <span style="font-size:.78rem;color:var(--wt-muted);">${t.status}</span></span>
+                        <span dir="auto" translate="no">${wtEsc(t.title)} <span style="font-size:.78rem;color:var(--wt-muted);">${wtEsc(t.status)}</span></span>
                     </a>`;
                 });
             }
@@ -534,16 +543,16 @@
                 data.users.forEach(u => {
                     html += `<a class="sr-item" href="{% url 'admin_dashboard' %}">
                         <span class="sr-icon" style="background:var(--wt-brand-soft);"><i class="fas fa-user" style="color:var(--wt-brand);font-size:.8rem;"></i></span>
-                        <span>${u.name} <span style="font-size:.78rem;color:var(--wt-muted);">${u.role}</span></span>
+                        <span dir="auto" translate="no">${wtEsc(u.name)} <span style="font-size:.78rem;color:var(--wt-muted);">${wtEsc(u.role)}</span></span>
                     </a>`;
                 });
             }
             if (data.modules && data.modules.length) {
                 html += '<div class="sr-section"><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></div>';
                 data.modules.forEach(m => {
-                    html += `<a class="sr-item" href="${m.url}">
+                    html += `<a class="sr-item" href="${wtEsc(m.url)}">
                         <span class="sr-icon" style="background:var(--wt-brand-soft);"><i class="fas fa-layer-group" style="color:var(--wt-brand);font-size:.8rem;"></i></span>
-                        <span>${m.name}</span>
+                        <span dir="auto" translate="no">${wtEsc(m.name)}</span>
                     </a>`;
                 });
             }
@@ -569,8 +578,8 @@
                     confirmColor = titleOrOptions.confirmButtonColor || 'var(--wt-brand)';
                 }
 
-                document.getElementById('amazingConfirmTitle').innerHTML = title;
-                document.getElementById('amazingConfirmText').innerHTML = text;
+                document.getElementById('amazingConfirmTitle').textContent = title ?? '';
+                document.getElementById('amazingConfirmText').textContent = text ?? '';
                 
                 const iconElement = document.getElementById('amazingConfirmIcon');
                 if (icon === 'warning') iconElement.className = 'fas fa-exclamation-triangle';

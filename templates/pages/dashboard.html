@@ -5081,7 +5081,7 @@
         function showToast(msg, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast-premium shadow-lg ${type}`;
-            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i> ${msg}`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i> ${escapeHtml(String(msg ?? ''))}`;
             document.body.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 100);
             setTimeout(() => {
@@ -5201,7 +5201,7 @@
                     renderTodos(allFetchedTodos);
                     updateGlobalBadge();
                 } else {
-                    container.innerHTML = `<div class="alert alert-danger m-3 small">${data.message || 'Error loading notes'}</div>`;
+                    container.innerHTML = `<div class="alert alert-danger m-3 small">${escapeHtml(data.message || 'Error loading notes')}</div>`;
                 }
             } catch (e) {
                 container.innerHTML = `<div class="alert alert-danger m-3 small">${LOCALIZE('Connection lost.', 'تم فقدان الاتصال.')}</div>`;

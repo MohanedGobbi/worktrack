@@ -842,7 +842,7 @@
             const lInfo = layersToSync[idx];
             document.getElementById('download-count').innerText = "Analyzing Area...";
             document.getElementById('download-bar').style.width = '0%';
-            document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing ${lInfo.name} data...</span><br>Syncing zoom levels: ${zoomLevels.join(', ')}`;
+            document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing ${wtEsc(lInfo.name)} data...</span><br>Syncing zoom levels: ${zoomLevels.join(', ')}`;
 
             try {
                 await saveLayerAsync(lInfo.layer, zoomLevels, currentDownloadConfig.bounds);
@@ -891,17 +891,17 @@
             // Wait for map movement and tile calculation
             await new Promise(r => setTimeout(r, 800));
             
-            document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing data for ${loc.title}...</span>`;
+            document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing data for ${wtEsc(loc.title)}...</span>`;
             
             const zlevels = [12, 13, 14, 15, 16, 17];
             const activeLayerName = document.getElementById('layer-select').value;
             
             if (activeLayerName === 'both' || activeLayerName === 'street') {
-                document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing Street map for ${loc.title}...</span>`;
+                document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing Street map for ${wtEsc(loc.title)}...</span>`;
                 await saveLayerAsync(streetLayer, zlevels, null);
             }
             if (activeLayerName === 'both' || activeLayerName === 'satellite') {
-                document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing Satellite map for ${loc.title}...</span>`;
+                document.getElementById('map-status').innerHTML = `<span class="text-primary fw-bold">Syncing Satellite map for ${wtEsc(loc.title)}...</span>`;
                 await saveLayerAsync(satelliteLayer, zlevels, null);
             }
             

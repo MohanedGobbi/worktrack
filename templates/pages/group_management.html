@@ -202,7 +202,7 @@
                         </td>
                         <td>
                             <div class="text-muted" style="max-height: 2.8em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;">
-                                {{ group.description|default:"<em>No description provided</em>"|safe }}
+                                {% if group.description %}{{ group.description }}{% else %}<em><span class="lang-en">No description provided</span><span class="lang-ar">لا يوجد وصف</span></em>{% endif %}
                             </div>
                         </td>
                         <td class="text-center">

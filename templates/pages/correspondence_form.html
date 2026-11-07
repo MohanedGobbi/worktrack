@@ -625,9 +625,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const chip = document.createElement('div');
             chip.className = 'user-chip';
             chip.innerHTML = `
-                <div class="user-chip-avatar">${userInitials}</div>
-                <span>${userName}</span>
-                <span class="user-chip-remove" onclick="removeUser('${userId}')" style="cursor: pointer;">×</span>
+                <div class="user-chip-avatar">${wtEsc(userInitials)}</div>
+                <span dir="auto" translate="no">${wtEsc(userName)}</span>
+                <span class="user-chip-remove" onclick="removeUser('${wtEsc(userId)}')" style="cursor: pointer;">×</span>
             `;
             selectedUsersChips.appendChild(chip);
         });
@@ -830,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${setIcon(file)}
                             </div>
                             <div style="font-weight: 600; color: #334155; word-break: break-all;">
-                                ${file.name}
+                                ${wtEsc(file.name)}
                                 ${i === 0 ? '<span class="badge bg-indigo ms-2"><span class="lang-en">Primary</span><span class="lang-ar">رئيسي</span></span>' : ''}
                             </div>
                         </div>

@@ -20,6 +20,7 @@ from django.utils.text import slugify
 import datetime
 import os
 import json
+from core.sanitize import script_json
 from django.core.files.base import ContentFile
 
 from tasks.models import Task, TaskField, Correspondence, CorrespondenceAcknowledgement, CorrespondenceAttachment, TaskTodo, TaskTodoAttachment, Todo, TodoAttachment
@@ -6647,8 +6648,8 @@ def worker_performance(request):
         'avg_score': avg_score, 'compliance_rate': compliance_rate,
         'recent_submissions': recent_submissions, 'recent_tasks': recent_tasks,
         'days_present': days_present, 'total_hours': total_hours,
-        'trend_data_json': json.dumps(trend_data),
-        'radar_data_json': json.dumps(radar_data),
+        'trend_data_json': script_json(trend_data),
+        'radar_data_json': script_json(radar_data),
         'monthly_data': json.dumps(trend_data), # Map trend_data for backward compatibility
     }
     return render(request, 'pages/worker_performance.html', context)
@@ -6701,7 +6702,7 @@ def manager_analytics(request):
         'total_pending': all_tasks.filter(status='pending').count(),
         'total_completed': all_tasks.filter(status__in=['approved','completed']).count(),
         'global_avg_score': round(sum(s.score for s in all_subs)/all_subs.count(),1) if all_subs.exists() else None,
-        'monthly_trend': json.dumps(monthly_trend),
+        'monthly_trend': script_json(monthly_trend),
     }
     return render(request, 'pages/manager_analytics.html', context)
 
@@ -7687,7 +7688,7 @@ def offline_map_manager(request):
             })
             
     context = {
-        'task_locations': json.dumps(task_locations),
+        'task_locations': script_json(task_locations),
         'task_count': tasks_with_loc.count(),
     }
     return render(request, 'pages/offline_map_manager.html', context)
@@ -7915,7 +7916,7 @@ def global_map(request):
             })
     
     context = {
-        'tasks_json': json.dumps(tasks_data),
+        'tasks_json': script_json(tasks_data),
     }
     return render(request, 'pages/global_map.html', context)
 

@@ -10,13 +10,27 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
+import sys as _sys
+_TESTING = len(_sys.argv) > 1 and _sys.argv[1] == 'test'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+# Off unless .env says DEBUG=True (local development only).
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+# SECURITY WARNING: keep the secret key used in production secret!
+_INSECURE_KEY = 'django-insecure-dev-key-change-in-production'
+SECRET_KEY = config('SECRET_KEY', default=_INSECURE_KEY)
+if SECRET_KEY == _INSECURE_KEY and not (DEBUG or _TESTING):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        'SECRET_KEY is not set. Add a long random SECRET_KEY to .env (see .env.example), '
+        'or set DEBUG=True for local development.'
+    )
+
+# Host checking is done per install by core.middleware.DynamicHostMiddleware
+# (AllowedHost table), so Django's own list defaults to '*'. Narrow it in .env
+# if the install does not use the host-management table.
+ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='*').split(',') if h.strip()]
 
 
 # Application definition
@@ -177,6 +191,12 @@ STORAGES = {
 }
 WHITENOISE_MANIFEST_STRICT = False
 
+# Tests (and local DEBUG runs) render templates without a collectstatic manifest,
+# so the hashed-name lookup would fail. Use plain storage there; production
+# (DEBUG=False, not testing) keeps the compressed manifest storage.
+if _TESTING or DEBUG:
+    STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
 # Media files
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = Path(config('MEDIA_ROOT', default=str(BASE_DIR / 'media')))
@@ -258,6 +278,11 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    # Opt-in: only once the site is reliably served over HTTPS.
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure_view'
 

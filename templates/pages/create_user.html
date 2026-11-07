@@ -245,7 +245,7 @@
                                 {% if target_user.profile.avatar %}
                                     <img id="avatarPreview" src="{{ target_user.profile.avatar.url }}" alt="Avatar" class="rounded-circle shadow-sm" style="width: 82px; height: 82px; object-fit: cover; border: 3px solid var(--color-primary, #10b981);">
                                 {% else %}
-                                    <img id="avatarPreview" src="/static/img/default-avatar.png" alt="Avatar" class="rounded-circle shadow-sm" style="width: 82px; height: 82px; object-fit: cover; border: 3px solid var(--color-primary, #10b981);" onerror="this.src='https://ui-avatars.com/api/?name={{ target_user.first_name|default:'User' }}+{{ target_user.last_name|default:'' }}&background=dc2626&color=fff';">
+                                    <img id="avatarPreview" src="/static/img/default-avatar.png" alt="Avatar" class="rounded-circle shadow-sm" style="width: 82px; height: 82px; object-fit: cover; border: 3px solid var(--color-primary, #10b981);" onerror="this.src='https://ui-avatars.com/api/?name={{ target_user.first_name|default:'User'|urlencode:'' }}+{{ target_user.last_name|default:''|urlencode:'' }}&background=dc2626&color=fff';">
                                 {% endif %}
                             </div>
                             <div class="flex-grow-1" style="min-width: 240px;">

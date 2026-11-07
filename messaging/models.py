@@ -105,6 +105,10 @@ class Message(models.Model):
                 conversation = Conversation.objects.create(is_group=False)
                 ConversationMember.objects.create(conversation=conversation, user=self.sender)
                 ConversationMember.objects.create(conversation=conversation, user=self.recipient)
+                # last_read_timestamp is auto_now_add; on coarse clocks (Windows ~15 ms)
+                # the opening message can share that instant and count as already read.
+                from django.utils import timezone as _tz
+                conversation.members.update(last_read_timestamp=_tz.now() - _tz.timedelta(seconds=1))
             self.conversation = conversation
         super().save(*args, **kwargs)
 

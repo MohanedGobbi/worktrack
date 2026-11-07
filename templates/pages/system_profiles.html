@@ -408,7 +408,7 @@
                 });
             }
 
-            document.getElementById('formCardHeader').innerHTML = `<span class="lang-en">Edit Profile: ${name}</span><span class="lang-ar">تعديل الملف: ${nameAr || name}</span>`;
+            document.getElementById('formCardHeader').innerHTML = `<span class="lang-en">Edit Profile: ${wtEsc(name)}</span><span class="lang-ar">تعديل الملف: ${wtEsc(nameAr || name)}</span>`;
             document.getElementById('createTabTitle').innerHTML = `<span class="lang-en">Edit Profile</span><span class="lang-ar">تعديل الملف</span>`;
             switchProfilesTab('tab-create-edit');
         };

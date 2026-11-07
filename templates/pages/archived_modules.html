@@ -251,7 +251,7 @@
                             Restore
                         </button>
                         <button type="button" class="btn btn-outline-light text-muted border rounded-3 p-2 d-flex align-items-center justify-content-center" 
-                                style="width: 42px;" onclick="handleDelete('{{ m_stat.name }}')">
+                                style="width: 42px;" onclick="handleDelete('{{ m_stat.name|escapejs }}')">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </form>

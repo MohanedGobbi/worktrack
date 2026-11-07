@@ -376,7 +376,7 @@ async function pickConv(el, id) {
       <div style="text-align:center;padding:40px">
         <span class="ms" style="font-size:36px;color:#fca5a5">error</span>
         <p style="color:var(--wt-bad);font-weight:700;margin:8px 0 4px">Failed to load messages</p>
-        <p style="color:#94a3b8;font-size:12px">${e.message}</p>
+        <p style="color:#94a3b8;font-size:12px">${esc(e.message)}</p>
         <button onclick="pickConv(document.querySelector('.conv-item.active'))"
           style="margin-top:12px;background:#137fec;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;cursor:pointer">Retry</button>
       </div>`;
@@ -441,8 +441,8 @@ function buildBubble(msg,isGroup){
 
   // Avatar
   const av=msg.sender_avatar
-    ?`<img src="${msg.sender_avatar}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0" title="${esc(msg.sender_name)}">`
-    :`<div style="width:30px;height:30px;border-radius:50%;background:${sent?'#137fec':'#64748b'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0">${(msg.sender_name||'?')[0].toUpperCase()}</div>`;
+    ?`<img src="${esc(msg.sender_avatar)}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0" title="${esc(msg.sender_name)}">`
+    :`<div style="width:30px;height:30px;border-radius:50%;background:${sent?'#137fec':'#64748b'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0">${esc((msg.sender_name||'?')[0].toUpperCase())}</div>`;
 
   // Content
   let body=del
@@ -454,8 +454,8 @@ function buildBubble(msg,isGroup){
   if(msg.attachment_url){
     const img=/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(msg.attachment_name||'');
     att=img
-      ?`<a href="${msg.attachment_url}" target="_blank" style="display:block;margin-top:8px;border-radius:12px;overflow:hidden"><img src="${msg.attachment_url}" style="max-height:180px;max-width:100%;object-fit:cover;border-radius:12px"></a>`
-      :`<a href="${msg.attachment_url}" target="_blank" style="display:flex;align-items:center;gap:8px;margin-top:8px;background:rgba(255,255,255,.2);border-radius:12px;padding:8px 12px;text-decoration:none;color:inherit"><span class="ms" style="font-size:18px"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></span><span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${esc(msg.attachment_name||'File')}</span></a>`;
+      ?`<a href="${esc(msg.attachment_url)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;border-radius:12px;overflow:hidden"><img src="${esc(msg.attachment_url)}" style="max-height:180px;max-width:100%;object-fit:cover;border-radius:12px"></a>`
+      :`<a href="${esc(msg.attachment_url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;margin-top:8px;background:rgba(255,255,255,.2);border-radius:12px;padding:8px 12px;text-decoration:none;color:inherit"><span class="ms" style="font-size:18px"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></span><span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${esc(msg.attachment_name||'File')}</span></a>`;
   }
 
   // Badges
@@ -475,7 +475,7 @@ function buildBubble(msg,isGroup){
         ${body}${att}
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:3px;${sent?'flex-direction:row-reverse':''}">
-        <span style="font-size:10px;color:#94a3b8">${msg.timestamp}</span>${badges}
+        <span style="font-size:10px;color:#94a3b8">${esc(msg.timestamp)}</span>${badges}
       </div>
     </div>`;
   return wrap;
@@ -490,7 +490,7 @@ function renderContent(c,sent){
   const doc=(new DOMParser()).parseFromString(t,'text/html');
   const h=doc.querySelector('h1,h2,h3,h4,strong')?.textContent?.trim()||'';
   const p=doc.querySelector('p')?.textContent?.trim()||'';
-  const url=(Array.from(doc.querySelectorAll('a[href]')).filter(a=>!a.href.startsWith('javascript'))[0])?.href||'';
+  const url=(Array.from(doc.querySelectorAll('a[href]')).filter(a=>/^https?:/i.test(a.href))[0])?.href||'';
   const icon=t.includes('task')?'task_alt':t.includes('module')?'view_module':t.includes('poll')?'poll':t.includes('attach')||t.includes('file')?'description':'widgets';
   const lbl=t.includes('task')?'Task':t.includes('module')?'Module':t.includes('poll')?'Poll':'Shared';
   const card=`<div style="border:2px solid ${sent?'rgba(255,255,255,.3)':'#e2e8f0'};border-radius:16px;overflow:hidden;min-width:200px;max-width:280px;background:${sent?'rgba(255,255,255,.1)':'#fff'}">
@@ -504,7 +504,7 @@ function renderContent(c,sent){
     </div>
     ${url?`<div style="padding:8px 14px;border-top:1px solid ${sent?'rgba(255,255,255,.15)':'#f1f5f9'};font-size:11px;font-weight:800;color:#137fec">↗ Open</div>`:''}
   </div>`;
-  return url?`<a href="${url}" target="_blank" style="text-decoration:none;display:block">${card}</a>`:card;
+  return url?`<a href="${esc(url)}" target="_blank" rel="noopener" style="text-decoration:none;display:block">${card}</a>`:card;
 }
 
 /* ── Chat view filter ── */
