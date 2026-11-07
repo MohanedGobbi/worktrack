@@ -3260,7 +3260,21 @@ def task_list(request):
     tasks = paginator.get_page(page)
     
     import time
+    qs = request.GET.copy()
+    qs.pop('page', None)
+    module_slug = request.GET.get('module', '')
     context = {
+        'wt_qs': qs.urlencode(),
+        'wt_filtered': any(request.GET.get(k) for k in ('search', 'status', 'priority')),
+        'wt_module_name': WorkModule.objects.filter(slug=module_slug).values_list('name', flat=True).first() if module_slug else '',
+        'wt_now': timezone.now(),
+        'wt_status_options': [
+            ('pending', 'Not started', 'لم تبدأ'), ('in_progress', 'In progress', 'قيد التنفيذ'),
+            ('submitted', 'Submitted', 'تم التسليم'), ('rejected', 'Sent back', 'أعيدت'),
+            ('approved', 'Approved', 'معتمدة'), ('completed', 'Completed', 'مكتملة'), ('overdue', 'Overdue', 'متأخرة'),
+        ],
+        'wt_priority_options': [('critical', 'Critical', 'حرجة'), ('high', 'High', 'عالية'), ('medium', 'Medium', 'متوسطة'), ('low', 'Low', 'منخفضة')],
+        'wt_per_page_options': [10, 25, 50, 100],
         'tasks': tasks,
         'tasks_count': tasks_qs.count(),
         'search': request.GET.get('search', ''),

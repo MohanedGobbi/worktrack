@@ -1,0 +1,6 @@
+{% comment %}List / Board / Calendar switch shared by the three task views. Usage: {% include 'includes/wt_task_views.html' with current='list' %}{% endcomment %}
+<nav class="wt-seg wt-views" aria-label="{% if wt_lang == 'ar' %}طريقة العرض{% else %}View{% endif %}">
+    <a href="{% url 'task-list' %}" {% if current == 'list' %}aria-current="page"{% endif %}><i class="fas fa-list" aria-hidden="true"></i><span class="lang-en">List</span><span class="lang-ar">قائمة</span></a>
+    <a href="{% url 'task-kanban' %}" {% if current == 'board' %}aria-current="page"{% endif %}><i class="fas fa-table-columns" aria-hidden="true"></i><span class="lang-en">Board</span><span class="lang-ar">لوحة</span></a>
+    <a href="{% url 'task-calendar' %}" {% if current == 'calendar' %}aria-current="page"{% endif %}><i class="fas fa-calendar-days" aria-hidden="true"></i><span class="lang-en">Calendar</span><span class="lang-ar">تقويم</span></a>
+</nav>
