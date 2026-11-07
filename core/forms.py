@@ -64,3 +64,56 @@ class SiteConfigurationForm(forms.ModelForm):
             'warning_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color', 'title': 'Warning State Color'}),
             'info_color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color', 'title': 'Info State Color'})
         }
+
+
+import re as _re
+
+_HEX = _re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+
+
+class SiteThemeForm(forms.ModelForm):
+    """Site Settings, built around the theme model: identity, three colours,
+    contact and footer. The legacy colour columns stay in the database for old
+    pages but are no longer edited here."""
+
+    theme_preset = forms.ChoiceField(choices=[('rowd', 'ROWD default'), ('custom', 'Custom colours')])
+
+    class Meta:
+        model = SiteConfiguration
+        fields = [
+            'app_name', 'app_name_ar', 'logo', 'banner_image',
+            'theme_preset', 'primary_color', 'accent_color', 'on_brand_color',
+            'contact_email', 'contact_phone', 'website_url', 'address', 'address_ar',
+            'footer_text', 'footer_text_ar',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['app_name'].required = True
+        for name in ('logo', 'banner_image'):
+            self.fields[name].required = False
+        # A legacy preset (crimson, emerald, ...) is shown as custom colours.
+        if self.instance and self.instance.theme_preset not in ('rowd', 'custom'):
+            self.initial['theme_preset'] = 'custom'
+
+    def _hex(self, name, fallback):
+        value = (self.cleaned_data.get(name) or '').strip()
+        if not value:
+            return fallback
+        if not _HEX.match(value):
+            raise forms.ValidationError('Use a hex colour such as #0033a0.')
+        if len(value) == 4:
+            value = '#' + ''.join(c * 2 for c in value[1:])
+        return value.lower()
+
+    def clean_primary_color(self):
+        return self._hex('primary_color', '#0033a0')
+
+    def clean_accent_color(self):
+        return self._hex('accent_color', '#19bedc')
+
+    def clean_on_brand_color(self):
+        return self._hex('on_brand_color', '#ffffff')
+
+    def clean_app_name(self):
+        return (self.cleaned_data.get('app_name') or '').strip()

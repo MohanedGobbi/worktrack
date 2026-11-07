@@ -111,6 +111,18 @@ THEME_PRESET_COLORS = {
     },
 }
 
+# Quick-start colour pairs for Site Settings (brand, accent). Picking one fills
+# the custom colour inputs; the theme itself only ever reads those inputs.
+WT_SWATCHES = [
+    ('rowd', 'ROWD', 'رود', '#0033a0', '#19bedc'),
+    ('crimson', 'Crimson', 'قرمزي', '#b91c1c', '#f59e9e'),
+    ('emerald', 'Emerald', 'زمردي', '#047857', '#34d399'),
+    ('ocean', 'Ocean', 'محيطي', '#1d4ed8', '#38bdf8'),
+    ('violet', 'Violet', 'بنفسجي', '#6d28d9', '#c4b5fd'),
+    ('teal', 'Teal', 'فيروزي', '#0f766e', '#5eead4'),
+    ('slate', 'Slate', 'رمادي', '#334155', '#94a3b8'),
+]
+
 # Attach primary_rgb to every preset
 for k, v in THEME_PRESET_COLORS.items():
     v['primary_rgb'] = hex_to_rgb(v.get('primary', '#10b981'))
@@ -197,7 +209,7 @@ def _wt_theme(config, preset_key, theme_colors):
     else:
         brand = _clean_hex(theme_colors.get('primary'), '#0033a0')
         accent = _clean_hex(theme_colors.get('accent'), '#19bedc')
-    on_brand = _clean_hex(getattr(config, 'button_text_color', ''), '#ffffff') if preset_key == 'custom' else '#ffffff'
+    on_brand = _clean_hex(getattr(config, 'on_brand_color', ''), '#ffffff') if preset_key == 'custom' else '#ffffff'
     return {'brand': brand, 'accent': accent, 'on_brand': on_brand, 'brand_rgb': hex_to_rgb(brand, '0, 51, 160'),
             'logo_tone': _logo_tone(config)}
 

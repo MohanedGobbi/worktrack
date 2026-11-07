@@ -7,7 +7,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import rotate_token
 from django.contrib import messages
 from .models import SiteConfiguration, AllowedHost, BlockedHostAttempt
-from .forms import SiteConfigurationForm
+from .forms import SiteConfigurationForm, SiteThemeForm
 
 logger = logging.getLogger('django.security.csrf')
 
@@ -52,27 +52,55 @@ def is_super_admin(user):
 @user_passes_test(is_super_admin)
 @ensure_csrf_cookie
 def site_settings_view(request):
-    """View for updating site-wide settings."""
-    config = SiteConfiguration.objects.first()
-    if not config:
-        config = SiteConfiguration.objects.create()
+    """Site Settings: identity, theme colours, contact/footer, language and access."""
+    from users.models import SiteSettings
+    from core.context_processors import WT_SWATCHES, _wt_lang
+    ar = _wt_lang(request) == 'ar'
+
+    config = SiteConfiguration.objects.first() or SiteConfiguration.objects.create()
+    site = SiteSettings.get_settings()
 
     if request.method == 'POST':
-        form = SiteConfigurationForm(request.POST, request.FILES, instance=config)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Site settings updated successfully!")
+        form = SiteThemeForm(request.POST, request.FILES, instance=config)
+        lang = request.POST.get('default_language')
+        if form.is_valid() and lang in ('ar', 'en'):
+            obj = form.save(commit=False)
+            if request.POST.get('logo-clear') and not request.FILES.get('logo'):
+                obj.logo = None
+            if request.POST.get('banner_image-clear') and not request.FILES.get('banner_image'):
+                obj.banner_image = None
+            obj.save()
+            site.default_language = lang
+            site.allow_registration = request.POST.get('allow_registration') == 'on'
+            site.save()
+            messages.success(request, 'تم حفظ إعدادات الموقع.' if ar else 'Site settings saved.')
             return redirect('site-settings')
-        else:
-            messages.error(request, "Please correct the errors below.")
+        messages.error(request, 'يرجى مراجعة الحقول المحددة.' if ar else 'Please check the highlighted fields.')
     else:
-        form = SiteConfigurationForm(instance=config)
+        form = SiteThemeForm(instance=config)
+
+    # Colours the inputs start from: the saved custom colours, or the preset in use.
+    from core.context_processors import THEME_PRESET_COLORS
+    preset = config.theme_preset or 'rowd'
+    if request.method == 'POST':
+        start = {'brand': request.POST.get('primary_color', ''), 'accent': request.POST.get('accent_color', ''),
+                 'on_brand': request.POST.get('on_brand_color', '')}
+    elif preset == 'custom':
+        start = {'brand': config.primary_color, 'accent': config.accent_color, 'on_brand': config.on_brand_color}
+    else:
+        p = THEME_PRESET_COLORS.get(preset, THEME_PRESET_COLORS['rowd'])
+        start = {'brand': p['primary'], 'accent': p['accent'], 'on_brand': '#ffffff'}
 
     return render(request, 'pages/site_settings.html', {
         'form': form,
         'site_config': config,
+        'site_flags': site,
+        'ss_mode': form['theme_preset'].value() or 'rowd',
+        'ss_start': start,
+        'ss_swatches': WT_SWATCHES,
+        'ss_lang': request.POST.get('default_language') or site.default_language,
+        'ss_allow_registration': (request.POST.get('allow_registration') == 'on') if request.method == 'POST' else site.allow_registration,
     })
-
 
 
 @login_required

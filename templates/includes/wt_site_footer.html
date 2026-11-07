@@ -1,0 +1,11 @@
+{% comment %}
+  Per-install footer line (theme layer): footer text or the product name, then the contact details from Site
+  Settings. The ROWD credit is NOT part of this include; it stays in includes/rowd_credit.html beside it.
+{% endcomment %}<span class="wt-site-foot">
+    <span translate="no">&copy; {% now "Y" %} <span class="lang-en" dir="auto">{{ site_config.footer_text|default:site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar" dir="auto">{{ site_config.footer_text_ar|default:site_config.app_name_ar|default:site_config.app_name|default:"وورك تراك برو" }}</span></span>
+    {% if site_config.address or site_config.address_ar %}<span class="wt-site-foot-item" translate="no"><span class="lang-en" dir="auto">{{ site_config.address|default:site_config.address_ar }}</span><span class="lang-ar" dir="auto">{{ site_config.address_ar|default:site_config.address }}</span></span>{% endif %}
+    {% if site_config.contact_email %}<a class="wt-site-foot-item" href="mailto:{{ site_config.contact_email }}" dir="ltr">{{ site_config.contact_email }}</a>{% endif %}
+    {% if site_config.contact_phone %}<a class="wt-site-foot-item" href="tel:{{ site_config.contact_phone|cut:' ' }}" dir="ltr">{{ site_config.contact_phone }}</a>{% endif %}
+    {% if site_config.website_url %}<a class="wt-site-foot-item" href="{{ site_config.website_url }}" target="_blank" rel="noopener" dir="ltr">{{ site_config.website_url|cut:'https://'|cut:'http://'|cut:'www.' }}</a>{% endif %}
+    <a class="wt-site-foot-item" href="{% url 'submit-contact' %}"><span class="lang-en">Contact the administrator</span><span class="lang-ar">تواصل مع المشرف</span></a>
+</span>

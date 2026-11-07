@@ -111,6 +111,19 @@ class SiteConfiguration(models.Model):
     warning_color = models.CharField(max_length=50, default="#f59e0b", blank=True, help_text="Warning color")
     info_color = models.CharField(max_length=50, default="#0ea5e9", blank=True, help_text="Info indicator color")
     
+    # ── Theme model (what the WorkTrack design reads) ───────────────────────
+    # Brand = primary_color, accent = accent_color, plus the text colour on brand.
+    on_brand_color = models.CharField(max_length=20, default="#ffffff", help_text="Text and icon colour on the brand colour")
+
+    # ── Contact and footer (per install, both languages) ────────────────────
+    contact_email = models.EmailField(blank=True, default="", help_text="Public contact email shown in the footer")
+    contact_phone = models.CharField(max_length=40, blank=True, default="", help_text="Public contact phone shown in the footer")
+    website_url = models.URLField(blank=True, default="", help_text="Institution website")
+    address = models.CharField(max_length=255, blank=True, default="", help_text="Postal address (English)")
+    address_ar = models.CharField(max_length=255, blank=True, default="", help_text="Postal address (Arabic)")
+    footer_text = models.CharField(max_length=200, blank=True, default="", help_text="Footer line (English). Empty = product name")
+    footer_text_ar = models.CharField(max_length=200, blank=True, default="", help_text="Footer line (Arabic). Empty = product name")
+
     class Meta:
         verbose_name = "Site Configuration"
         verbose_name_plural = "Site Configuration"

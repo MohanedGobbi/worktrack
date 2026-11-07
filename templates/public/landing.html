@@ -120,8 +120,7 @@
             </div>
         </div>
         <div class="lp-legal">
-            <span>&copy; {% now "Y" %} <span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></span>
-            <a href="{% url 'submit-contact' %}"><span class="lang-en">Contact the administrator</span><span class="lang-ar">تواصل مع المشرف</span></a>
+            {% include 'includes/wt_site_footer.html' %}
         </div>
     </section>
 

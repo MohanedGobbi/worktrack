@@ -39,7 +39,7 @@
     <script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
 
     {% include 'includes/wt_theme.html' %}
-    <link href="{% static 'wt/app.css' %}?v=38" rel="stylesheet">
+    <link href="{% static 'wt/app.css' %}?v=41" rel="stylesheet">
 
     <script>
         window.__forceLanguageReload = {{ site_settings.force_language_reload|yesno:"true,false" }};
@@ -259,7 +259,7 @@
             </main>
 
             <footer id="main-footer" class="wt-footer">
-                <span>&copy; {% now "Y" %} <span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span> · <a href="{% url 'submit-contact' %}"><span class="lang-en">Contact the administrator</span><span class="lang-ar">تواصل مع المشرف</span></a></span>
+                {% include 'includes/wt_site_footer.html' %}
                 {% include 'includes/rowd_credit.html' with variant='light' %}
             </footer>
         </div>
