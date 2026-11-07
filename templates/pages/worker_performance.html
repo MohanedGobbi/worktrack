@@ -53,7 +53,7 @@
                         <b><span class="lang-en">{{ p.en }}</span><span class="lang-ar">{{ p.ar }}</span></b>
                         <span class="wt-ks-weight"><span class="lang-en">weight</span><span class="lang-ar">الوزن</span> <span class="wt-num">{{ p.weight }}%</span></span>
                     </div>
-                    <span class="wt-ks-bar" role="img" aria-label="{{ p.value }}%"><i style="--p: {{ p.value|stringformat:'s' }}%;"></i></span>
+                    <span class="wt-ks-bar" role="img" aria-label="{{ p.value|stringformat:'s' }}%"><i style="--p: {{ p.value|stringformat:'s' }}%;"></i></span>
                     <span class="wt-ks-part-val"><span class="wt-num">{{ p.value|floatformat:"-1" }}%</span> <small><span class="lang-en">adds</span><span class="lang-ar">تضيف</span> <span class="wt-num">{{ p.points|floatformat:"-1" }}</span></small></span>
                 </li>
                 {% endfor %}
@@ -105,7 +105,7 @@
             <ul class="wt-ks-reviews">
                 {% for s in recent_reviews %}
                 <li>
-                    <span class="wt-up-dot" style="--mc: {{ s.task.work_module.color|default:'var(--wt-brand)' }};" aria-hidden="true"></span>
+                    <span class="wt-up-dot" style="--mc: {{ s.wt_color|default:'var(--wt-brand)' }};" aria-hidden="true"></span>
                     <span class="wt-ks-rv-main">
                         <a class="wt-cell-link" href="{% url 'submission-detail' s.id %}" dir="auto" translate="no">{{ s.task.title }}</a>
                         <small><span class="wt-num">{{ s.wt_reviewed|date:"j/n/Y" }}</span>{% if s.task.work_module %} · <span dir="auto" translate="no">{{ s.task.work_module.name }}</span>{% endif %}</small>

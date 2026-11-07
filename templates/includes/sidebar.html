@@ -135,6 +135,7 @@
 
 <ul class="modern-sidebar-nav">
   <!-- Core Layout -->
+  {% if sb_rules.global_map != False %}
   <li class="modern-nav-item mb-4 mt-2">
     <a href="{% url 'global-map' %}" class="modern-nav-link" style="background: linear-gradient(145deg, color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent), var(--wt-brand-soft)); border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);">
       <div class="icon-box" style="background: var(--sidebar-primary-val); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
@@ -145,6 +146,7 @@
       </span>
     </a>
   </li>
+  {% endif %}
 
   <li class="modern-nav-item mt-3 mb-2">
     <a href="{% url 'available-modules' %}" class="modern-nav-link" style="background: var(--wt-brand-soft); border: 1px dashed color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);">

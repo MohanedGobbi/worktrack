@@ -3638,11 +3638,13 @@
                     <button type="button" class="btn btn-sm rounded-pill app-layout-btn" data-layout="list" onclick="setModuleLayout('list')" title="List View">
                         <i class="fas fa-list"></i>
                     </button>
+{% if sb_rules.roadmap != False %}
                     <div class="vr mx-1" style="opacity: 0.15; height: 20px;"></div>
                     <a href="{% url 'roadmap-gantt' %}" class="btn btn-sm rounded-pill"
                         title="Operational Roadmap (Full Page)" style="border: none; background: transparent; color: var(--color-primary, #10b981);">
                         <i class="fas fa-project-diagram"></i>
                     </a>
+{% endif %}
                 </div>
 
                 <!-- Item 6: New Module button - black text, follows system style -->

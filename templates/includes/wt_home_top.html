@@ -24,9 +24,9 @@
                     <li><a class="dropdown-item" href="{% url 'submission-list' %}"><i class="fas fa-folder-open"></i><span class="lang-en">All submissions</span><span class="lang-ar">كل التقديمات</span></a></li>
                     <li><a class="dropdown-item" href="{% url 'task-list' %}"><i class="fas fa-list-check"></i><span class="lang-en">All tasks</span><span class="lang-ar">كل المهام</span></a></li>
                     <li><a class="dropdown-item" href="{% url 'admin-correspondence' %}"><i class="fas fa-envelope-open-text"></i><span class="lang-en">Correspondence</span><span class="lang-ar">المراسلات</span></a></li>
-                    <li><a class="dropdown-item" href="{% url 'template-dashboard' %}"><i class="fas fa-cubes"></i><span class="lang-en">Module templates</span><span class="lang-ar">قوالب الوحدات</span></a></li>
+{% if sb_rules.templates != False %}                    <li><a class="dropdown-item" href="{% url 'template-dashboard' %}"><i class="fas fa-cubes"></i><span class="lang-en">Module templates</span><span class="lang-ar">قوالب الوحدات</span></a></li>{% endif %}
                     <li><a class="dropdown-item" href="{% url 'archived-modules' %}"><i class="fas fa-box-archive"></i><span class="lang-en">Archived modules</span><span class="lang-ar">الوحدات المؤرشفة</span></a></li>
-                    <li><a class="dropdown-item" href="{% url 'offline-map-manager' %}"><i class="fas fa-map-location-dot"></i><span class="lang-en">Offline maps</span><span class="lang-ar">الخرائط دون اتصال</span></a></li>
+{% if sb_rules.offline_maps != False %}                    <li><a class="dropdown-item" href="{% url 'offline-map-manager' %}"><i class="fas fa-map-location-dot"></i><span class="lang-en">Offline maps</span><span class="lang-ar">الخرائط دون اتصال</span></a></li>{% endif %}
                     <li><a class="dropdown-item" href="{% url 'attendance-dashboard' %}"><i class="fas fa-clock"></i><span class="lang-en">Attendance</span><span class="lang-ar">الحضور</span></a></li>
                     {% if user.role == 'super_admin' or user.role == 'manager' %}
                     <li><hr class="dropdown-divider"></li>

@@ -16,6 +16,7 @@ from core.views import (
     site_settings_view, host_management_view, toggle_host_status, 
     whitelist_host_action, delete_host_action
 )
+from core.features import feature_required
 from core.views_translations import (
     translation_manager, api_update_translation, api_bulk_update_translations, api_manage_translations,
 )
@@ -118,7 +119,7 @@ urlpatterns = [
     
     # Dashboard routes
     path('dashboard/', dashboard, name='dashboard'),
-    path('roadmap/', roadmap_gantt, name='roadmap-gantt'),
+    path('roadmap/', feature_required('roadmap')(roadmap_gantt), name='roadmap-gantt'),
     path('manager-portal/', manager_portal, name='manager-portal'),
     path('worker-portal/', worker_portal, name='worker-portal'),
     path('modules/available/', available_modules, name='available-modules'),
@@ -138,12 +139,12 @@ urlpatterns = [
     path('module/reorder/update/', update_module_order, name='update-module-order'),
     path('groups/reorder/update/', update_group_order, name='update-group-order'),
     path('modules/archived/', archived_modules, name='archived-modules'),
-    path('templates/', template_dashboard, name='template-dashboard'),
-    path('templates/create/', template_create, name='template-create'),
-    path('templates/edit/<int:template_id>/', template_edit, name='template-edit'),
-    path('templates/delete/<int:template_id>/', template_delete, name='template-delete'),
-    path('templates/bulk-delete/', template_bulk_delete, name='template-bulk-delete'),
-    path('templates/manage/<int:template_id>/', template_tasks_manage, name='template-tasks-manage'),
+    path('templates/', feature_required('templates')(template_dashboard), name='template-dashboard'),
+    path('templates/create/', feature_required('templates')(template_create), name='template-create'),
+    path('templates/edit/<int:template_id>/', feature_required('templates')(template_edit), name='template-edit'),
+    path('templates/delete/<int:template_id>/', feature_required('templates')(template_delete), name='template-delete'),
+    path('templates/bulk-delete/', feature_required('templates')(template_bulk_delete), name='template-bulk-delete'),
+    path('templates/manage/<int:template_id>/', feature_required('templates')(template_tasks_manage), name='template-tasks-manage'),
     path('correspondence/', administrative_correspondence, name='admin-correspondence'),
     path('correspondence/create/', correspondence_create, name='correspondence-create'),
     path('correspondence/<int:pk>/', correspondence_detail, name='correspondence-detail'),
@@ -180,7 +181,7 @@ urlpatterns = [
     path('tasks/todos/files/<int:file_id>/delete/', task_todo_delete_file, name='task-todo-delete-file'),
     
     # Module TODO routes (Standalone Management)
-    path('todos/<str:module_slug>/manage/', corr_todo_management, name='module-todo-management'),
+    path('todos/<str:module_slug>/manage/', feature_required('todo_management')(corr_todo_management), name='module-todo-management'),
     path('todos/<str:module_slug>/add/', corr_todo_add, name='module-todo-add'),
     path('todos/<str:module_slug>/list-ajax/', corr_todo_list_ajax, name='module-todo-list-ajax'),
     path('todos/<int:todo_id>/update/', corr_todo_update, name='module-todo-update'),
@@ -191,7 +192,7 @@ urlpatterns = [
     path('todos/files/<int:file_id>/delete/', module_todo_delete_file, name='module-todo-delete-file'),
     
     # General Organizational Intelligence Dedicated Management Hub (Item 7)
-    path('organizational-intelligence/', organizational_intelligence_view, name='organizational-intelligence'),
+    path('organizational-intelligence/', feature_required('org_intelligence')(organizational_intelligence_view), name='organizational-intelligence'),
     
     # Task Quick Complete (Item 14)
     path('tasks/<int:task_id>/quick-complete/', task_toggle_complete_ajax, name='task-quick-complete'),
@@ -232,7 +233,7 @@ urlpatterns = [
     path('management/users/', user_management, name='user-management'),
     path('admin-dashboard/users/data/<int:user_id>/', get_user_data, name='get-user-data'),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
-    path('translations/', translation_manager, name='translation-manager'),
+    path('translations/', feature_required('translations')(translation_manager), name='translation-manager'),
     path('translations/api/update/', api_update_translation, name='api-update-translation'),
     path('translations/api/bulk-update/', api_bulk_update_translations, name='api-bulk-update-translations'),
     path('translations/api/manage/', api_manage_translations, name='api-manage-translations'),
@@ -244,7 +245,7 @@ urlpatterns = [
     path('admin-dashboard/site-settings/', site_settings_view, name='site-settings'),
     
     # Host Management UI
-    path('admin-dashboard/host-management/', host_management_view, name='host-management'),
+    path('admin-dashboard/host-management/', feature_required('host_management')(host_management_view), name='host-management'),
     path('management/hosts/<int:host_id>/toggle/', toggle_host_status, name='toggle-host-status'),
     path('management/hosts/<int:host_id>/delete/', delete_host_action, name='delete-host-action'),
     path('management/hosts/whitelist/<int:attempt_id>/', whitelist_host_action, name='whitelist-host-action'),
@@ -281,13 +282,13 @@ urlpatterns = [
     path('tasks/bulk-action/', task_bulk_action, name='task-bulk-action'),
     # Submission versions
     path('tasks/<int:task_id>/submission-versions/', submission_versions, name='submission-versions'),
-    path('management/version-archive/', version_data_archive, name='version-data-archive'),
+    path('management/version-archive/', feature_required('version_archive')(version_data_archive), name='version-data-archive'),
     # Offline Map Hub
-    path('management/offline-maps/', offline_map_manager, name='offline-map-manager'),
+    path('management/offline-maps/', feature_required('offline_maps')(offline_map_manager), name='offline-map-manager'),
     path('map-tiles/<str:layer_type>/<int:z>/<int:x>/<int:y>.png', map_tile_proxy, name='map-tile-proxy'),
     
     # Global Map Dashboard
-    path('global-map/', global_map, name='global-map'),
+    path('global-map/', feature_required('global_map')(global_map), name='global-map'),
     
     # System & Database Reset Engine (Super Admin Quick Tool)
     path('management/reset-database/', reset_database_ajax, name='reset-database-ajax'),
@@ -298,13 +299,15 @@ urlpatterns = [
     path('email-manager/', include('notifications.urls')),
 ]
 
+from core.features import safe_media_serve
+
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += [re_path(r'^(?:.*/)?media/(?P<path>.*)$', safe_media_serve, {'document_root': settings.MEDIA_ROOT})]
 else:
     from django.views.static import serve
     urlpatterns += [
-        re_path(r'^(?:.*/)?media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+        re_path(r'^(?:.*/)?media/(?P<path>.*)$', safe_media_serve, {'document_root': settings.MEDIA_ROOT}),
         re_path(r'^(?:.*/)?static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
     ]
 

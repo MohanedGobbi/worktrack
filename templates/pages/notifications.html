@@ -141,6 +141,12 @@
     function setUnread(n) {
         if (typeof n !== 'number') return;
         document.querySelectorAll('[data-unread-count]').forEach(el => { el.textContent = n; });
+        if (n === 0) {
+            const sum = document.getElementById('nt-summary');
+            if (sum) sum.innerHTML = '<span class="lang-en">You\'re all caught up.</span><span class="lang-ar">لا جديد، اطّلعت على كل شيء.</span>';
+            const all = document.querySelector('form[action$="mark-all-as-read/"]');
+            if (all) all.closest('.wt-home-actions').remove();
+        }
         const badge = document.getElementById('notif-badge');
         if (badge) badge.style.display = n === 0 ? 'none' : '';  // the shell badge is a dot
     }
@@ -177,11 +183,11 @@
     }));
 
     // Opening a notification marks it read; the link still navigates normally.
-    document.querySelectorAll('.wt-nt-row.is-unread [data-open]').forEach(a => a.addEventListener('click', () => {
+    document.querySelectorAll('.wt-nt-row.is-unread [data-open]').forEach(a => ['click', 'auxclick'].forEach(ev => a.addEventListener(ev, () => {
         const row = a.closest('.wt-nt-row');
         const f = row.querySelector('[data-nt-action="read"]');
         if (f) post(f.action).catch(() => {});
-    }));
+    })));
 })();
 </script>
 {% endblock %}

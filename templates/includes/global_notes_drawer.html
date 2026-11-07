@@ -16,9 +16,11 @@
             <span class="lang-ar">الملاحظات وقائمة المهام</span>
         </h5>
         <div class="d-flex align-items-center gap-2">
+{% if sb_rules.org_intelligence != False %}
             <a href="{% url 'organizational-intelligence' %}" class="btn btn-sm btn-light border rounded-pill px-2 py-1 text-muted" title="Open Full View" style="font-size: 0.72rem;">
                 <i class="fas fa-external-link-alt"></i>
             </a>
+{% endif %}
             <button type="button" class="wp-notes-close" onclick="toggleStrategicDrawer(true)" aria-label="Close">
                 <i class="fas fa-times"></i>
             </button>

@@ -771,6 +771,7 @@
             </div>
 
             <!-- Tool: Translation Manager -->
+            {% if sb_rules.translations != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="translation manager i18n languages إدارة الترجمة">
                 <a href="{% url 'translation-manager' %}" class="cmd-tool-card tint-red">
                     <div class="cmd-tool-icon"><i class="fas fa-language"></i></div>
@@ -778,6 +779,7 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Central UI Text</span><span class="lang-ar">نصوص الواجهات</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Worker Portal -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="worker portal tasks بوابة الموظف">
@@ -870,6 +872,7 @@
             </div>
 
             <!-- Tool: Offline Map Hub -->
+            {% if sb_rules.offline_maps != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="offline map manager gis الخرائط">
                 <a href="{% url 'offline-map-manager' %}" class="cmd-tool-card tint-indigo">
                     <div class="cmd-tool-icon"><i class="fas fa-map-marked-alt"></i></div>
@@ -877,8 +880,10 @@
                     <div class="cmd-tool-sub"><span class="lang-en">GIS Batch Caching</span><span class="lang-ar">التخزين الجغرافي</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Security & Hosts -->
+            {% if sb_rules.host_management != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="security hosts access الأمان والمضيفين">
                 <a href="{% url 'host-management' %}" class="cmd-tool-card tint-red">
                     <div class="cmd-tool-icon"><i class="fas fa-shield-alt"></i></div>
@@ -886,6 +891,7 @@
                     <div class="cmd-tool-sub"><span class="lang-en">IP Access Control</span><span class="lang-ar">حماية العناوين</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Detailed Audit -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="audit logs system activity سجل التدقيق">
@@ -906,6 +912,7 @@
             </div>
 
             <!-- Tool: Messaging Config -->
+            {% if sb_rules.messenger_admin != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="messaging config chat permissions channels تهيئة المحادثات الصلاحيات">
                 <a href="{% url 'messaging:config' %}" class="cmd-tool-card tint-blue">
                     <div class="cmd-tool-icon"><i class="fas fa-comment-dots"></i></div>
@@ -913,8 +920,10 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Chat Permissions</span><span class="lang-ar">قنوات وتصاريح الدردشة</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Global GIS Operations Map -->
+            {% if sb_rules.global_map != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="global gis map spatial operations tracking الخريطة الجغرافية العمليات">
                 <a href="{% url 'global-map' %}" class="cmd-tool-card tint-emerald">
                     <div class="cmd-tool-icon"><i class="fas fa-globe-africa"></i></div>
@@ -922,8 +931,10 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Operations Map</span><span class="lang-ar">مركز العمليات الحي</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Task Templates Hub -->
+            {% if sb_rules.templates != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="task templates pipelines workflows automation قوالب المهام النماذج">
                 <a href="{% url 'template-dashboard' %}" class="cmd-tool-card tint-purple">
                     <div class="cmd-tool-icon"><i class="fas fa-cubes-stacked"></i></div>
@@ -931,6 +942,7 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Pipelines & SOPs</span><span class="lang-ar">نماذج ومسارات العمل</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Administrative Correspondence -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="administrative correspondence official letters memos المراسلات الإدارية الخطابات">
@@ -942,6 +954,7 @@
             </div>
 
             <!-- Tool: Todo Notes Hub -->
+            {% if sb_rules.org_intelligence != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="todo notes action items directives الملاحظات المهام">
                 <a href="{% url 'organizational-intelligence' %}" class="cmd-tool-card tint-indigo">
                     <div class="cmd-tool-icon"><i class="fas fa-clipboard-check"></i></div>
@@ -949,6 +962,7 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Action Items</span><span class="lang-ar">قوائم المهام المركزية</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: KPI Telemetry & Analytics Hub -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="kpi dashboard telemetry analytics institutional metrics مؤشرات الأداء">
@@ -960,6 +974,7 @@
             </div>
 
             <!-- Tool: Version Data Archive -->
+            {% if sb_rules.version_archive != False %}
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="version data archive revision history audit logs أرشيف الإصدارات">
                 <a href="{% url 'version-data-archive' %}" class="cmd-tool-card tint-slate">
                     <div class="cmd-tool-icon"><i class="fas fa-history"></i></div>
@@ -967,6 +982,7 @@
                     <div class="cmd-tool-sub"><span class="lang-en">Revision Logs</span><span class="lang-ar">سجل النسخ والتعديلات</span></div>
                 </a>
             </div>
+            {% endif %}
 
             <!-- Tool: Site Settings -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="site settings config إعدادات الموقع">

@@ -6658,9 +6658,17 @@ def worker_performance(request):
     ]
     history = []
     current_parts = []
+    from django.core.cache import cache
     for i, month in enumerate(months):
-        engine = KPICalculationEngine(target_user, month)
-        values = {key: max(0.0, min(100.0, float(getattr(engine, fn)() or 0))) for key, _, _, _, fn in parts_def}
+        cache_key = f'wt-kpi-{target_user.id}-{month:%Y%m}-{int(w.updated_at.timestamp())}'
+        values = cache.get(cache_key) if i < len(months) - 1 else None  # past months may be a few minutes old
+        if values is None:
+            # Build the engine without its per-instance weights lookup (the weights are already loaded).
+            engine = KPICalculationEngine.__new__(KPICalculationEngine)
+            engine.user, engine.month, engine.weights = target_user, month, w
+            values = {key: max(0.0, min(100.0, float(getattr(engine, fn)() or 0))) for key, _, _, _, fn in parts_def}
+            if i < len(months) - 1:
+                cache.set(cache_key, values, 300)
         total = round(min(100.0, sum(values[key] * weight for key, _, _, weight, _ in parts_def)), 1)
         history.append({'month': month, 'label_en': month.strftime('%b'), 'label_ar': _AR_MONTHS[month.month - 1],
                         'score': total, 'is_current': i == len(months) - 1})
@@ -6695,6 +6703,11 @@ def worker_performance(request):
     recent_reviews = (subs.filter(Q(reviewed_at__isnull=False) | Q(score__isnull=False) | Q(status__in=['approved', 'rejected']))
                       .select_related('task', 'task__work_module')
                       .annotate(wt_reviewed=Coalesce('reviewed_at', 'updated_at')).order_by('-wt_reviewed')[:8])
+
+    import re as _re
+    for r in recent_reviews:
+        c = getattr(r.task.work_module, 'color', '') or ''
+        r.wt_color = c if _re.fullmatch(r'#[0-9a-fA-F]{3,8}', c) else ''
 
     context = {
         'target_user': target_user,
@@ -6787,21 +6800,33 @@ def profile_avatar_upload(request):
     if avatar_file.size > 5 * 1024 * 1024:
         messages.error(request, _say(request, 'The photo must be under 5 MB.', 'يجب أن يكون حجم الصورة أقل من 5 ميغابايت.'))
         return redirect('profile')
+    # Decode and re-encode: the stored file is a clean image under a server-made name, so nothing the
+    # uploader appended (HTML, scripts) survives and the extension cannot choose the served content type.
+    import uuid
+    from io import BytesIO
+    from django.core.files.base import ContentFile
     try:
-        from PIL import Image
+        from PIL import Image, ImageOps
         with Image.open(avatar_file) as im:
-            fmt = (im.format or '').upper()
-            im.verify()
-        avatar_file.seek(0)
+            if (im.format or '').upper() not in ('JPEG', 'PNG', 'GIF', 'WEBP'):
+                raise ValueError('format')
+            im = ImageOps.exif_transpose(im)
+            im.thumbnail((512, 512))
+            has_alpha = im.mode in ('RGBA', 'LA', 'P')
+            out = BytesIO()
+            if has_alpha:
+                im.convert('RGBA').save(out, 'PNG')
+                ext = 'png'
+            else:
+                im.convert('RGB').save(out, 'JPEG', quality=88)
+                ext = 'jpg'
     except Exception:
-        fmt = ''
-    if fmt not in ('JPEG', 'PNG', 'GIF', 'WEBP'):
         messages.error(request, _say(request, 'Use a JPEG, PNG, GIF or WebP image.', 'استخدم صورة بصيغة JPEG أو PNG أو GIF أو WebP.'))
         return redirect('profile')
     if profile_obj.avatar:
         try: profile_obj.avatar.delete(save=False)
         except Exception: pass
-    profile_obj.avatar = avatar_file
+    profile_obj.avatar.save(f'{uuid.uuid4().hex}.{ext}', ContentFile(out.getvalue()), save=False)
     profile_obj.save()
     messages.success(request, _say(request, 'Photo updated.', 'تم تحديث الصورة.'))
     return redirect('profile')

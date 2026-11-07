@@ -1,16 +1,17 @@
 from django.urls import path
+from core.features import feature_required
 from . import views
 
 app_name = 'messaging'
 
 urlpatterns = [
     path('', views.messenger_page, name='index'),
-    path('config/', views.messaging_config, name='config'),
+    path('config/', feature_required('messenger_admin')(views.messaging_config), name='config'),
     path('update-permission/', views.update_chat_permission, name='update-permission'),
-    path('inspect/<int:user_id>/', views.user_message_log, name='user-message-log'),
-    path('inspect/conv/<int:conv_id>/messages/', views.admin_inspect_conversation, name='admin-inspect-conv'),
-    path('inspect/<int:user_id>/activity/', views.admin_user_activity, name='admin-user-activity'),
-    path('inspect/<int:user_id>/search/', views.admin_inspect_search, name='admin-inspect-search'),
+    path('inspect/<int:user_id>/', feature_required('messenger_admin')(views.user_message_log), name='user-message-log'),
+    path('inspect/conv/<int:conv_id>/messages/', feature_required('messenger_admin')(views.admin_inspect_conversation), name='admin-inspect-conv'),
+    path('inspect/<int:user_id>/activity/', feature_required('messenger_admin')(views.admin_user_activity), name='admin-user-activity'),
+    path('inspect/<int:user_id>/search/', feature_required('messenger_admin')(views.admin_inspect_search), name='admin-inspect-search'),
 
 
     path('api/contacts/', views.get_contacts, name='api-get-contacts'),

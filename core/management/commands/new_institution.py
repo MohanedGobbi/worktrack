@@ -121,9 +121,9 @@ class Command(BaseCommand):
                 raise CommandError(f'Role "{role["name"]}": unknown privileges {sorted(bad)}. Valid: {sorted(valid)}')
             role['color'] = _hex(role.get('color'), f'role {role["name"]} color')
         known = {k for k, *_ in self._sidebar_keys(SidebarVisibilityRule)}
-        unknown = set(cfg.get('hide_sidebar') or []) - known
+        unknown = (set(cfg.get('hide_sidebar') or []) | set(cfg.get('show_sidebar') or [])) - known
         if unknown:
-            raise CommandError(f'hide_sidebar: unknown keys {sorted(unknown)}. Valid: {sorted(known)}')
+            raise CommandError(f'hide_sidebar / show_sidebar: unknown keys {sorted(unknown)}. Valid: {sorted(known)}')
         admin = cfg.get('admin') or {}
         if admin and not admin.get('email'):
             raise CommandError('admin.email is required when an admin is given.')
@@ -250,11 +250,14 @@ class Command(BaseCommand):
         from users.models import SidebarVisibilityRule
 
         hide = cfg.get('hide_sidebar')
-        if hide is None:
+        if hide is None and not cfg.get('show_sidebar'):
             return []
+        hide = hide or []
+        show = cfg.get('show_sidebar') or []
         SidebarVisibilityRule.objects.filter(feature_key__in=hide).update(is_allowed=False)
-        SidebarVisibilityRule.objects.exclude(feature_key__in=hide).filter(is_allowed=False).update(is_allowed=True)
-        return [f'Sidebar hidden: {", ".join(hide) or "nothing"}']
+        # Features the v1 defaults keep off (maps, roadmap, templates, ...) stay off unless named in show_sidebar.
+        SidebarVisibilityRule.objects.filter(feature_key__in=show).update(is_allowed=True)
+        return [f'Sidebar hidden: {", ".join(hide) or "nothing"}; switched on: {", ".join(show) or "nothing"}']
 
     def _admin(self, cfg, opts, out):
         from users.models import CustomUser
