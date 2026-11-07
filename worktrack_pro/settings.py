@@ -11,7 +11,7 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 import sys as _sys
-_TESTING = len(_sys.argv) > 1 and _sys.argv[1] == 'test'
+_TESTING = (len(_sys.argv) > 1 and _sys.argv[1] == 'test') or 'pytest' in _sys.modules
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Off unless .env says DEBUG=True (local development only).
@@ -269,7 +269,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://0.0.0.0:8000', 'http://0.0.0.0',
     'https://localhost:8000', 'https://127.0.0.1:8000',
 ]
-_env_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+_env_origins = config('CSRF_TRUSTED_ORIGINS', default='')
 if _env_origins:
     CSRF_TRUSTED_ORIGINS.extend([o.strip() for o in _env_origins.split(',') if o.strip()])
 
@@ -290,7 +290,7 @@ CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Crash-Proof HTTPS Cookie Enforcer
-_env_secure = str(os.getenv('SECURE_COOKIES', 'False')).lower()
+_env_secure = str(config('SECURE_COOKIES', default='False')).lower()
 CSRF_COOKIE_SECURE = _env_secure in ('true', '1', 't', 'y', 'yes')
 SESSION_COOKIE_SECURE = _env_secure in ('true', '1', 't', 'y', 'yes')
 

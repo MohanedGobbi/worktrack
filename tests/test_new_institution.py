@@ -63,3 +63,25 @@ class NewInstitutionTests(TestCase):
         self.assertIn('Dry run', out)
         self.assertFalse(CustomUser.objects.filter(email='d@x.test').exists())
         self.assertFalse(SiteConfiguration.objects.filter(app_name='Dry').exists())
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix='wt-test-media-'))
+class NewInstitutionSafetyTests(TestCase):
+    def test_dry_run_writes_no_logo_file(self):
+        from django.conf import settings
+        from PIL import Image
+        with tempfile.TemporaryDirectory() as d:
+            Image.new('RGB', (10, 10)).save(Path(d) / 'l.png')
+            call_command('new_institution', '--name', 'D', '--logo', str(Path(d) / 'l.png'), '--dry-run', stdout=StringIO())
+        self.assertFalse(any(Path(settings.MEDIA_ROOT).rglob('*.png')))
+
+    def test_password_not_silently_dropped(self):
+        call_command('new_institution', '--name', 'P', '--admin-email', 'p@x.test', '--admin-password', 'First-pass-1', stdout=StringIO())
+        out = StringIO()
+        call_command('new_institution', '--name', 'P', '--admin-email', 'p@x.test', '--admin-password', 'Other-pass-2', stdout=out)
+        self.assertIn('NOT applied', out.getvalue())
+        self.assertTrue(CustomUser.objects.get(email='p@x.test').check_password('First-pass-1'))
+
+    def test_real_error_in_dry_run_is_raised(self):
+        with self.assertRaises(CommandError):
+            call_command('new_institution', '--name', 'E', '--brand', 'nope', '--accent', '#000', '--dry-run', stdout=StringIO())

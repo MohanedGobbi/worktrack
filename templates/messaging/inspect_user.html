@@ -144,7 +144,7 @@ let KW = JSON.parse(localStorage.getItem('ghost_kw')||'null') || [...DEF_KW];
               <span style="font-size:11px;color:#94a3b8;flex-shrink:0">{{ conv.updated_at|timesince|slice:":8" }}</span>
             </div>
             <div style="font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-              {% if lm %}{{ lm.content|truncatechars:40 }}{% else %}<em>No messages</em>{% endif %}
+              {% if lm %}{{ lm.content|striptags|truncatechars:40 }}{% else %}<em>No messages</em>{% endif %}
             </div>
           </div>
           <span style="font-size:11px;font-weight:800;color:#137fec;background:#eff6ff;padding:3px 8px;border-radius:99px;flex-shrink:0">{{ conv.msg_count }}</span>

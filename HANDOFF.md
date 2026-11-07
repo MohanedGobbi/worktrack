@@ -1,6 +1,6 @@
 # Handoff: WorkTrack Pro UI rework
 
-Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and `DESIGN.md` (the design system).
+Last updated: 2026-11-07 (after Sprint 1). Read this first, then `PRODUCT.md` (product truth) and `DESIGN.md` (the design system).
 
 ---
 
@@ -16,12 +16,23 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 - **Mechanical restyles may go to a cheaper model**; keep security, Site Settings and anything touching data with the strongest model.
 - Commit after each page; push only when the owner asks.
 
-### Sprint 1: sale blockers
+### Sprint 1: sale blockers — DONE 2026-11-07 (see "Sprint 1 results" below)
 1. **Server-side cleaning of user text.** Message content is stored raw; the messenger now sanitizes on screen, but the server should too (messages, task comments, submission notes and feedback, todo text, correspondence). Then grep every template and script for user data inserted with `innerHTML` / `|safe` and fix what is found.
 2. **Production readiness:** fix the 2 failing tests (`tests.test_creation_fix`: static manifest during tests, and `task_create` crashing on a non-numeric `estimated_hours`); check `DEBUG`, `ALLOWED_HOSTS`, `collectstatic` with the manifest storage, secret key from `.env`.
 3. **Translation table:** owner decision pending. Proposal: delete the 3,185 machine rows (`TranslationItem` with key starting `auto.`); template pairs already carry both languages.
 4. **Site Settings rebuild** around the theme model: product name EN/AR, logo, brand / accent / on-brand colours (plus preview), contact and footer details, default language. Replace the old ~40-colour editor. This is what makes the product white-label.
 5. **"New institution" management command:** name, logo, colours, default language, roles, departments, first admin user.
+
+### Sprint 1 results
+- **Cleaning on save:** `core/sanitize.py` (`clean_text`, `clean_rich`, `script_json`) + `core/signals.py` (`CLEAN_FIELDS`: one map of model → fields, connected in `CoreConfig.ready`). Messages keep the messenger allowlist (b, strong, i, em, br, safe links); everything else listed is plain text. `QuerySet.update()` bypasses it. `manage.py clean_user_text [--apply]` cleans rows saved before (0 rows in the dev DB).
+- **Sinks fixed:** emails no longer compile user text as template code (it was server-side template injection); JSON islands use `script_json`; shell search/toast/confirm are text-only (`window.wtEsc` is defined in `<head>` for page scripts); plus the per-page fixes listed in commit `fb06306`. Rule for new code: build HTML with `wtEsc()`/`esc()` or `textContent`, and put institution or user text that sits in `lang-en`/`lang-ar` pairs under `translate="no"` (the translation middleware rewrites matching pairs).
+- **Production:** `DEBUG` defaults to False; the server refuses to start without `SECRET_KEY` unless `DEBUG=True` or testing. Local `.env` holds `DEBUG=True` (gitignored). `.env.example` lists every install setting. `collectstatic` works with the manifest storage (tests and DEBUG use plain storage). `ALLOWED_HOSTS` stays `*` by default because hosts are checked by `DynamicHostMiddleware`. On Windows run collectstatic with `PYTHONIOENCODING=utf-8`.
+- **Tests:** 73 pass, 1 skipped (sidebar module paging: the feature is not in any template; `base.html` still has its dead JS). Messenger unread count had a real bug on coarse clocks (first message counted as read), fixed in `Message.save`.
+- **Translation table:** not touched (owner decision: delete `auto.` rows in Sprint 4). Also found: a row maps "العربية" to `missing_arabic` in English mode; delete it in that cleanup.
+- **Site Settings** (`/admin-dashboard/site-settings/`): rebuilt on wt parts. Identity (name EN/AR, logo, banner), Colours ("ROWD default" or "Your colours": brand, accent, text on brand, with swatches and a contrast check), Contact & footer (email, phone, website, address EN/AR, footer line EN/AR, shown on every page through `includes/wt_site_footer.html`), Language & access. Live preview of the shell on the end side. Model fields added in migration 0026 (`on_brand_color` replaces the use of `button_text_color`). The ~40 legacy colour columns remain in the DB but are no longer edited; old pages that still read them keep their current values.
+- **`manage.py new_institution`**: `--config file.json` and/or flags; see `docs/institution.example.json`. One transaction, `--dry-run`, safe to re-run, prints a generated admin password once.
+- **Independent review** (one for the sprint) found 10 issues; all fixed in the last Sprint 1 commit: `clean_rich` crashed on nested `<svg>/<template>` content; `clean_text` ate text like `x<y` (now only well-formed tags are removed, a stray `<` stays as text); `.env` values for `CSRF_TRUSTED_ORIGINS`/`SECURE_COOKIES` were ignored (read with `os.getenv`); `new_institution --dry-run` wrote the logo file and a given password was silently ignored for an existing admin (now warned; `WT_ADMIN_PASSWORD` env var supported); stored email templates had the first message frozen in (migration `notifications.0005`); global map popups and dashboard calendar titles were unescaped; conversation previews now strip tags; an invalid Site Settings POST showed unsaved values in the shell.
+- **Known gap found:** page banners always use white text, so a very light brand colour makes banner text hard to read (the preview shows it). Consider deriving banner text from `--wt-on-brand` when doing the Signal Blue work.
 
 ### Sprint 2: finish Phase 1
 `notifications`, `profile`, `worker_performance`, built from the existing parts, no layout questions.
@@ -34,7 +45,7 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 
 ### Sprint 4: release
 - One independent review over everything rebuilt since the worker home (tasks, submissions, module page, messenger, Sprint 2 and 3 pages); fix what it finds.
-- Install checklist for cPanel/Passenger (subpath, cookies, static, media, backups, first admin) and a demo-data seed so the product demos well.
+- Install checklist for cPanel/Passenger (subpath, cookies, static, media, backups, first admin via `new_institution`, and `manage.py clean_user_text --apply` once on any install upgraded from before Sprint 1) and a demo-data seed so the product demos well.
 - Delete the machine-made translation rows (see owner decisions).
 - Tag `v1.0`.
 
@@ -103,6 +114,7 @@ Glossary / terminology table, editable landing and sign-in copy, the University 
 - **`templates/messaging/messenger.html`** is not referenced anywhere (probably dead).
 - **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you". (Worker `tester@test.local`, pk 165, now has 8 dated demo tasks covering every worker-home group, one sent back and one waiting for review.)
 - **Notes for workers.** The todo endpoints (`corr_todo_*`) were manager-only, so the shell notes drawer never worked for workers. Now `_can_use_todos` lets anyone manage their own general (module-less) notes; module to-dos stay manager-only. Managers can still edit any todo by id (pre-existing, unchanged).
+- ~~Server-side cleaning, production settings, Site Settings, new-institution command~~ Done in Sprint 1.
 - **Stale demo passwords.** The accounts in `docs/guides/USER_CREDENTIALS_REFERENCE.md` no longer match the database.
 
 ## 2b. Customization requirement (applies to ALL remaining work)
@@ -138,6 +150,7 @@ Planned work for this: (a) a terminology/glossary table and template tag; (b) ed
 .venv/Scripts/python manage.py runserver 127.0.0.1:8000
 .venv/Scripts/python manage.py check
 ```
+- **Local `.env`:** must contain `DEBUG=True` for development (production refuses to start without a `SECRET_KEY`). See `.env.example`.
 - **Python environment:** `.venv` uses Python 3.12 with `requirements.txt` installed (Django 6.0.10 resolved from `>=5.0`).
 - **Desktop app launcher:** `../.claude/launch.json` defines `worktrack` (port 8000) and `worktrack-8001` (use it when another session already holds 8000). Auto-reload is on; if a page renders with an empty context after many quick edits, restart the server.
 - **Database:** SQLite `db.sqlite3`. It holds demo data plus `SiteConfiguration.theme_preset='rowd'`.
@@ -232,12 +245,14 @@ print('PROBLEMS', bad)
 
 ## 6. Gotchas learned the hard way
 - **Escaping in scripted edits.** Python string escapes inside shell heredocs turned `\f`, `\b` and `\1` into control bytes twice. That broke `app.css` parsing (everything after the bad rule was ignored) and a middleware regex. Write edit scripts to a file and use `chr(92)` for backslashes, or use a file-editing tool. After any scripted edit, scan for bytes below 0x20.
+- **Line endings in scripted edits.** Python's text mode on Windows writes CRLF, which turned whole LF files into one big diff (fixed in `48935ad`). Use `open(p, encoding='utf-8', newline='')` for reads and writes, or edit with a file-editing tool.
 - **Template cache.** With `runserver --noreload`, Django caches templates, so edits don't show until a restart. The launcher now runs with auto-reload.
-- **Asset caching.** Bump the `?v=` cache-busters when editing CSS/JS: `app.css?v=14`, `public.css?v=7`, `i18n.js?v=3.2`, `stack-scene.js?v=2`.
+- **Asset caching.** Bump the `?v=` cache-busters when editing CSS/JS: `app.css?v=41` (in `base.html` and `public/_head.html`), `public.css?v=8`, `site-settings.js?v=3`, `i18n.js?v=3.2`, `stack-scene.js?v=2`.
 - **Old page scripts write inline styles.** For example, `dashboard.html` set margins on `.dashboard-main-area`. The shell's sidebar offset is therefore padding on `.wt-shell`, not a margin.
 - **Old page CSS uses `!important` widely.** Overrides need higher specificity (`.wt-app ...`) or a rebuilt block.
 - **`100vw` includes the scrollbar.** Use `%` widths, or RTL pages get sideways scroll.
 - **`repeat(12, 1fr)` grids overflow** when labels are wider than columns. Use `minmax(0, 1fr)`.
+- **Translation middleware vs. data hooks.** It rebuilds `lang-en`/`lang-ar` pairs that match a DB row and drops attributes on them. Anything a script needs to find, and any institution or user text, goes under `translate="no"`.
 - **Small browser pane.** The pane can be resized small by the user, which shrinks screenshots. For full-resolution phone captures, emulate 390×330 and stack strips (ffmpeg `vstack`).
 
 ## 7. Process used (keep using it)

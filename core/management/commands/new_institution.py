@@ -14,6 +14,7 @@ admin keeps their password unless --reset-admin-password is given.
 The ROWD credit is not configurable and is not touched here.
 """
 import json
+import os
 import re
 import secrets
 from pathlib import Path
@@ -51,7 +52,7 @@ class Command(BaseCommand):
         parser.add_argument('--departments', help='Comma-separated department names.')
         parser.add_argument('--admin-email', help='First administrator email.')
         parser.add_argument('--admin-name', help='First administrator full name.')
-        parser.add_argument('--admin-password', help='Password (default: a generated one, printed once).')
+        parser.add_argument('--admin-password', help='Password. Safer: set WT_ADMIN_PASSWORD in the environment. Default: a generated one, printed once.')
         parser.add_argument('--reset-admin-password', action='store_true', help='Set a new password if the admin already exists.')
         parser.add_argument('--dry-run', action='store_true', help='Validate and show what would change, then roll back.')
 
@@ -83,6 +84,8 @@ class Command(BaseCommand):
             admin['name'] = opts['admin_name']
         if opts.get('admin_password'):
             admin['password'] = opts['admin_password']
+        elif os.environ.get('WT_ADMIN_PASSWORD') and admin:
+            admin['password'] = os.environ['WT_ADMIN_PASSWORD']
         if admin:
             cfg['admin'] = admin
         return cfg
@@ -135,6 +138,8 @@ class Command(BaseCommand):
     # ── apply ──────────────────────────────────────────────────────────────
     def handle(self, *args, **opts):
         cfg = self._validate(self._load(opts))
+        cfg['_dry_run'] = opts['dry_run']
+        self._saved_files = []
         out = []
         try:
             with transaction.atomic():
@@ -145,7 +150,16 @@ class Command(BaseCommand):
                 password_note = self._admin(cfg, opts, out)
                 if opts['dry_run']:
                     raise _DryRun()
-        except _DryRun:
+        except BaseException as exc:
+            # The database rolls back; files written to media storage do not.
+            from django.core.files.storage import default_storage
+            for name in self._saved_files:
+                try:
+                    default_storage.delete(name)
+                except Exception:
+                    pass
+            if not isinstance(exc, _DryRun):
+                raise
             for line in out:
                 self.stdout.write('  ' + line)
             self.stdout.write(self.style.WARNING('Dry run: nothing was saved.'))
@@ -180,9 +194,13 @@ class Command(BaseCommand):
                 setattr(c, field, (contact.get(key) or '').strip())
         if cfg.get('logo'):
             p = Path(cfg['logo'])
-            with p.open('rb') as fh:
-                c.logo.save(p.name, File(fh), save=False)
-            lines.append(f'Logo: {p.name}')
+            if cfg.get('_dry_run'):
+                lines.append(f'Logo: {p.name} (not copied in a dry run)')
+            else:
+                with p.open('rb') as fh:
+                    c.logo.save(p.name, File(fh), save=False)
+                self._saved_files.append(c.logo.name)
+                lines.append(f'Logo: {p.name}')
         c.full_clean(exclude=['logo', 'gateway_image', 'background_image', 'banner_image'])
         c.save()
 
@@ -261,6 +279,8 @@ class Command(BaseCommand):
             user.is_staff = user.is_superuser = user.is_active = True
             if first:
                 user.first_name, user.last_name = first, last
+            if password and not opts.get('reset_admin_password'):
+                note = f'{email} already exists: the given password was NOT applied. Add --reset-admin-password to change it.'
             if opts.get('reset_admin_password'):
                 if not password:
                     password = secrets.token_urlsafe(12)

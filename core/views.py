@@ -75,7 +75,11 @@ def site_settings_view(request):
             site.save()
             messages.success(request, 'تم حفظ إعدادات الموقع.' if ar else 'Site settings saved.')
             return redirect('site-settings')
+        if lang not in ('ar', 'en'):
+            form.add_error(None, 'اختر اللغة الافتراضية.' if ar else 'Choose the default language.')
         messages.error(request, 'يرجى مراجعة الحقول المحددة.' if ar else 'Please check the highlighted fields.')
+        # is_valid() copied the posted values onto `config`; render the page around the saved row instead.
+        config = SiteConfiguration.objects.get(pk=config.pk)
     else:
         form = SiteThemeForm(instance=config)
 
@@ -93,7 +97,6 @@ def site_settings_view(request):
 
     return render(request, 'pages/site_settings.html', {
         'form': form,
-        'site_config': config,
         'site_flags': site,
         'ss_mode': form['theme_preset'].value() or 'rowd',
         'ss_start': start,

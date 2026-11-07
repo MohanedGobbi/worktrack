@@ -22,7 +22,7 @@ def email_template_list(request):
             notification_type=n_type,
             defaults={
                 'subject': f'[WorkTrack Pro] Notification: {n_label}',
-                'body': f'Hello {{recipient_name}},\n\nYou have a new notification of type {n_label}.',
+                'body': 'Hello {recipient_name},\n\n{message}',
             }
         )
     

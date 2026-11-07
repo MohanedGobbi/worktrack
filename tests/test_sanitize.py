@@ -18,7 +18,9 @@ class CleanTextTests(TestCase):
         self.assertEqual(clean_text('<script>alert(1)</script>ok'), 'alert(1)ok')
         self.assertEqual(clean_text('a<!-- c -->b'), 'ab')
         self.assertNotIn('<', clean_text('<<b>script>alert(1)<</b>/script>'))
-        self.assertEqual(clean_text('tail <img src=x onerror=alert(1)'), 'tail ')
+        # A stray '<' is text, not markup; output escaping keeps it harmless.
+        for s in ('if x<y', 'price<USD 5', 'a < b & c'):
+            self.assertEqual(clean_text(s), s)
 
 
 class CleanRichTests(TestCase):
@@ -33,6 +35,14 @@ class CleanRichTests(TestCase):
         self.assertEqual(clean_rich('<a href="javascript:alert(1)">x</a>'), 'x')
         self.assertEqual(clean_rich('<b style="x" onmouseover="y">z</b>'), '<b>z</b>')
         self.assertIn('&lt;', clean_rich('<b>1 < 2</b>'))
+
+    def test_nested_containers_do_not_crash(self):
+        for s in ('<svg><a href=x>', '<template><b>x</b></template>', '<object><i>a</i></object>',
+                  '<noscript><p title="</noscript><img src=x onerror=alert(1)>">', '<math><mtext><b>x</b>'):
+            self.assertNotIn('<img', clean_rich(s))
+
+    def test_plain_message_unchanged(self):
+        self.assertEqual(clean_rich('a < b & c'), 'a < b & c')
 
 
 class ScriptJsonTests(TestCase):

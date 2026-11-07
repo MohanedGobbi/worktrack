@@ -353,16 +353,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Build Glassmorphic Popup HTML
             const popupContent = `
                 <div class="popup-header">
-                    <h4 class="popup-title">${task.title}</h4>
+                    <h4 class="popup-title" dir="auto">${wtEsc(task.title)}</h4>
                     <span class="popup-status" style="color:${getStatusColor(task.status)}; border: 1px solid ${getStatusColor(task.status)}55;">
-                        ${task.status_display}
+                        ${wtEsc(task.status_display)}
                     </span>
                 </div>
                 <div class="popup-body">
-                    <div class="popup-desc">${task.description}</div>
+                    <div class="popup-desc" dir="auto">${wtEsc(task.description)}</div>
                     
                     <div class="popup-meta">
-                        <i class="fas fa-user-circle"></i> <span>${task.assigned_users}</span>
+                        <i class="fas fa-user-circle"></i> <span>${wtEsc(task.assigned_users)}</span>
                     </div>
                     ${task.deadline ? `
                     <div class="popup-meta mt-1">

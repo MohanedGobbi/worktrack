@@ -60,3 +60,13 @@ class SiteSettingsViewTests(TestCase):
         r = self.client.get(self.url)
         self.assertContains(r, 'id="ss-preview"')
         self.assertContains(r, 'name="on_brand_color"')
+
+
+class SiteSettingsInvalidPostTests(TestCase):
+    def test_invalid_post_does_not_show_unsaved_values(self):
+        admin = User.objects.create_user(email='sa2@t.local', password='x', username='sa2', role='super_admin')
+        self.client.force_login(admin)
+        r = self.client.post(reverse('site-settings'), _post(app_name='Unsaved Name', primary_color='bad'))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context['site_config'].app_name, SiteConfiguration.objects.get().app_name)
+        self.assertNotEqual(SiteConfiguration.objects.get().app_name, 'Unsaved Name')

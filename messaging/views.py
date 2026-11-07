@@ -679,16 +679,10 @@ def get_conversations(request):
         
         last_msg_text = "No messages yet"
         if last_msg:
-            # If the last message contains HTML (e.g. shared widget), keep it simple for the preview
-            if '<div' in last_msg.content and 'class=' in last_msg.content:
-                if 'Task:' in last_msg.content or 'task' in last_msg.content.lower():
-                    last_msg_text = "Shared a task"
-                elif 'Module:' in last_msg.content or 'module' in last_msg.content.lower():
-                    last_msg_text = "Shared a module"
-                else:
-                    last_msg_text = "Shared an item"
-            else:
-                last_msg_text = last_msg.content
+            # Preview is plain text: drop formatting tags and decode entities.
+            import html as _html
+            from django.utils.html import strip_tags
+            last_msg_text = ' '.join(_html.unescape(strip_tags(last_msg.content or '')).split())[:120] or '…'
 
         conv_data = {
             'id': conv.id,
