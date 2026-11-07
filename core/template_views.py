@@ -6662,15 +6662,17 @@ def task_kanban(request):
         qs = Task.objects.filter(assigned_to=request.user, work_module__is_archived=False).select_related('work_module','created_by').prefetch_related('assigned_to')
         modules = WorkModule.objects.filter(id__in=qs.values_list('work_module_id', flat=True)).distinct().order_by('name')
 
+    qs = qs.annotate(wt_comments=Count('comments', distinct=True), wt_subs=Count('submissions', distinct=True))
     columns = {
-        'pending':     {'label':'Pending',     'color':'#f59e0b','icon':'fa-clock',                 'tasks':[]},
-        'in_progress': {'label':'In Progress', 'color':'#3b82f6','icon':'fa-spinner',               'tasks':[]},
-        'submitted':   {'label':'Submitted',   'color':'#8b5cf6','icon':'fa-paper-plane',           'tasks':[]},
-        'approved':    {'label':'Approved',    'color':'#10b981','icon':'fa-check-circle',           'tasks':[]},
-        'overdue':     {'label':'Overdue',     'color':'#ef4444','icon':'fa-exclamation-triangle',  'tasks':[]},
+        'pending':     {'en': 'Not started', 'ar': 'لم تبدأ',         'tasks': []},
+        'in_progress': {'en': 'In progress', 'ar': 'قيد التنفيذ',     'tasks': []},
+        'submitted':   {'en': 'Submitted',   'ar': 'تم التسليم',      'tasks': []},
+        'rejected':    {'en': 'Sent back',   'ar': 'أُعيدت للتعديل',  'tasks': []},
+        'approved':    {'en': 'Done',        'ar': 'مكتملة',          'tasks': []},
+        'overdue':     {'en': 'Overdue',     'ar': 'متأخرة',          'tasks': []},
     }
     for task in qs:
-        col = task.status if task.status in columns else 'pending'
+        col = 'approved' if task.status == 'completed' else (task.status if task.status in columns else 'pending')
         columns[col]['tasks'].append(task)
     return render(request, 'pages/task_kanban.html', {'columns': columns, 'modules': modules})
 
@@ -6715,27 +6717,16 @@ def task_calendar(request):
                 Q(work_module__name__icontains=search_query)
             )
 
-        STATUS_COLORS = {
-            'pending': '#f59e0b',
-            'in_progress': '#3b82f6',
-            'submitted': '#8b5cf6',
-            'approved': '#10b981',
-            'completed': '#10b981',
-            'rejected': '#ef4444',
-            'overdue': '#dc2626',
-        }
         events = [
             {
                 'id': t.id,
                 'title': t.title,
                 'start': t.deadline.isoformat() if t.deadline else None,
                 'url': t.detail_url,
-                'backgroundColor': STATUS_COLORS.get(t.status, '#e2e8f0'),
-                'borderColor': STATUS_COLORS.get(t.status, '#94a3b8'),
-                'textColor': '#0f172a',
+                'classNames': ['wt-ev', 'is-' + ('approved' if t.status == 'completed' else t.status)],
                 'extendedProps': {
-                    'status': t.get_status_display(),
-                    'priority': t.get_priority_display(),
+                    'status': t.status,
+                    'priority': t.priority,
                     'module': t.work_module.name if t.work_module else ''
                 }
             }
