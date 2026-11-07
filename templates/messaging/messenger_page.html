@@ -1,14 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Messenger - WorkTrack Pro{% endblock %}
+{% block title %}{% if wt_lang == 'ar' %}المحادثات · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}Messenger · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'vendor/tailwind/tailwind.min.css' %}">
-<link rel="stylesheet" href="{% static 'vendor/fonts/material-symbols/material-symbols-outlined.css' %}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
     /* ===== SYSTEM DESIGN SYSTEM (Emerald / Institutional) ===== */
@@ -74,7 +70,7 @@
     }
     body > footer, #main-footer, footer:not(.lm-input-footer) { display: none !important; }
 
-    .material-symbols-outlined {
+    .wt-mi {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         vertical-align: middle;
     }
@@ -911,17 +907,17 @@
         left: 0 !important;
     }
     html[dir="rtl"] #send-icon,
-    html[dir="rtl"] .lm-send-btn .material-symbols-outlined,
-    html[dir="rtl"] #stop-recording-btn .material-symbols-outlined,
+    html[dir="rtl"] .lm-send-btn .wt-mi,
+    html[dir="rtl"] #stop-recording-btn .wt-mi,
     body.rtl-mode #send-icon,
-    body.rtl-mode .lm-send-btn .material-symbols-outlined,
-    body.rtl-mode #stop-recording-btn .material-symbols-outlined,
+    body.rtl-mode .lm-send-btn .wt-mi,
+    body.rtl-mode #stop-recording-btn .wt-mi,
     [dir="rtl"] #send-icon,
-    [dir="rtl"] .lm-send-btn .material-symbols-outlined,
+    [dir="rtl"] .lm-send-btn .wt-mi,
     .rtl-mode #send-icon,
-    .rtl-mode .lm-send-btn .material-symbols-outlined,
+    .rtl-mode .lm-send-btn .wt-mi,
     .lm-input-footer[dir="rtl"] #send-icon,
-    .lm-input-footer[dir="rtl"] .lm-send-btn .material-symbols-outlined {
+    .lm-input-footer[dir="rtl"] .lm-send-btn .wt-mi {
         display: inline-block !important;
         transform: scaleX(-1) !important;
     }
@@ -933,6 +929,17 @@
         direction: rtl !important;
         font-family: 'Cairo', 'Inter', sans-serif !important;
     }
+
+    /* WorkTrack theme touches */
+    .wt-online-dot { background: var(--wt-ok); }
+    .wt-msg-sender { display: block; margin: 0 4px 2px; font-size: 0.72rem; font-weight: 600; color: var(--wt-muted); unicode-bidi: plaintext; }
+    .wt-closed { color: var(--wt-warn); }
+    #messenger-chat-main.hidden, #conversations-sidebar.hidden { display: none !important; }
+    @media (max-width: 767.98px) { #conversations-sidebar { max-width: none !important; } }
+    p.whitespace-pre-wrap a { color: inherit; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+    .wt-mi { font-size: 0.95em; line-height: 1; }
+    /* the shell's floating notes button sits on top of the send button here; notes stay in the menu */
+    .wp-floating-notes-btn, #generalTodoToggle { display: none !important; }
 </style>
 {% endblock %}
 
@@ -949,26 +956,26 @@
             <div class="flex items-center justify-between" style="margin-bottom:16px;">
                 <div class="flex items-center gap-2">
                     <button id="mobile-sidebar-close" class="lm-icon-btn" onclick="toggleConversationsSidebar(false)" style="color:var(--color-primary, #10b981);" title="Close conversations list">
-                        <span class="material-symbols-outlined">arrow_back</span>
+                        <i class="fas fa-arrow-left rtl-flip wt-mi" aria-hidden="true"></i>
                     </button>
                     <h1 class="lm-sidebar-title"><span class="lang-en">Messages</span><span class="lang-ar">الرسائل</span></h1>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="view-archived-chats-btn" onclick="toggleArchivedChatsView()" class="lm-archive-btn" title="View Archived Chats">
-                        <span id="view-archived-icon" class="material-symbols-outlined" style="font-size:20px;">inventory_2</span>
+                        <i id="view-archived-icon" class="fas fa-box-archive wt-mi" aria-hidden="true"></i>
                     </button>
                     <button id="create-group-btn" class="lm-new-group-btn">
-                        <span class="material-symbols-outlined" style="font-size:18px;">group_add</span>
+                        <i class="fas fa-user-plus wt-mi" style="font-size:18px;" aria-hidden="true"></i>
                         <span class="lang-en">New Group</span><span class="lang-ar">مجموعة جديدة</span>
                     </button>
                 </div>
             </div>
             <!-- Search -->
             <div style="position:relative;">
-                <span class="material-symbols-outlined search-icon-wrapper" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:20px;color:#9ca3af;pointer-events:none;">search</span>
+                <i class="fas fa-magnifying-glass wt-mi search-icon-wrapper" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:20px;color:#9ca3af;pointer-events:none;" aria-hidden="true"></i>
                 <input id="messenger-global-search" class="lm-search-input" style="padding-left:42px;padding-right:36px;" placeholder="Search conversations or users..." type="text"/>
                 <button id="search-clear-btn" type="button" class="hidden" onclick="clearMessengerSearch()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px;display:flex;align-items:center;" title="Clear search">
-                    <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                    <i class="fas fa-xmark wt-mi" style="font-size:18px;" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -989,7 +996,7 @@
         <!-- Mobile top bar -->
         <div class="md:hidden lm-mobile-bar flex items-center justify-between p-3 border-b border-slate-200 bg-white">
             <button onclick="toggleConversationsSidebar(true)" class="lm-icon-btn flex items-center justify-center gap-1 text-emerald-600 font-bold">
-                <span class="material-symbols-outlined">menu</span>
+                <i class="fas fa-bars wt-mi" aria-hidden="true"></i>
                 <span class="text-xs"><span class="lang-en">Chats</span><span class="lang-ar">المحادثات</span></span>
             </button>
             <span style="font-weight:700;color:#191c1d;font-family:'Inter',sans-serif;font-size:14px;">Messenger</span>
@@ -999,12 +1006,12 @@
         <!-- Empty State -->
         <div id="chat-empty-state" class="flex-1 flex flex-col items-center justify-center p-8 text-center" style="background:#ffffff;height:100%;">
             <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-sm" style="background:rgba(var(--wt-brand-rgb),0.1);color:var(--color-primary, #10b981);">
-                <span class="material-symbols-outlined text-3xl">forum</span>
+                <i class="fas fa-comments wt-mi text-3xl" aria-hidden="true"></i>
             </div>
             <h3 class="text-base font-bold text-slate-800 mb-1"><span class="lang-en">Select a conversation</span><span class="lang-ar">اختر محادثة</span></h3>
             <p class="text-xs text-slate-500 max-w-sm mb-4"><span class="lang-en">Choose a contact from the list or search for team members to start chatting.</span><span class="lang-ar">اختر جهة اتصال من القائمة أو ابحث عن أعضاء الفريق لبدء المراسلة.</span></p>
             <button type="button" onclick="toggleConversationsSidebar(true)" class="lm-btn-primary d-inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-sm" style="background:var(--color-primary, #10b981);color:#fff;">
-                <span class="material-symbols-outlined text-base">contacts</span>
+                <i class="fas fa-address-book wt-mi text-base" aria-hidden="true"></i>
                 <span class="lang-en">View Conversations</span><span class="lang-ar">عرض المحادثات</span>
             </button>
         </div>
@@ -1016,14 +1023,14 @@
                 <div class="flex items-center gap-2.5">
                     <!-- Conversations list toggle / back button -->
                     <button type="button" id="sidebar-toggle-btn" onclick="toggleConversationsSidebar()" class="lm-icon-btn shrink-0" title="Toggle Conversations List">
-                        <span class="material-symbols-outlined" id="sidebar-toggle-icon">menu</span>
+                        <i class="fas fa-bars wt-mi" id="sidebar-toggle-icon" aria-hidden="true"></i>
                     </button>
                     <div style="position:relative;flex-shrink:0;">
                         <div id="active-chat-avatar" class="lm-avatar lm-avatar-online" style="width:42px;height:42px;font-size:14px;">??</div>
                         <span id="active-chat-presence" style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#d1d5db;border:2px solid #fff;border-radius:50%;transition:background 0.2s;"></span>
                     </div>
                     <div>
-                        <h2 id="active-chat-name" class="lm-chat-name">Conversation</h2>
+                        <h2 id="active-chat-name" class="lm-chat-name" dir="auto" translate="no">Conversation</h2>
                         <div id="active-chat-status" class="lm-chat-status flex items-center gap-1">
                             <span class="status-text">Connecting...</span>
                         </div>
@@ -1034,21 +1041,21 @@
                         <input type="text" id="chat-search-input" class="lm-chat-search-input" placeholder="Search in chat...">
                     </div>
                     <button id="chat-search-toggle" class="lm-icon-btn" title="Search in Chat">
-                        <span class="material-symbols-outlined" style="font-size:20px;">search</span>
+                        <i class="fas fa-magnifying-glass wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                     </button>
                     <button onclick="toggleSelectMode()" class="lm-icon-btn" title="Select Messages">
-                        <span class="material-symbols-outlined" style="font-size:20px;">checklist</span>
+                        <i class="fas fa-list-check wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                     </button>
                     <button id="detail-panel-toggle" class="lm-icon-btn" title="Contact Info">
-                        <span class="material-symbols-outlined" style="font-size:20px;">info</span>
+                        <i class="fas fa-circle-info wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                     </button>
                     <div style="position:relative;" id="more-menu-wrap">
                         <button id="more-menu-btn" class="lm-icon-btn">
-                            <span class="material-symbols-outlined" style="font-size:20px;">more_vert</span>
+                            <i class="fas fa-ellipsis-vertical wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                         </button>
                         <ul id="more-menu-list" class="lm-dropdown" style="position:absolute;right:0;top:calc(100% + 6px);display:none;z-index:50;">
-                            <li><a href="#" onclick="archiveActiveChat()" class="lm-dropdown-item"><span id="menu-archive-icon" class="material-symbols-outlined" style="font-size:18px;color:#f59e0b;">archive</span> <span id="menu-archive-text">Archive Chat</span></a></li>
-                            <li><a href="#" onclick="deleteActiveChat()" class="lm-dropdown-item danger"><span class="material-symbols-outlined" style="font-size:18px;">delete</span> <span class="lang-en">Delete Chat</span><span class="lang-ar">حذف المحادثة</span></a></li>
+                            <li><a href="#" onclick="archiveActiveChat()" class="lm-dropdown-item"><i class="fas fa-box-archive wt-mi" id="menu-archive-icon" style="font-size:18px;color:#f59e0b;" aria-hidden="true"></i> <span id="menu-archive-text">Archive Chat</span></a></li>
+                            <li><a href="#" onclick="deleteActiveChat()" class="lm-dropdown-item danger"><i class="fas fa-trash wt-mi" style="font-size:18px;" aria-hidden="true"></i> <span class="lang-en">Delete Chat</span><span class="lang-ar">حذف المحادثة</span></a></li>
                         </ul>
                     </div>
                 </div>
@@ -1057,14 +1064,14 @@
             <!-- Bulk Action Bar -->
             <div id="bulk-action-bar" class="lm-bulk-bar shrink-0 z-[9] flex items-center justify-between" style="display:none;">
                 <div class="flex items-center gap-2">
-                    <button onclick="toggleSelectAll()" class="lm-bulk-btn"><span class="material-symbols-outlined" style="font-size:16px;">checklist_rtl</span> <span class="lang-en">Select All</span><span class="lang-ar">تحديد الكل</span></button>
-                    <button onclick="toggleSelectMode()" class="lm-bulk-btn"><span class="material-symbols-outlined" style="font-size:16px;">close</span> <span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                    <button onclick="toggleSelectAll()" class="lm-bulk-btn"><i class="fas fa-list-check wt-mi" style="font-size:16px;" aria-hidden="true"></i> <span class="lang-en">Select All</span><span class="lang-ar">تحديد الكل</span></button>
+                    <button onclick="toggleSelectMode()" class="lm-bulk-btn"><i class="fas fa-xmark wt-mi" style="font-size:16px;" aria-hidden="true"></i> <span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
                     <span id="bulk-selected-count" style="font-size:13px;font-weight:600;color:var(--color-primary, #10b981);">0 selected</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="executeBulkAction('export')" class="lm-bulk-btn"><span class="material-symbols-outlined" style="font-size:16px;">download</span> <span class="lang-en">Export</span><span class="lang-ar">تصدير</span></button>
-                    <button onclick="executeBulkAction('archive')" class="lm-bulk-btn amber"><span class="material-symbols-outlined" style="font-size:16px;">archive</span> <span class="lang-en">Archive</span><span class="lang-ar">أرشفة</span></button>
-                    <button onclick="executeBulkAction('delete')" class="lm-bulk-btn danger"><span class="material-symbols-outlined" style="font-size:16px;">delete</span> <span class="lang-en">Delete</span><span class="lang-ar">حذف</span></button>
+                    <button onclick="executeBulkAction('export')" class="lm-bulk-btn"><i class="fas fa-download wt-mi" style="font-size:16px;" aria-hidden="true"></i> <span class="lang-en">Export</span><span class="lang-ar">تصدير</span></button>
+                    <button onclick="executeBulkAction('archive')" class="lm-bulk-btn amber"><i class="fas fa-box-archive wt-mi" style="font-size:16px;" aria-hidden="true"></i> <span class="lang-en">Archive</span><span class="lang-ar">أرشفة</span></button>
+                    <button onclick="executeBulkAction('delete')" class="lm-bulk-btn danger"><i class="fas fa-trash wt-mi" style="font-size:16px;" aria-hidden="true"></i> <span class="lang-en">Delete</span><span class="lang-ar">حذف</span></button>
                 </div>
             </div>
 
@@ -1085,7 +1092,7 @@
                         <p id="reply-preview-text" style="font-size:13px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;">Message content</p>
                     </div>
                     <button id="cancel-reply-btn" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px;border-radius:6px;transition:color 0.15s;" onmouseenter="this.style.color='var(--color-primary, #10b981)'" onmouseleave="this.style.color='#9ca3af'">
-                        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                        <i class="fas fa-xmark wt-mi" style="font-size:18px;" aria-hidden="true"></i>
                     </button>
                 </div>
 
@@ -1098,7 +1105,7 @@
                         </div>
                         <!-- File Icon container for non-images -->
                         <div id="file-icon-container" class="h-10 w-10 rounded-xl bg-red-100/70 text-red-800 flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined" style="font-size:22px;">description</span>
+                            <i class="fas fa-file-lines wt-mi" style="font-size:22px;" aria-hidden="true"></i>
                         </div>
                         <div style="min-width:0;">
                             <p id="file-name-display" style="font-size:13px;font-weight:600;color:#191c1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;">document.pdf</p>
@@ -1106,7 +1113,7 @@
                         </div>
                     </div>
                     <button type="button" id="cancel-file-btn" style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:4px;border-radius:8px;transition:color 0.15s;" onmouseenter="this.style.color='var(--color-primary, #10b981)'" onmouseleave="this.style.color='#9ca3af'">
-                        <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                        <i class="fas fa-xmark wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                     </button>
                 </div>
 
@@ -1133,11 +1140,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" id="cancel-recording-btn" class="px-3 py-1.5 text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold border border-red-500/30" title="Discard Voice Note">
-                            <span class="material-symbols-outlined text-lg">delete</span>
+                            <i class="fas fa-trash wt-mi text-lg" aria-hidden="true"></i>
                             <span class="hidden sm:inline"><span class="lang-en">Discard</span><span class="lang-ar">إلغاء</span></span>
                         </button>
                         <button type="button" id="stop-recording-btn" class="px-4 py-1.5 text-xs font-extrabold text-white bg-red-600 hover:bg-red-500 rounded-xl shadow-[0_0_12px_rgba(155,16,34,0.5)] transition-all flex items-center gap-1.5 border border-red-400/30" title="Send Voice Note">
-                            <span class="material-symbols-outlined text-lg">send</span>
+                            <i class="fas fa-paper-plane wt-mi text-lg" aria-hidden="true"></i>
                             <span class="lang-en">Send</span>
                             <span class="lang-ar">إرسال</span>
                         </button>
@@ -1150,10 +1157,10 @@
                     <div class="flex items-center gap-1" style="padding-bottom:6px;">
                         <input type="file" id="messenger-file-input" class="hidden">
                         <button id="messenger-attach-btn" class="lm-icon-btn" title="Attach File">
-                            <span class="material-symbols-outlined" style="font-size:20px;">attach_file</span>
+                            <i class="fas fa-paperclip wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                         </button>
                         <button id="messenger-poll-btn" class="lm-icon-btn" title="Create Poll">
-                            <span class="material-symbols-outlined" style="font-size:20px;">poll</span>
+                            <i class="fas fa-square-poll-vertical wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                         </button>
                     </div>
                     
@@ -1167,7 +1174,7 @@
                             <!-- Emoji picker trigger -->
                             <div id="emoji-picker-container" class="emoji-picker-container">
                                 <button type="button" id="emoji-picker-btn" class="lm-icon-btn" title="Emoji" style="width:28px;height:28px;color:#9ca3af;">
-                                    <span class="material-symbols-outlined" style="font-size:20px;">mood</span>
+                                    <i class="fas fa-face-smile wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                                 </button>
                                 <!-- Emoji Picker Dropdown -->
                                 <div id="emoji-picker-dropdown" class="lm-emoji-picker" style="display:none;">
@@ -1192,10 +1199,10 @@
                         <!-- Send / Mic buttons -->
                         <div class="flex items-center gap-2" style="padding-bottom:6px;">
                             <button type="button" id="messenger-mic-btn" class="lm-mic-btn" title="Voice Note">
-                                <span class="material-symbols-outlined" style="font-size:20px;">mic</span>
+                                <i class="fas fa-microphone wt-mi" style="font-size:20px;" aria-hidden="true"></i>
                             </button>
                             <button type="submit" id="send-btn" class="lm-send-btn" title="Send Message">
-                                <span class="material-symbols-outlined" id="send-icon" style="font-size:20px;">send</span>
+                                <i class="fas fa-paper-plane wt-mi" id="send-icon" style="font-size:20px;" aria-hidden="true"></i>
                             </button>
                         </div>
                     </form>
@@ -1213,7 +1220,7 @@
     <aside id="detail-panel" class="lm-detail-panel hidden shrink-0 overflow-y-auto message-scrollbar" style="width:272px;padding:24px 20px;position:relative;">
         <!-- Exit Close Button -->
         <button type="button" id="detail-panel-close" class="lm-icon-btn" title="Close Panel" onclick="closeDetailPanel()" style="position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:10px;background:rgba(var(--wt-brand-rgb),0.08);color:var(--color-primary, #10b981);display:flex;align-items:center;justify-content:center;transition:all 0.2s;border:none;cursor:pointer;z-index:10;">
-            <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+            <i class="fas fa-xmark wt-mi" style="font-size:18px;" aria-hidden="true"></i>
         </button>
 
         <!-- Avatar & name -->
@@ -1230,11 +1237,11 @@
                 <h4 class="lm-detail-label"><span class="lang-en">Contact Info</span><span class="lang-ar">معلومات التواصل</span></h4>
                 <div style="display:flex;flex-direction:column;gap:12px;">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#9ca3af;">mail</span>
+                        <i class="fas fa-envelope wt-mi" style="font-size:18px;color:#9ca3af;" aria-hidden="true"></i>
                         <span id="detail-email" style="font-size:13px;color:#404944;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">user@email.com</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#9ca3af;">info</span>
+                        <i class="fas fa-circle-info wt-mi" style="font-size:18px;color:#9ca3af;" aria-hidden="true"></i>
                         <span id="detail-status" style="font-size:13px;color:#404944;">Available</span>
                     </div>
                 </div>
@@ -1255,7 +1262,7 @@
         <div class="lm-modal-header">
             <h5 class="lm-modal-title"><span class="lang-en">Create a Poll</span><span class="lang-ar">إنشاء استطلاع</span></h5>
             <button type="button" onclick="closeCreatePollModal()" class="lm-icon-btn">
-                <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                <i class="fas fa-xmark wt-mi" style="font-size:20px;" aria-hidden="true"></i>
             </button>
         </div>
         <form id="create-poll-form">
@@ -1287,7 +1294,7 @@
         <div class="lm-modal-header">
             <h5 class="lm-modal-title"><span class="lang-en">Create New Group</span><span class="lang-ar">إنشاء مجموعة جديدة</span></h5>
             <button type="button" onclick="closeCreateGroupModal()" class="lm-icon-btn">
-                <span class="material-symbols-outlined" style="font-size:20px;">close</span>
+                <i class="fas fa-xmark wt-mi" style="font-size:20px;" aria-hidden="true"></i>
             </button>
         </div>
         <form id="create-group-form">
@@ -1319,6 +1326,35 @@
 (function() {
     const CURRENT_USER_ID = parseInt("{{ request.user.id }}") || 0;
     const CSRF = "{{ csrf_token }}";
+    // Base path of the messaging app (keeps working when the site runs under a subpath such as /cnrst/)
+    const MSG_ROOT = "{% url 'messaging:api-send-message' %}".replace(/api\/send\/$/, '');
+    const IS_AR = () => document.documentElement.dir === 'rtl';
+    const T = (en, ar) => IS_AR() ? ar : en;
+    // Message text may carry a little formatting (task shares send <b>, <br> and a link). Keep only that; drop everything else.
+    function safeHtml(str) {
+        if (!str) return '';
+        const tpl = document.createElement('template');
+        tpl.innerHTML = String(str);
+        const ok = { B: 1, STRONG: 1, I: 1, EM: 1, BR: 1, A: 1 };
+        (function clean(node) {
+            Array.from(node.childNodes).forEach(ch => {
+                if (ch.nodeType === 1) {
+                    if (!ok[ch.tagName]) { ch.replaceWith(document.createTextNode(ch.textContent)); return; }
+                    const href = ch.tagName === 'A' ? (ch.getAttribute('href') || '') : '';
+                    Array.from(ch.attributes).forEach(a => ch.removeAttribute(a.name));
+                    if (ch.tagName === 'A') {
+                        if (/^(https?:\/\/|\/)/i.test(href)) { ch.setAttribute('href', href); ch.setAttribute('target', '_blank'); ch.setAttribute('rel', 'noopener'); }
+                        else ch.replaceWith(document.createTextNode(ch.textContent));
+                    }
+                    clean(ch);
+                } else if (ch.nodeType !== 3) ch.remove();
+            });
+        })(tpl.content);
+        const box = document.createElement('div');
+        box.appendChild(tpl.content);
+        return box.innerHTML;
+    }
+    function textOnly(str) { const d = document.createElement('div'); d.innerHTML = safeHtml(str); return d.textContent || ''; }
 
     const globalSearch   = document.getElementById('messenger-global-search');
     const contactsList   = document.getElementById('messenger-contacts-list');
@@ -1391,7 +1427,7 @@
     function updateSidebarToggleIcon() {
         const sidebar = document.getElementById('conversations-sidebar');
         const icon = document.getElementById('sidebar-toggle-icon');
-        const closeIcon = document.querySelector('#mobile-sidebar-close .material-symbols-outlined');
+        const closeIcon = document.querySelector('#mobile-sidebar-close .wt-mi');
         if (!sidebar) return;
 
         const isHidden = sidebar.classList.contains('hidden');
@@ -1400,16 +1436,16 @@
 
         if (icon) {
             if (isMobile) {
-                icon.innerText = isAr ? 'arrow_forward' : 'arrow_back';
+                icon.className = 'fas fa-arrow-left rtl-flip wt-mi';
             } else {
-                icon.innerText = isHidden ? 'menu' : 'menu_open';
+                icon.className = 'fas ' + (isHidden ? 'fa-bars' : 'fa-bars-staggered') + ' wt-mi';
             }
         }
         if (closeIcon) {
             if (isMobile) {
-                closeIcon.innerText = isAr ? 'arrow_forward' : 'arrow_back';
+                closeIcon.className = 'fas fa-arrow-left rtl-flip wt-mi';
             } else {
-                closeIcon.innerText = isAr ? 'chevron_right' : 'chevron_left';
+                closeIcon.className = 'fas fa-chevron-left rtl-flip wt-mi';
             }
         }
     }
@@ -1432,13 +1468,13 @@
         const headerTitle = document.querySelector('#conversations-sidebar h1');
         
         if (showingArchivedChats) {
-            btn.title = "View Active Chats";
-            if (icon) icon.innerText = "chat";
-            if (headerTitle) headerTitle.innerText = "Archived";
+            btn.title = T("View active chats", "عرض المحادثات النشطة");
+            if (icon) icon.className = "fas fa-comment wt-mi";
+            if (headerTitle) headerTitle.innerHTML = '<span class="lang-en">Archived</span><span class="lang-ar">المؤرشفة</span>';
         } else {
-            btn.title = "View Archived Chats";
-            if (icon) icon.innerText = "inventory_2";
-            if (headerTitle) headerTitle.innerText = "Messages";
+            btn.title = T("View archived chats", "عرض المحادثات المؤرشفة");
+            if (icon) icon.className = "fas fa-box-archive wt-mi";
+            if (headerTitle) headerTitle.innerHTML = '<span class="lang-en">Messages</span><span class="lang-ar">الرسائل</span>';
         }
         
         // Force refresh
@@ -1513,22 +1549,22 @@
         
         let avatarHtml = '';
         if (conv.avatar_url) {
-            avatarHtml = `<img src="${conv.avatar_url}" class="h-12 w-12 rounded-full object-cover border border-slate-200">`;
+            avatarHtml = `<img src="${escapeHtml(conv.avatar_url)}" alt="" class="h-12 w-12 rounded-full object-cover border border-slate-200">`;
         } else {
-            avatarHtml = `<div class="h-12 w-12 rounded-full ${online ? 'bg-primary' : 'bg-slate-400'} flex items-center justify-center text-slate-900 font-bold text-sm uppercase">${conv.initial || '?'}</div>`;
+            avatarHtml = `<div class="h-12 w-12 rounded-full ${online ? 'bg-primary' : 'bg-slate-400'} flex items-center justify-center text-slate-900 font-bold text-sm uppercase">${escapeHtml(conv.initial || '?')}</div>`;
         }
 
         div.innerHTML = `
             <div class="relative shrink-0">
                 ${avatarHtml}
-                ${online ? '<span class="absolute bottom-0 right-0 h-3 w-3 bg-red-500 border-2 border-slate-50 rounded-full"></span>' : ''}
+                ${online ? '<span class="absolute bottom-0 right-0 h-3 w-3 wt-online-dot border-2 border-slate-50 rounded-full"></span>' : ''}
             </div>
             <div class="flex-1 min-w-0">
                 <div class="flex justify-between items-center mb-0.5">
-                    <h3 class="font-bold text-sm text-slate-900 truncate">${conv.name}</h3>
-                    <span class="text-[10px] font-semibold text-slate-400 shrink-0 ml-2">${conv.last_message_time || ''}</span>
+                    <h3 class="font-bold text-sm text-slate-900 truncate" dir="auto" translate="no">${escapeHtml(conv.name)}</h3>
+                    <span class="text-[10px] font-semibold text-slate-400 shrink-0 ml-2">${escapeHtml(conv.last_message_time || '')}</span>
                 </div>
-                <p class="text-xs text-slate-500 truncate">${conv.last_message || '...'}</p>
+                <p class="text-xs text-slate-500 truncate" dir="auto" translate="no">${escapeHtml(textOnly(conv.last_message) || '…')}</p>
             </div>
             ${conv.unread_count > 0 ? `<div class="h-5 min-w-[20px] px-1 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">${conv.unread_count}</div>` : ''}
         `;
@@ -1539,6 +1575,7 @@
     // ---- Open chat ----
     function openChat(conv) {
         activeChatId  = conv.id;
+        window.__wtActiveIsGroup = !!conv.is_group;
         activeIsGroup = !!conv.is_group;
         knownMsgIds   = new Set();
         currentOffset = 0;
@@ -1564,21 +1601,21 @@
         const archiveBtnIcon = document.getElementById('menu-archive-icon');
         if (archiveBtnText && archiveBtnIcon) {
             archiveBtnText.innerText = conv.is_archived ? 'Unarchive Chat' : 'Archive Chat';
-            archiveBtnIcon.innerText = conv.is_archived ? 'unarchive' : 'archive';
+            archiveBtnIcon.className = 'fas ' + (conv.is_archived ? 'fa-box-open' : 'fa-box-archive') + ' wt-mi';
         }
         
         if (conv.avatar_url) {
-            headerAvatar.innerHTML = `<img src="${conv.avatar_url}" class="w-full h-full object-cover">`;
+            headerAvatar.innerHTML = `<img src="${escapeHtml(conv.avatar_url)}" alt="" class="w-full h-full object-cover">`;
             headerAvatar.classList.remove('bg-primary', 'text-slate-900', 'flex', 'items-center', 'justify-center', 'font-bold');
         } else {
-            headerAvatar.innerHTML = conv.initial || '?';
+            headerAvatar.textContent = conv.initial || '?';
             headerAvatar.classList.add('bg-primary', 'text-slate-900', 'flex', 'items-center', 'justify-center', 'font-bold');
         }
 
         const presence  = document.getElementById('active-chat-presence');
         const statusTxt = document.querySelector('#active-chat-status .status-text');
         if (presence) presence.className = `absolute bottom-0 right-0 h-2.5 w-2.5 border-2 border-white  rounded-full transition-colors ${conv.is_online && !conv.is_group ? 'bg-red-500' : 'bg-slate-300'}`;
-        if (statusTxt) statusTxt.innerText = conv.is_group ? 'Group Chat' : (conv.is_online ? 'Online' : 'Offline');
+        if (statusTxt) statusTxt.innerText = conv.is_group ? T('Group chat', 'محادثة جماعية') : (conv.is_online ? T('Online', 'متصل') : T('Offline', 'غير متصل'));
 
         // Update detail panel
         const detailAvatar = document.getElementById('detail-avatar');
@@ -1599,8 +1636,8 @@
         }
         if (detailName)      detailName.innerText      = conv.name || '';
         if (detailRole)      detailRole.innerText      = conv.role || (conv.is_group ? 'Group' : 'Team Member');
-        if (detailStatus)    detailStatus.innerText    = conv.is_group ? 'Group Chat' : (conv.is_online ? '🟢 Online' : '⚫ Offline');
-        if (detailEmail)     detailEmail.innerText     = conv.email || (conv.is_group ? 'Group Chat' : 'user@email.com');
+        if (detailStatus)    detailStatus.innerText    = conv.is_group ? T('Group chat', 'محادثة جماعية') : (conv.is_online ? T('Online', 'متصل') : T('Offline', 'غير متصل'));
+        if (detailEmail)     detailEmail.innerText     = conv.email || (conv.is_group ? T('Group chat', 'محادثة جماعية') : '');
         if (detailStatusTxt) detailStatusTxt.innerText = conv.status || 'Available';
 
         const pollsContainer = document.getElementById('active-polls-container');
@@ -1618,7 +1655,7 @@
         isLoadingMsgs = true;
         const offset = isLoadMore ? currentOffset : 0;
 
-        fetch(`/messaging/api/messages/conv/${activeChatId}/?offset=${offset}`)
+        fetch(`${MSG_ROOT}api/messages/conv/${activeChatId}/?offset=${offset}`)
             .then(r => r.json())
             .then(data => {
                 isLoadingMsgs = false;
@@ -1633,7 +1670,7 @@
                         currentOffset = msgs.length;
                         msgContainer.innerHTML = '';
                         if (msgs.length === 0) {
-                            msgContainer.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 py-12"><span class="material-symbols-outlined text-4xl mb-2 opacity-30">chat</span><p class="text-xs font-semibold">No messages yet. Say hello!</p></div>';
+                            msgContainer.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 py-12"><i class="fas fa-comment wt-mi text-4xl mb-2 opacity-30" aria-hidden="true"></i><p class="text-xs font-semibold">No messages yet. Say hello!</p></div>';
                         } else {
                             msgs.forEach(msg => msgContainer.appendChild(buildMsgRow(msg)));
                             knownMsgIds = new Set(msgs.map(m => m.id));
@@ -1683,15 +1720,15 @@
         let attachHtml = '';
         if (msg.attachment_url) {
             if (msg.is_image)
-                attachHtml = `<div class="mt-2 rounded-xl overflow-hidden border border-slate-200"><img src="${msg.attachment_url}" class="max-w-[260px] object-cover cursor-pointer" onclick="window.open('${msg.attachment_url}')"></div>`;
+                attachHtml = `<div class="mt-2 rounded-xl overflow-hidden border border-slate-200"><a href="${escapeHtml(msg.attachment_url)}" target="_blank" rel="noopener"><img src="${escapeHtml(msg.attachment_url)}" alt="" class="max-w-[260px] object-cover cursor-pointer"></a></div>`;
             else if (msg.is_voice)
                 attachHtml = `
                 <div class="mt-2 px-3 py-2 rounded-xl bg-slate-900 text-white border border-slate-700/70 shadow-md flex items-center gap-2.5 w-64 max-w-full">
-                    <audio id="voice-audio-${msg.id}" src="${msg.attachment_url}" preload="auto" onended="resetVoicePlayer(${msg.id})" ontimeupdate="updateVoiceProgress(${msg.id})"></audio>
+                    <audio id="voice-audio-${msg.id}" src="${escapeHtml(msg.attachment_url)}" preload="auto" onended="resetVoicePlayer(${msg.id})" ontimeupdate="updateVoiceProgress(${msg.id})"></audio>
                     
                     <!-- Sharp Play / Pause Button -->
                     <button type="button" onclick="toggleVoicePlay(${msg.id})" id="voice-play-btn-${msg.id}" class="w-8 h-8 rounded-full bg-red-500 hover:bg-red-400 active:scale-95 text-slate-950 flex items-center justify-center shadow transition-all flex-shrink-0" title="Play / Stop Voice Note">
-                        <span class="material-symbols-outlined text-xl leading-none font-bold" id="voice-play-icon-${msg.id}">play_arrow</span>
+                        <i class="fas fa-play wt-mi text-xl leading-none font-bold" id="voice-play-icon-${msg.id}" aria-hidden="true"></i>
                     </button>
                     
                     <div class="flex-1 min-w-0 flex flex-col gap-1">
@@ -1701,7 +1738,7 @@
                         <!-- Details Row (Timer & Speed Multiplier) -->
                         <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
                             <div class="flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[12px] text-red-400">mic</span>
+                                <i class="fas fa-microphone wt-mi text-[12px] text-red-400" aria-hidden="true"></i>
                                 <span id="voice-time-${msg.id}">0:00</span>
                             </div>
                             <button type="button" onclick="toggleVoiceSpeed(${msg.id})" id="voice-speed-${msg.id}" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-600 transition-colors">1x</button>
@@ -1709,7 +1746,7 @@
                     </div>
                 </div>`;
             else
-                attachHtml = `<a href="${msg.attachment_url}" target="_blank" class="mt-2 flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors"><span class="material-symbols-outlined text-slate-900 text-base">description</span><span class="text-xs truncate font-medium max-w-[140px]">${msg.attachment_url.split('/').pop()}</span></a>`;
+                attachHtml = `<a href="${escapeHtml(msg.attachment_url)}" target="_blank" rel="noopener" class="mt-2 flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors"><i class="fas fa-file-lines wt-mi text-slate-900 text-base" aria-hidden="true"></i><span class="text-xs truncate font-medium max-w-[140px]">${escapeHtml(decodeURIComponent(msg.attachment_url.split('/').pop()))}</span></a>`;
         }
 
         let reactHtml = '';
@@ -1719,49 +1756,50 @@
             reactHtml = '<div class="flex flex-wrap gap-1 mt-1 px-1">';
             for (const [emoji, users] of Object.entries(grouped)) {
                 const mine = users.some(u => parseInt(u.user_id) === CURRENT_USER_ID);
-                reactHtml += `<button onclick="reactToMessage(${msg.id},'${emoji}')" class="px-2 py-0.5 text-[10px] rounded-full border ${mine ? 'bg-primary/10 border-slate-200 text-slate-900 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'} shadow-sm">${emoji} ${users.length}</button>`;
+                reactHtml += `<button data-emoji="${escapeHtml(emoji)}" onclick="reactToMessage(${msg.id}, this.dataset.emoji)" class="px-2 py-0.5 text-[10px] rounded-full border ${mine ? 'bg-primary/10 border-slate-200 text-slate-900 font-bold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'} shadow-sm">${escapeHtml(emoji)} ${users.length}</button>`;
             }
             reactHtml += '</div>';
         }
 
         const replyHtml = msg.reply_to_id
-            ? `<div class="text-[10px] text-slate-500 mb-1 flex items-center gap-1 cursor-pointer hover:text-slate-900 px-1" onclick="scrollToMessage(${msg.reply_to_id})"><span class="material-symbols-outlined text-[12px]">reply</span> Replying to a message</div>`
+            ? `<div class="text-[10px] text-slate-500 mb-1 flex items-center gap-1 cursor-pointer hover:text-slate-900 px-1" onclick="scrollToMessage(${msg.reply_to_id})"><i class="fas fa-reply wt-mi text-[12px]" aria-hidden="true"></i> ${T('Reply to a message', 'ردًّا على رسالة')}</div>`
             : '';
 
         const actHtml = msg.is_deleted ? '' : `
             <div class="absolute ${isSent ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity bg-white px-2 py-1 rounded-xl shadow border border-slate-200 z-10">
-                <button onclick="reactToMessage(${msg.id}, '\uD83D\uDC4D')" class="p-1 text-slate-400 hover:text-amber-500 transition-colors" title="React"><span class="material-symbols-outlined text-base">mood</span></button>
-                <button onclick="prepareReply(${msg.id}, decodeURIComponent(this.dataset.content))" data-content="${encodeURIComponent(msg.content||'')}" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Reply"><span class="material-symbols-outlined text-base">reply</span></button>
-                <button onclick="prepareForward(${msg.id})" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Forward"><span class="material-symbols-outlined text-base">share</span></button>
-                ${isSent ? `<button onclick="prepareEdit(${msg.id}, decodeURIComponent(this.dataset.content))" data-content="${encodeURIComponent(msg.content||'')}" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Edit"><span class="material-symbols-outlined text-base">edit</span></button>` : ''}
-                ${isSent ? `<button onclick="deleteMessage(${msg.id})" class="p-1 text-slate-400 hover:text-red-500 transition-colors" title="Delete"><span class="material-symbols-outlined text-base">delete</span></button>` : ''}
+                <button onclick="reactToMessage(${msg.id}, '\uD83D\uDC4D')" class="p-1 text-slate-400 hover:text-amber-500 transition-colors" title="React"><i class="fas fa-face-smile wt-mi text-base" aria-hidden="true"></i></button>
+                <button onclick="prepareReply(${msg.id}, decodeURIComponent(this.dataset.content))" data-content="${encodeURIComponent(msg.content||'')}" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Reply"><i class="fas fa-reply wt-mi text-base" aria-hidden="true"></i></button>
+                <button onclick="prepareForward(${msg.id})" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Forward"><i class="fas fa-share wt-mi text-base" aria-hidden="true"></i></button>
+                ${isSent ? `<button onclick="prepareEdit(${msg.id}, decodeURIComponent(this.dataset.content))" data-content="${encodeURIComponent(msg.content||'')}" class="p-1 text-slate-400 hover:text-slate-900 transition-colors" title="Edit"><i class="fas fa-pen wt-mi text-base" aria-hidden="true"></i></button>` : ''}
+                ${isSent ? `<button onclick="deleteMessage(${msg.id})" class="p-1 text-slate-400 hover:text-red-500 transition-colors" title="Delete"><i class="fas fa-trash wt-mi text-base" aria-hidden="true"></i></button>` : ''}
             </div>`;
 
         let senderAvatarHtml = '';
         if (!isSent && msg.sender_avatar) {
-            senderAvatarHtml = `<img src="${msg.sender_avatar}" class="h-8 w-8 rounded-full border border-slate-200 object-cover mt-auto mb-1 shrink-0" title="${msg.sender_name}">`;
+            senderAvatarHtml = `<img src="${escapeHtml(msg.sender_avatar)}" alt="" class="h-8 w-8 rounded-full border border-slate-200 object-cover mt-auto mb-1 shrink-0" title="${escapeHtml(msg.sender_name)}">`;
         } else if (!isSent) {
             const initial = msg.sender_name ? msg.sender_name.charAt(0).toUpperCase() : '?';
-            senderAvatarHtml = `<div class="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 mt-auto mb-1 shrink-0" title="${msg.sender_name}">${initial}</div>`;
+            senderAvatarHtml = `<div class="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 mt-auto mb-1 shrink-0" title="${escapeHtml(msg.sender_name)}">${escapeHtml(initial)}</div>`;
         }
 
         div.innerHTML = `
             <div class="flex items-end gap-2 max-w-[85%] relative group/msg">
                 ${senderAvatarHtml}
                 <div class="flex flex-col ${isSent ? 'items-end' : 'items-start'} min-w-0">
+                    ${!isSent && window.__wtActiveIsGroup && msg.sender_name ? `<span class="wt-msg-sender" dir="auto" translate="no">${escapeHtml(msg.sender_name)}</span>` : ''}
                     ${replyHtml}
                     <div class="flex items-center gap-2">
                         ${!isSent && !msg.is_deleted ? `<div class="msg-checkbox-container hidden"><input type="checkbox" class="msg-checkbox w-4 h-4 text-slate-900 bg-slate-100 border-slate-300 rounded focus:ring-primary" value="${msg.id}" onchange="toggleMessageSelection(this, ${msg.id})"></div>` : ''}
                         <div class="px-4 py-3 rounded-2xl relative ${isSent ? 'bg-primary text-white rounded-tr-none' : 'bg-slate-100 text-slate-900 rounded-tl-none'}">
-                            <p class="text-sm leading-relaxed ${msg.is_deleted ? 'italic opacity-60' : ''} whitespace-pre-wrap break-words">${msg.is_deleted ? 'This message was deleted' : (msg.content || '')}${msg.is_edited ? ' <span class="text-[10px] opacity-70">(edited)</span>' : ''}</p>
+                            <p class="text-sm leading-relaxed ${msg.is_deleted ? 'italic opacity-60' : ''} whitespace-pre-wrap break-words" dir="auto" translate="no">${msg.is_deleted ? T('This message was deleted', 'حُذفت هذه الرسالة') : safeHtml(msg.content)}${msg.is_edited ? ` <span class="text-[10px] opacity-70">${T('(edited)', '(معدّلة)')}</span>` : ''}</p>
                             ${attachHtml}
                             ${actHtml}
                         </div>
                         ${isSent && !msg.is_deleted ? `<div class="msg-checkbox-container hidden"><input type="checkbox" class="msg-checkbox w-4 h-4 text-slate-900 bg-slate-100 border-slate-300 rounded focus:ring-primary" value="${msg.id}" onchange="toggleMessageSelection(this, ${msg.id})"></div>` : ''}
                     </div>
                     <div class="flex items-center gap-2 mt-1 px-1">
-                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${msg.timestamp || ''}</span>
-                        ${msg.is_pinned ? '<span class="material-symbols-outlined text-[12px] text-amber-500">push_pin</span>' : ''}
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">${escapeHtml(msg.timestamp || '')}</span>
+                        ${msg.is_pinned ? '<i class="fas fa-thumbtack wt-mi text-[12px] text-amber-500" aria-hidden="true"></i>' : ''}
                     </div>
                     ${reactHtml}
                 </div>
@@ -1789,7 +1827,7 @@
 
         const isEditing = editId !== '';
         const url = isEditing
-            ? `/messaging/api/edit/${editId}/`
+            ? `${MSG_ROOT}api/edit/${editId}/`
             : "{% url 'messaging:api-send-message' %}";
 
         let opts;
@@ -1848,7 +1886,7 @@
         const now = Date.now();
         if (now - lastTypingSent > 3000) {
             lastTypingSent = now;
-            fetch(`/messaging/api/conversations/typing-update/${activeChatId}/`, { method:'POST', headers:{'X-CSRFToken':CSRF} }).catch(()=>{});
+            fetch(`${MSG_ROOT}api/conversations/typing-update/${activeChatId}/`, { method:'POST', headers:{'X-CSRFToken':CSRF} }).catch(()=>{});
         }
     });
     messageInput.addEventListener('keydown', e => {
@@ -1905,7 +1943,7 @@
             `;
 
             searchTimeout = setTimeout(() => {
-                fetch(`/messaging/api/search-users/?q=${encodeURIComponent(q)}`)
+                fetch(`${MSG_ROOT}api/search-users/?q=${encodeURIComponent(q)}`)
                     .then(r => r.json())
                     .then(data => {
                         const users = data.users || [];
@@ -1926,7 +1964,7 @@
             contactsList.innerHTML = `
                 <div class="text-center py-12 px-4">
                     <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                        <span class="material-symbols-outlined text-2xl">person_search</span>
+                        <i class="fas fa-user-group wt-mi text-2xl" aria-hidden="true"></i>
                     </div>
                     <div class="text-sm font-bold text-slate-700 mb-1">
                         <span class="lang-en">No users found</span><span class="lang-ar">لم يتم العثور على نتائج</span>
@@ -1948,7 +1986,7 @@
             const convSec = document.createElement('div');
             convSec.innerHTML = `
                 <div class="px-3 py-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                    <span class="material-symbols-outlined text-[15px] text-emerald-600">forum</span>
+                    <i class="fas fa-comments wt-mi text-[15px] text-emerald-600" aria-hidden="true"></i>
                     <span class="lang-en">Active Chats (${matchingConvs.length})</span>
                     <span class="lang-ar">المحادثات الجارية (${matchingConvs.length})</span>
                 </div>
@@ -1965,7 +2003,7 @@
             const userSec = document.createElement('div');
             userSec.innerHTML = `
                 <div class="px-3 py-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                    <span class="material-symbols-outlined text-[15px] text-emerald-600">group</span>
+                    <i class="fas fa-users wt-mi text-[15px] text-emerald-600" aria-hidden="true"></i>
                     <span class="lang-en">System Users (${users.length})</span>
                     <span class="lang-ar">مستخدمو المنظومة (${users.length})</span>
                 </div>
@@ -2005,7 +2043,7 @@
                         openChat(existing);
                         renderConvList();
                     } else {
-                        fetch(`/messaging/api/messages/${u.id}/`)
+                        fetch(`${MSG_ROOT}api/messages/${u.id}/`)
                             .then(r => r.json()).then(d => {
                                 if (d.conversation_id) {
                                     fetch("{% url 'messaging:api-get-conversations' %}")
@@ -2049,20 +2087,20 @@
                 const q = memSearch.value.trim();
                 if (q.length < 1) { resDiv.classList.add('hidden'); return; }
                 grpSearchTO = setTimeout(() => {
-                    fetch(`/messaging/api/search-users/?q=${encodeURIComponent(q)}`)
+                    fetch(`${MSG_ROOT}api/search-users/?q=${encodeURIComponent(q)}`)
                         .then(r => r.json()).then(data => {
                             resDiv.innerHTML = '';
                             (data.users||[]).forEach(u => {
                                 const d = document.createElement('div');
                                 d.className = 'p-2 flex items-center gap-3 cursor-pointer hover:bg-slate-50 ';
-                                d.innerHTML = `<div class="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">${u.initial||'?'}</div><span class="text-sm">${u.full_name}</span>`;
+                                d.innerHTML = `<div class="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">${escapeHtml(u.initial||'?')}</div><span class="text-sm" dir="auto">${escapeHtml(u.full_name)}</span>`;
                                 d.onclick = () => {
                                     if (!selMembers.find(m => m.id === u.id)) {
                                         selMembers.push(u);
                                         const tag = document.createElement('span');
                                         tag.className = 'bg-primary/10 text-slate-900  text-xs px-2 py-1 rounded-full flex items-center gap-1';
                                         tag.dataset.uid = u.id;
-                                        tag.innerHTML = `${u.full_name} <button type="button" class="ml-1 text-slate-900 hover:text-red-500 font-bold">&times;</button>`;
+                                        tag.innerHTML = `<span dir="auto">${escapeHtml(u.full_name)}</span> <button type="button" class="ml-1 text-slate-900 hover:text-red-500 font-bold">&times;</button>`;
                                         tag.querySelector('button').onclick = () => { tag.remove(); selMembers = selMembers.filter(m => m.id !== u.id); };
                                         selDiv.appendChild(tag);
                                     }
@@ -2110,12 +2148,12 @@
         if (!activeChatId) return;
         const msg = showingArchivedChats ? 'Unarchive this conversation?' : 'Archive this conversation?';
         if (!await amazingConfirm(msg)) return;
-        fetch(`/messaging/api/conversations/archive/${activeChatId}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/conversations/archive/${activeChatId}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(()=>{ activeChatId=null; loadConversations(); });
     };
     window.deleteActiveChat = async () => {
         if (!activeChatId || !await amazingConfirm('Delete this conversation?')) return;
-        fetch(`/messaging/api/conversations/delete/${activeChatId}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/conversations/delete/${activeChatId}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(()=>{ activeChatId=null; loadConversations(); });
     };
 
@@ -2127,7 +2165,7 @@
         if(preview.length > 50) preview = preview.substring(0, 50) + '...';
         document.getElementById('reply-preview-text').innerText = preview || 'Shared Item';
         document.getElementById('reply-preview-bar').classList.remove('hidden');
-        document.getElementById('send-icon').innerText = 'send';
+        document.getElementById('send-icon').className = 'fas fa-paper-plane wt-mi';
         messageInput.focus();
     };
     window.prepareEdit = (id, content) => {
@@ -2138,7 +2176,7 @@
         document.getElementById('reply-preview-text').innerText = 'Editing: ' + (preview || 'Shared Item');
         document.getElementById('reply-preview-bar').classList.remove('hidden');
         messageInput.value = content;
-        document.getElementById('send-icon').innerText = 'check';
+        document.getElementById('send-icon').className = 'fas fa-check wt-mi';
         messageInput.focus();
     };
     const cRplyB = document.getElementById('cancel-reply-btn');
@@ -2146,21 +2184,21 @@
         document.getElementById('reply-to-id').value = '';
         document.getElementById('edit-message-id').value = '';
         document.getElementById('reply-preview-bar').classList.add('hidden');
-        document.getElementById('send-icon').innerText = 'send';
+        document.getElementById('send-icon').className = 'fas fa-paper-plane wt-mi';
     };
 
     // ---- Actions ----
     window.reactToMessage = (id,emoji) => {
-        fetch(`/messaging/api/react/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({emoji})})
+        fetch(`${MSG_ROOT}api/react/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({emoji})})
             .then(r=>r.json()).then(d=>{if(d.status==='success'){knownMsgIds=new Set();loadMessages();}});
     };
     window.deleteMessage = async id => {
         if (!await amazingConfirm('Delete this message?')) return;
-        fetch(`/messaging/api/delete/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/delete/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(d=>{if(d.status==='success'){knownMsgIds=new Set();loadMessages();}});
     };
     window.togglePin = id => {
-        fetch(`/messaging/api/messages/pin/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/messages/pin/${id}/`, {method:'POST',headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(d=>{if(d.status==='success'){knownMsgIds=new Set();loadMessages();}});
     };
     window.scrollToMessage = id => { const el=document.getElementById(`msg-row-${id}`); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); };
@@ -2178,7 +2216,7 @@
             const sel=fwdRcpts.has(conv.id);
             const d=document.createElement('div');
             d.className=`flex items-center p-3 cursor-pointer rounded-xl border transition-colors ${sel?'border-primary bg-primary/5':'border-transparent hover:bg-slate-50 '}`;
-            d.innerHTML=`<div class="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-900 text-xs font-bold mr-3">${conv.initial||'?'}</div><span class="flex-1 text-sm font-semibold">${conv.name}</span><input type="checkbox" class="h-4 w-4" ${sel?'checked':''} readonly>`;
+            d.innerHTML=`<div class="h-8 w-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-900 text-xs font-bold mr-3">${escapeHtml(conv.initial||'?')}</div><span class="flex-1 text-sm font-semibold" dir="auto">${escapeHtml(conv.name)}</span><input type="checkbox" class="h-4 w-4" ${sel?'checked':''} readonly>`;
             d.onclick=()=>{if(sel)fwdRcpts.delete(conv.id);else fwdRcpts.add(conv.id);if(fwdBtn)fwdBtn.disabled=fwdRcpts.size===0;renderFwdList(fwdSearch?fwdSearch.value:'');};
             fwdList.appendChild(d);
         });
@@ -2186,7 +2224,7 @@
     if(fwdSearch) fwdSearch.oninput=e=>renderFwdList(e.target.value);
     if(fwdBtn) fwdBtn.onclick=()=>{
         if(!fwdMsgId||fwdRcpts.size===0) return; fwdBtn.disabled=true;
-        fetch(`/messaging/api/forward/${fwdMsgId}/`,{method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({conversation_ids:[...fwdRcpts]})})
+        fetch(`${MSG_ROOT}api/forward/${fwdMsgId}/`,{method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({conversation_ids:[...fwdRcpts]})})
             .then(r=>r.json()).then(d=>{if(d.status==='success'){forwardModal.hide();loadMessages();loadConversations();}}).finally(()=>fwdBtn.disabled=false);
     };
 
@@ -2351,7 +2389,7 @@
                     a.pause();
                     const otherId = a.id.replace('voice-audio-', '');
                     const otherIcon = document.getElementById(`voice-play-icon-${otherId}`);
-                    if (otherIcon) otherIcon.innerText = 'play_arrow';
+                    if (otherIcon) otherIcon.className = 'fas fa-play wt-mi';
                 }
             });
 
@@ -2360,22 +2398,22 @@
             const playPromise = audio.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    icon.innerText = 'pause';
+                    icon.className = 'fas fa-pause wt-mi';
                 }).catch(err => {
                     console.error("Audio playback error:", err);
                     audio.load();
                     audio.play().then(() => {
-                        icon.innerText = 'pause';
+                        icon.className = 'fas fa-pause wt-mi';
                     }).catch(e => {
                         console.error("Audio retry playback error:", e);
                     });
                 });
             } else {
-                icon.innerText = 'pause';
+                icon.className = 'fas fa-pause wt-mi';
             }
         } else {
             audio.pause();
-            icon.innerText = 'play_arrow';
+            icon.className = 'fas fa-play wt-mi';
         }
     };
 
@@ -2402,7 +2440,7 @@
         const icon = document.getElementById(`voice-play-icon-${msgId}`);
         const seek = document.getElementById(`voice-seek-${msgId}`);
         const timeEl = document.getElementById(`voice-time-${msgId}`);
-        if (icon) icon.innerText = 'play_arrow';
+        if (icon) icon.className = 'fas fa-play wt-mi';
         if (seek) seek.value = 0;
         if (timeEl) timeEl.innerText = '0:00';
     };
@@ -2434,7 +2472,7 @@
         const q=document.getElementById('poll-question-input').value.trim();
         const opts=[...document.querySelectorAll('.poll-option-input')].map(i=>i.value).filter(v=>v.trim());
         if(!q || opts.length < 2) { alert('Please enter a question and at least 2 options.'); return; }
-        fetch(`/messaging/api/conversations/polls/create/${activeChatId}/`,{method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({question:q,options:opts})})
+        fetch(`${MSG_ROOT}api/conversations/polls/create/${activeChatId}/`,{method:'POST',headers:{'X-CSRFToken':CSRF,'Content-Type':'application/json'},body:JSON.stringify({question:q,options:opts})})
             .then(r=>r.json()).then(d=>{
                 if(d.status==='success'){
                     createPollMdl.hide();
@@ -2449,7 +2487,7 @@
 
     function loadPolls() {
         if (!activeChatId) return;
-        fetch(`/messaging/api/conversations/polls/${activeChatId}/`)
+        fetch(`${MSG_ROOT}api/conversations/polls/${activeChatId}/`)
             .then(r=>r.json()).then(d=>{
                 const polls = d.polls || [];
                 renderPolls(polls);
@@ -2464,7 +2502,7 @@
 
         if (polls.length === 0) { container.innerHTML = ''; container.classList.add('hidden'); if(detailSection) detailSection.classList.add('hidden'); return; }
         container.classList.remove('hidden');
-        container.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3"><span class="material-symbols-outlined text-[14px] align-middle">poll</span> Active Polls</p>';
+        container.innerHTML = '<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3"><i class="fas fa-square-poll-vertical wt-mi text-[14px] align-middle" aria-hidden="true"></i> Active Polls</p>';
         if (detailSection) { detailSection.classList.remove('hidden'); detailList.innerHTML = ''; }
 
         polls.forEach(poll => {
@@ -2473,8 +2511,8 @@
             // Generate Poll HTML Card
             let cardHtml = `
                 <div class="flex justify-between items-start mb-3">
-                    <p class="font-bold text-sm text-slate-900">${poll.question}</p>
-                    ${!poll.is_closed && poll.creator_id === CURRENT_USER_ID ? `<button onclick="closePoll(${poll.id})" class="text-slate-400 hover:text-red-500 transition-colors" title="Close Poll"><span class="material-symbols-outlined text-sm">close</span></button>` : ''}
+                    <p class="font-bold text-sm text-slate-900" dir="auto">${escapeHtml(poll.question)}</p>
+                    ${!poll.is_closed && poll.creator_id === CURRENT_USER_ID ? `<button onclick="closePoll(${poll.id})" class="text-slate-400 hover:text-red-500 transition-colors" title="Close Poll"><i class="fas fa-xmark wt-mi text-sm" aria-hidden="true"></i></button>` : ''}
                 </div>
                 <div class="space-y-2" id="poll-opts-${poll.id}">
                     ${poll.options.map(opt => {
@@ -2487,7 +2525,7 @@
                             <div class="relative px-3 py-2">
                                 <div class="absolute inset-0 ${fillClass}" style="width:${pct}%"></div>
                                 <div class="relative flex justify-between text-xs font-semibold">
-                                    <span class="${textClass}">${opt.text}</span>
+                                    <span class="${textClass}" dir="auto">${escapeHtml(opt.text)}</span>
                                     <span class="${pctClass}">${pct}%</span>
                                 </div>
                             </div>
@@ -2495,8 +2533,8 @@
                     }).join('')}
                 </div>
                 <div class="flex justify-between items-center mt-2">
-                    <p class="text-[10px] text-slate-400">${totalVotes} vote${totalVotes !== 1 ? 's' : ''} · by ${poll.creator_name}</p>
-                    ${poll.is_closed ? '<span class="text-[10px] font-bold text-red-500 uppercase">Closed</span>' : ''}
+                    <p class="text-[10px] text-slate-400">${IS_AR() ? `الأصوات: ${totalVotes}` : `${totalVotes} vote${totalVotes !== 1 ? 's' : ''}`} · ${escapeHtml(poll.creator_name)}</p>
+                    ${poll.is_closed ? `<span class="text-[10px] font-bold wt-closed">${T('Closed', 'مغلق')}</span>` : ''}
                 </div>
             `;
             
@@ -2524,13 +2562,13 @@
     }
 
     window.votePoll = function(optionId, pollId) {
-        fetch(`/messaging/api/conversations/polls/vote/${optionId}/`, {method:'POST', headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/conversations/polls/vote/${optionId}/`, {method:'POST', headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(d=>{ if(d.status==='success') loadPolls(); else alert(d.message||'Vote failed.'); });
     };
 
     window.closePoll = async function(pollId) {
         if (!await amazingConfirm('Are you sure you want to close this poll? It will be removed from the active chat.')) return;
-        fetch(`/messaging/api/conversations/polls/${pollId}/close/`, {method:'POST', headers:{'X-CSRFToken':CSRF}})
+        fetch(`${MSG_ROOT}api/conversations/polls/${pollId}/close/`, {method:'POST', headers:{'X-CSRFToken':CSRF}})
             .then(r=>r.json()).then(d=>{ if(d.status==='success') loadPolls(); else alert(d.message||'Could not close poll.'); });
     };
 
@@ -2666,7 +2704,7 @@
         clearChatSearchHighlights();
         if (!q || !activeChatId) return;
         chatSearchTO = setTimeout(()=>{
-            fetch(`/messaging/api/conversations/search/${activeChatId}/?q=${encodeURIComponent(q)}`)
+            fetch(`${MSG_ROOT}api/conversations/search/${activeChatId}/?q=${encodeURIComponent(q)}`)
                 .then(r=>r.json()).then(d=>{
                     const msgs = d.messages || [];
                     if (msgs.length === 0) return;
@@ -2699,9 +2737,9 @@
     const typingTxt=document.getElementById('typing-text');
     function pollTyping(){
         if(!activeChatId) return;
-        fetch(`/messaging/api/conversations/typing-list/${activeChatId}/`).then(r=>r.json()).then(d=>{
+        fetch(`${MSG_ROOT}api/conversations/typing-list/${activeChatId}/`).then(r=>r.json()).then(d=>{
             const u=(d.typing_users||[]);
-            if(u.length>0){typingTxt.innerText=u.map(x=>x.name).join(', ')+' is typing...';typingIndicator.classList.remove('hidden');}
+            if(u.length>0){typingTxt.innerText=u.map(x=>x.name).join(IS_AR() ? '، ' : ', ')+T(' is typing…', ' يكتب…');typingIndicator.classList.remove('hidden');}
             else typingIndicator.classList.add('hidden');
         }).catch(()=>{});
     }
@@ -2728,7 +2766,7 @@
                 const btn = document.querySelector('button[onclick="copyDetailEmail()"]');
                 if (btn) {
                     const origHtml = btn.innerHTML;
-                    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;color:var(--color-primary, #10b981);">check</span>';
+                    btn.innerHTML = '<i class="fas fa-check wt-mi" style="font-size:16px;color:var(--color-primary, #10b981);" aria-hidden="true"></i>';
                     setTimeout(() => btn.innerHTML = origHtml, 2000);
                 }
             }).catch(() => {});
@@ -2864,7 +2902,7 @@
                 }
             }
 
-            const stopRecIcon = document.querySelector('#stop-recording-btn .material-symbols-outlined');
+            const stopRecIcon = document.querySelector('#stop-recording-btn .wt-mi');
             if (stopRecIcon) {
                 stopRecIcon.style.setProperty('display', 'inline-block', 'important');
                 if (isAr) {
@@ -2941,7 +2979,8 @@
 
     // ---- Init ----
     loadConversations();
-    setInterval(loadConversations, 10000);
+    // Refresh the list when no chat is open; while a chat is open the 4 s loop already does it.
+    setInterval(() => { if (!activeChatId && !document.hidden) loadConversations(); }, 15000);
 })();
 </script>
 {% endblock %}

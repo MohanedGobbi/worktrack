@@ -32,7 +32,7 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
    - tasks: ~~`tasks_list`, `task_detail`, `task_kanban`, `task_calendar`, `task_form`~~ Done (independent review skipped at the owner's request; run one before calling them finished).
    - ~~submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`~~ Done (no independent review yet). Review scores are now 0–100, matching `Submission.score` and the KPI engine.
    - ~~`module_dashboard`~~ Done ("Task timeline first"; no independent review yet)
-   - `messaging/messenger_page` (still loads the Tailwind script)
+   - ~~`messaging/messenger_page`~~ Hardened in place (not rebuilt): message HTML sanitized, Font Awesome icons, subpath-safe URLs, translation kept off user text. It still uses the local Tailwind file for layout.
    - `notifications`, `profile`, `worker_performance`
 3. **Phase 2, manager tools:**
    - `manager_portal`, `manager_analytics`, `kpi_dashboard`
