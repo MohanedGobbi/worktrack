@@ -4360,21 +4360,21 @@ def delete_task_file(request, task_id):
 @require_http_methods(["GET"])
 def submission_list(request):
     """Submissions list view."""
-    submissions = Submission.objects.select_related('task', 'worker', 'reviewed_by')
-    
+    submissions = Submission.objects.select_related('task', 'task__work_module', 'worker', 'reviewed_by')
+
     # Filters
-    search = request.GET.get('search', '')
+    search = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '')
     sort = request.GET.get('sort', '-created_at')
-    
+    if sort not in ('-created_at', 'created_at', '-updated_at', '-submitted_at'):
+        sort = '-created_at'
+
     if search:
         submissions = submissions.filter(
-            Q(task__title__icontains=search) | Q(content__icontains=search)
+            Q(task__title__icontains=search) | Q(notes__icontains=search) |
+            Q(worker__first_name__icontains=search) | Q(worker__last_name__icontains=search) | Q(worker__email__icontains=search)
         )
-    
-    if status_filter:
-        submissions = submissions.filter(status=status_filter)
-    
+
     # Role-based visibility isolation
     if request.user.role == 'super_admin':
         pass
@@ -4385,26 +4385,42 @@ def submission_list(request):
         ).distinct()
     else:
         submissions = submissions.filter(worker=request.user)
-    
-    submissions = submissions.order_by(sort)
-    
-    # Get stats
-    total_submissions = submissions.count()
-    pending_count = submissions.filter(status='pending').count()
-    approved_count = submissions.filter(status='approved').count()
-    rejected_count = submissions.filter(status='rejected').count()
-    
+
+    counts = {
+        'all': submissions.count(),
+        'waiting': submissions.filter(status__in=['submitted', 'under_review']).count(),
+        'approved': submissions.filter(status='approved').count(),
+        'rejected': submissions.filter(status='rejected').count(),
+        'draft': submissions.filter(status='draft').count(),
+    }
+    if status_filter == 'waiting':
+        submissions = submissions.filter(status__in=['submitted', 'under_review'])
+    elif status_filter in ('approved', 'rejected', 'draft'):
+        submissions = submissions.filter(status=status_filter)
+    else:
+        status_filter = ''
+
+    submissions = submissions.order_by(sort, '-id')
+    page = Paginator(submissions, 25).get_page(request.GET.get('page'))
+    qs = request.GET.copy()
+    qs.pop('page', None)
+
     context = {
-        'submissions': submissions,
-        'total_submissions': total_submissions,
-        'pending_count': pending_count,
-        'approved_count': approved_count,
-        'rejected_count': rejected_count,
+        'submissions': page,
+        'wt_counts': counts,
+        'wt_sl_tabs': [('', 'All', 'الكل'), ('waiting', 'Waiting for review', 'بانتظار المراجعة'), ('rejected', 'Sent back', 'أُعيدت'), ('approved', 'Approved', 'معتمدة'), ('draft', 'Drafts', 'مسودات')],
+        'wt_qs': qs.urlencode(),
+        'wt_filtered': bool(search or status_filter),
+        'total_submissions': counts['all'],
+        'pending_count': counts['waiting'],
+        'approved_count': counts['approved'],
+        'rejected_count': counts['rejected'],
         'is_manager': request.user.role in ['manager', 'super_admin'],
         'search': search,
         'status': status_filter,
+        'sort': sort,
     }
-    
+
     return render(request, 'pages/submissions_list.html', context)
 
 def save_submission_snapshot(submission):
@@ -4845,10 +4861,10 @@ def submission_update_status(request, submission_id):
         # Fallback if for some reason progress_val is missing
         submission.progress = 100
     
-    # Correctly parse and save score (0-10 scale)
+    # Score is out of 100, the same scale as the other KPI parts (Submission.score help text, kpi.engine)
     if score is not None and score.strip():
         try:
-            submission.score = min(max(float(score), 0), 10)
+            submission.score = min(max(float(score), 0), 100)
         except ValueError:
             pass
 

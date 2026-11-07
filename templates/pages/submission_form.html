@@ -1,1087 +1,286 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if is_edit %}Edit Submission{% else %}Create Submission{% endif %} · WorkTrack Pro{% endblock %}
-
-{% block extra_css %}
-<!-- Material Symbols & Fonts -->
-<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/fonts/material_symbols.css' %}" rel="stylesheet" />
-<!-- Emerald Green Design System -->
-<link rel="stylesheet" href="{% static 'css/task-green-detail.css' %}?v=2" />
-<style>
-/* Submission Form Specific Styles */
-.sub-form-wrap {
-    max-width: 960px;
-    margin: 0 auto;
-}
-
-/* Error banner */
-.sub-error-widget {
-    display: none;
-    background: rgba(225, 29, 72, 0.08);
-    backdrop-filter: blur(8px);
-    border: 1.5px solid var(--warn);
-    border-radius: var(--radius-inputs);
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.12);
-}
-
-.sub-error-widget.shake {
-    animation: subErrorShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes subErrorShake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-}
-
-/* Staged File Item */
-.staged-file-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-inputs);
-    transition: all 0.2s ease;
-}
-
-.staged-file-item:hover {
-    border-color: var(--g);
-    background: var(--surface);
-    transform: translateY(-1px);
-}
-
-/* Custom Field Cards in Dynamic Container */
-.gf-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-cards);
-    padding: 1.5rem;
-    margin-bottom: 1.25rem;
-    box-shadow: var(--shadow);
-    transition: all 0.2s ease;
-}
-
-.gf-card.has-accent {
-    border-top: 4px solid var(--g);
-}
-
-.gf-card:focus-within {
-    border-color: var(--g);
-    box-shadow: 0 4px 18px rgba(var(--wt-brand-rgb), 0.15);
-}
-
-.gf-label {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-bottom: 0.75rem;
-    display: block;
-}
-
-.gf-input-group {
-    border-bottom: 2px solid var(--line);
-    padding-bottom: 6px;
-    transition: border-color 0.2s ease;
-}
-
-.gf-input-group:focus-within {
-    border-color: var(--g);
-}
-
-.gf-input {
-    border: none !important;
-    background: transparent !important;
-    color: var(--ink) !important;
-    font-size: 0.95rem !important;
-    padding: 0 !important;
-    outline: none !important;
-    width: 100%;
-}
-
-.gf-input:focus {
-    box-shadow: none !important;
-}
-
-/* Section Header Card */
-.gf-section-header {
-    background: linear-gradient(135deg, var(--deep2), var(--deep)) !important;
-    color: #eafff4 !important;
-    border-radius: var(--radius-cards);
-    padding: 1.75rem 2rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 10px 25px rgba(10, 46, 34, 0.2);
-}
-
-/* Progress Bead Styling */
-.progress-bead {
-    width: 16px;
-    height: 16px;
-    background: var(--surface);
-    border: 3px solid var(--mute);
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 3;
-}
-
-.progress-bead:hover {
-    transform: translate(-50%, -50%) scale(1.3);
-    border-color: var(--g);
-}
-
-.progress-bead.active {
-    background: var(--g);
-    border-color: var(--surface);
-    box-shadow: 0 0 10px rgba(var(--wt-brand-rgb), 0.6);
-}
-
-.progress-tooltip {
-    position: absolute;
-    top: -38px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--deep);
-    color: #eafff4;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 10;
-}
-
-.tg-bead-track:hover .progress-tooltip {
-    opacity: 1;
-}
-
-@keyframes celebratePulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-    100% { transform: scale(1); }
-}
-
-.celebrate {
-    animation: celebratePulse 0.5s ease-out;
-}
-</style>
-{% endblock %}
+{% block title %}{% if wt_lang == 'ar' %}{% if is_edit %}تعديل التسليم{% else %}تسليم جديد{% endif %} · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}{% if is_edit %}Edit submission{% else %}New submission{% endif %} · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="task-detail-page">
-    <div class="task-wrap">
-        <div id="submission-page-wrapper"
-              class="sub-form-wrap"
-              data-task-id="{% if is_edit %}{{ submission.task.id }}{% elif selected_task %}{{ selected_task.id }}{% endif %}"
-              data-submission-id="{% if is_edit %}{{ submission.id }}{% endif %}">
-
-            <!-- Emerald Hero Banner -->
-            <div class="tg-hero">
-                <div class="tg-hero-top">
-                    <a href="javascript:history.back()" class="tg-crumb">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
-                        <span class="lang-en">Back</span><span class="lang-ar">رجوع</span>
-                    </a>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <span class="tg-chip tg-chip-muted" style="background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2);">
-                            <span class="material-symbols-outlined" style="font-size: 15px;">assignment_turned_in</span>
-                            {% if is_edit %}
-                                <span class="lang-en">Edit Submission</span><span class="lang-ar">تعديل التسليم</span>
-                            {% else %}
-                                <span class="lang-en">New Submission</span><span class="lang-ar">تسليم جديد</span>
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-
-                <h1 class="tg-hero-title" style="color: #ffffff !important; margin-top: 1rem;">
-                    {% if selected_task %}
-                        {{ selected_task.title }}
-                    {% elif submission %}
-                        {{ submission.task.title }}
-                    {% else %}
-                        <span class="lang-en">Submit Deliverable</span>
-                        <span class="lang-ar">تسليم مخرجات المهمة</span>
-                    {% endif %}
-                </h1>
-                <p class="tg-hero-subtitle">
-                    <span class="lang-en">Report completion progress, attach verified deliverables, and provide completion documentation.</span>
-                    <span class="lang-ar">تقرير نسبة الإنجاز ورفع المخرجات والمستندات المطلوبة.</span>
-                </p>
-            </div>
-
-            <!-- Error Message Widget -->
-            <div id="errorWidget" class="sub-error-widget">
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 0.5rem; color: var(--warn); font-weight: 800;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-outlined">error</span>
-                        <span><span class="lang-en">Submission Validation</span><span class="lang-ar">تنبيه أثناء التسليم</span></span>
-                    </div>
-                    <button type="button" onclick="document.getElementById('errorWidget').style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-size:18px;">&times;</button>
-                </div>
-                <div id="errorBody" style="color: var(--warn); font-size: 0.88rem; font-weight: 600;">
-                    Please correct the issues highlighted below before proceeding.
-                </div>
-            </div>
-
-            <form method="post" enctype="multipart/form-data" id="submissionForm">
-                {% csrf_token %}
-
-                <!-- SECTION 1: Task Selection / Overview -->
-                <div class="tg-form-section">
-                    <div class="tg-form-section-head">
-                        <h2 class="tg-form-section-title">
-                            <span class="material-symbols-outlined">assignment</span>
-                            <span class="lang-en">Task Context</span>
-                            <span class="lang-ar">سياق المهمة</span>
-                        </h2>
-                    </div>
-
-                    {% if not is_edit %}
-                    <div style="margin-bottom: 1rem;">
-                        <label for="taskSelect" class="tg-form-label">
-                            <span class="lang-en">Select Assigned Task</span>
-                            <span class="lang-ar">اختر المهمة المسندة</span>
-                            <span class="required-star">*</span>
-                        </label>
-                        <select class="tg-form-select" id="taskSelect" name="task" required>
-                            <option value="">-- <span class="lang-en">Choose an assigned task</span> --</option>
-                            {% for t in available_tasks %}
-                                <option value="{{ t.id }}" {% if selected_task and selected_task.id == t.id %}selected{% endif %}>
-                                    {{ t.title }} (Deadline: {{ t.deadline|date:'M d, Y'|default:'None' }})
-                                </option>
-                            {% endfor %}
-                            {% if selected_task and selected_task not in available_tasks %}
-                                <option value="{{ selected_task.id }}" selected>
-                                    {{ selected_task.title }} (Pre-selected)
-                                </option>
-                            {% endif %}
-                        </select>
-                        {% if not available_tasks %}
-                        <div style="margin-top: 1rem; padding: 1rem 1.25rem; background: var(--mint); border: 1px solid var(--g); border-radius: var(--radius-inputs); color: var(--deep); font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-outlined" style="color: var(--g2);">info</span>
-                                <span>You have no active tasks currently requiring submission.</span>
-                            </div>
-                            <a href="{% url 'task-list' %}" class="tg-btn tg-btn-subtle" style="font-size: 0.78rem; padding: 4px 12px;">View All Tasks</a>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                    <!-- Display task info for edit -->
-                    <div style="background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-inputs); padding: 1.25rem 1.5rem;">
-                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--ink); margin-bottom: 0.35rem;">
-                            {{ submission.task.title }}
-                        </div>
-                        {% if submission.task.description %}
-                        <p style="color: var(--mute); font-size: 0.88rem; margin-bottom: 0.75rem; line-height: 1.5;">
-                            {{ submission.task.description|truncatewords:25 }}
-                        </p>
-                        {% endif %}
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <span class="tg-chip tg-chip-muted">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">event</span>
-                                Due: {{ submission.task.deadline|date:'M d, Y'|default:'Not set' }}
-                            </span>
-                            <span class="tg-chip tg-chip-success">
-                                <span class="material-symbols-outlined" style="font-size: 14px;">flag</span>
-                                {{ submission.task.get_status_display }}
-                            </span>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- SECTION 2: Progress Hub -->
-                <div class="tg-progress-hub">
-                    <div class="tg-progress-status-lbl" id="progressStatus">Task Progress</div>
-                    <div id="progressValueLarge" class="tg-progress-val-large">
-                        {% if is_edit %}{{ submission.task.progress|default:0 }}{% elif selected_task %}{{ selected_task.progress|default:0 }}{% else %}0{% endif %}%
-                    </div>
-                    <input type="hidden" id="progressRange" name="progress_percentage" value="{% if is_edit %}{{ submission.task.progress|default:0 }}{% elif selected_task %}{{ selected_task.progress|default:0 }}{% else %}0{% endif %}">
-
-                    <div class="tg-bead-track" id="beadTrack">
-                        <div id="progressTooltip" class="progress-tooltip">0%</div>
-                        <div class="tg-bead-progress-line" id="beadProgressLine"></div>
-                        <!-- Beads generated by JS -->
-                    </div>
-
-                    <div class="tg-preset-chips">
-                        <div class="tg-preset-chip preset-chip" data-value="0">0% (Started)</div>
-                        <div class="tg-preset-chip preset-chip" data-value="25">25%</div>
-                        <div class="tg-preset-chip preset-chip" data-value="50">50% (Halfway)</div>
-                        <div class="tg-preset-chip preset-chip" data-value="75">75%</div>
-                        <div class="tg-preset-chip preset-chip" data-value="100">100% (Finished)</div>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 1.25rem; font-size: 0.78rem; color: var(--mute);">
-                        <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: middle;">touch_app</span>
-                        <span class="lang-en">Click on track beads or chips to set precise reported progress</span>
-                        <span class="lang-ar">انقر على النقاط أو النسب لتحديد نسبة الإنجاز بدقة</span>
-                    </div>
-                </div>
-
-                <!-- SECTION 3: Deliverable Files Upload -->
-                <div class="tg-form-section">
-                    <div class="tg-form-section-head">
-                        <h2 class="tg-form-section-title">
-                            <span class="material-symbols-outlined">cloud_upload</span>
-                            <span class="lang-en">Deliverable Files</span>
-                            <span class="lang-ar">الملفات والمخرجات</span>
-                        </h2>
-                    </div>
-
-                    <!-- Drag & Drop Zone -->
-                    <div id="dropZone" class="tg-dropzone" onclick="document.getElementById('fileInput').click()">
-                        <div class="tg-dropzone-icon">
-                            <span class="material-symbols-outlined">upload_file</span>
-                        </div>
-                        <div class="tg-dropzone-title">
-                            <span class="lang-en">Drag & Drop or Click to Select Files</span>
-                            <span class="lang-ar">اسحب وأفلت الملفات هنا أو انقر للاختيار</span>
-                        </div>
-                        <div class="tg-dropzone-subtitle">
-                            PDF, Word (.docx), Excel (.xlsx), ZIP, JPEG, PNG · Maximum 50 MB total
-                        </div>
-                        <input type="file" id="fileInput" name="files"
-                               accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.jpg,.jpeg,.png" multiple
-                               style="display: none;">
-                    </div>
-
-                    <!-- Selected Files Staging List -->
-                    <div id="fileList" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 8px;">
-                        <!-- JS items will be injected here -->
-                    </div>
-
-                    {% if is_edit and current_documents %}
-                    <div style="margin-top: 1.5rem; padding: 1.25rem; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-inputs);">
-                        <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">history</span>
-                            <span>Currently Saved Files ({{ current_documents|length }})</span>
-                        </div>
-                        <div class="row g-2">
-                            {% for doc in current_documents %}
-                            <div class="col-md-6">
-                                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;">
-                                    <span class="material-symbols-outlined" style="color: var(--g); font-size: 20px;">description</span>
-                                    <div style="min-width: 0; flex: 1;">
-                                        <a href="{{ doc.file.url }}" target="_blank" style="text-decoration: none; color: var(--ink); font-weight: 700; font-size: 0.82rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            {{ doc.original_filename|default:doc.file.name|slice:"12:" }}
-                                        </a>
-                                        <span style="font-size: 0.65rem; color: var(--mute);">Previously uploaded</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <div style="margin-top: 0.75rem; font-size: 0.72rem; color: var(--mute);">
-                            <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">info</span>
-                            Uploading new files will add them to this submittal collection.
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- SECTION 4: Dynamic Custom Fields Container -->
-                <div id="custom-fields-container" style="display: none; margin-bottom: 1.5rem;">
-                    <div style="text-align: center; margin-bottom: 1.5rem;">
-                        <h3 style="font-weight: 800; color: var(--ink); font-size: 1.25rem;">
-                            <span class="material-symbols-outlined" style="color: var(--g); vertical-align: middle; margin-inline-end: 6px;">fact_check</span>
-                            <span class="lang-en">Custom Requirements</span>
-                            <span class="lang-ar">المتطلبات المخصصة</span>
-                        </h3>
-                    </div>
-                    <div id="dynamic-fields-area">
-                        <!-- Fields injected via JS -->
-                    </div>
-                </div>
-
-                <!-- SECTION 5: Notes & Documentation -->
-                <div class="tg-form-section">
-                    <div class="tg-form-section-head">
-                        <h2 class="tg-form-section-title">
-                            <span class="material-symbols-outlined">edit_note</span>
-                            <span class="lang-en">Submission Notes</span>
-                            <span class="lang-ar">ملاحظات التسليم</span>
-                        </h2>
-                    </div>
-
-                    <div style="margin-bottom: 0.5rem;">
-                        <label for="notesInput" class="tg-form-label">
-                            <span class="lang-en">Detailed Comments / Observations</span>
-                            <span class="lang-ar">ملاحظات أو تعليقات توضيحية</span>
-                            <span style="font-size: 0.75rem; color: var(--mute); font-weight: normal;">(Optional)</span>
-                        </label>
-                        <textarea class="tg-form-control" id="notesInput" name="notes" rows="5"
-                                  placeholder="Provide context, explanation, obstacles encountered, or key deliverables highlights...">{% if is_edit %}{{ submission.notes }}{% endif %}</textarea>
-                        <div style="font-size: 0.75rem; color: var(--mute); margin-top: 6px;">
-                            Provide any relevant context for the reviewer regarding this work milestone.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submission Status Info (for Edit) -->
-                {% if is_edit %}
-                <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-cards); padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow);">
-                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--ink); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-outlined" style="color: var(--g);">info</span>
-                        <span>Submission Status Overview</span>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-6 col-md-3">
-                            <div style="font-size: 0.7rem; font-weight: 700; color: var(--mute); text-transform: uppercase;">Status</div>
-                            <div style="font-size: 0.88rem; font-weight: 800; color: var(--ink);">{{ submission.get_status_display }}</div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div style="font-size: 0.7rem; font-weight: 700; color: var(--mute); text-transform: uppercase;">Version</div>
-                            <div style="font-size: 0.88rem; font-weight: 800; color: var(--ink);">v{{ submission.version }}</div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div style="font-size: 0.7rem; font-weight: 700; color: var(--mute); text-transform: uppercase;">Created</div>
-                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--ink);">{{ submission.created_at|date:'M d, Y · H:i' }}</div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div style="font-size: 0.7rem; font-weight: 700; color: var(--mute); text-transform: uppercase;">Last Update</div>
-                            <div style="font-size: 0.82rem; font-weight: 600; color: var(--ink);">{{ submission.updated_at|date:'M d, Y · H:i' }}</div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Form Action Buttons -->
-                <div id="submission-action-buttons" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2rem;">
-                    <button type="submit" name="action" value="draft" id="draft-button" formnovalidate class="tg-btn tg-btn-subtle" style="flex: 1; min-width: 180px; justify-content: center; padding: 12px 20px;">
-                        <span class="material-symbols-outlined">save</span>
-                        <span class="lang-en">Save as Draft</span>
-                        <span class="lang-ar">حفظ كمسودة</span>
-                    </button>
-                    <button type="submit" name="action" value="submit" id="submit-button" class="tg-btn tg-btn-primary" style="flex: 2; min-width: 220px; justify-content: center; padding: 12px 24px; font-size: 1rem;">
-                        <span class="material-symbols-outlined">send</span>
-                        {% if is_edit %}
-                            <span class="lang-en">Submit Updates</span>
-                            <span class="lang-ar">إرسال التحديثات</span>
-                        {% else %}
-                            <span class="lang-en">Submit Deliverable</span>
-                            <span class="lang-ar">إرسال التسليم</span>
-                        {% endif %}
-                    </button>
-                    <a href="{% if is_edit %}{% url 'submission-detail' submission.id %}{% else %}javascript:history.back(){% endif %}" class="tg-btn tg-btn-ghost" style="padding: 12px 20px;">
-                        <span class="lang-en">Cancel</span>
-                        <span class="lang-ar">إلغاء</span>
-                    </a>
-                </div>
-
-                <!-- Delete Draft Button (for edit) -->
-                {% if is_edit %}
-                <div style="margin-top: 1rem; text-align: center;">
-                    <button type="button" class="tg-btn tg-btn-ghost" style="color: var(--warn); font-size: 0.85rem;" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                        <span class="material-symbols-outlined">delete</span>
-                        <span class="lang-en">Delete This Submission Draft</span>
-                        <span class="lang-ar">حذف هذه المسودة</span>
-                    </button>
-                </div>
-                {% endif %}
-            </form>
-
-            <!-- Useful Guidelines Tips -->
-            <div style="margin-top: 2rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-cards); padding: 1.25rem 1.5rem; box-shadow: var(--shadow);">
-                <div style="font-size: 0.85rem; font-weight: 800; color: var(--ink); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;">
-                    <span class="material-symbols-outlined" style="color: var(--amber);">tips_and_updates</span>
-                    <span>Submission Best Practices</span>
-                </div>
-                <ul style="margin: 0; padding-inline-start: 1.25rem; font-size: 0.82rem; color: var(--mute); line-height: 1.6;">
-                    <li>Ensure all attached files and diagrams are legible and final versions.</li>
-                    <li>Accurately declare completed milestones so project velocity charts reflect true progress.</li>
-                    <li>You can save interim work as a Draft and return to complete it before final QA review.</li>
-                </ul>
-            </div>
-
+{% comment %}
+  Submission create / edit. Field names are what core.template_views.submission_create / submission_edit read:
+  task, progress_percentage, files, notes, custom_field_<id>, action=draft|submit. Custom fields load from get-custom-fields.
+{% endcomment %}
+<div class="wt-home wt-tf wt-sf" id="submission-page-wrapper"
+     data-task-id="{% if is_edit %}{{ submission.task.id }}{% elif selected_task %}{{ selected_task.id }}{% endif %}"
+     data-submission-id="{% if is_edit %}{{ submission.id }}{% endif %}">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1>{% if is_edit %}<span class="lang-en">Edit submission</span><span class="lang-ar">تعديل التسليم</span>{% else %}<span class="lang-en">Submit work</span><span class="lang-ar">تسليم العمل</span>{% endif %}</h1>
+            <p>{% if is_edit %}<b dir="auto">{{ submission.task.title }}</b> · <span class="lang-en">version</span><span class="lang-ar">النسخة</span> <span class="wt-num">{{ submission.version }}</span>{% elif selected_task %}<b dir="auto">{{ selected_task.title }}</b>{% else %}<span class="lang-en">Choose the task, add your files and send it for review.</span><span class="lang-ar">اختر المهمة وأضف ملفاتك وأرسلها للمراجعة.</span>{% endif %}</p>
         </div>
-    </div>
+    </header>
+
+    <div class="alert alert-danger" id="errorWidget" role="alert" hidden><span id="errorBody"></span></div>
+
+    <form method="post" enctype="multipart/form-data" id="submissionForm" class="wt-tf-form" novalidate>
+        {% csrf_token %}
+
+        <section class="wt-panel wt-tf-sec" aria-labelledby="sf-task">
+            <div class="wt-panel-head"><h2 id="sf-task"><span class="lang-en">Task</span><span class="lang-ar">المهمة</span></h2></div>
+            <div class="wt-tf-body">
+                {% if not is_edit %}
+                <div class="wt-tf-field">
+                    <label for="taskSelect" class="form-label"><span class="lang-en">Which task is this for?</span><span class="lang-ar">لأي مهمة هذا التسليم؟</span> <span class="wt-tf-req" aria-hidden="true">*</span></label>
+                    <select class="form-select" id="taskSelect" name="task" required>
+                        <option value="">{% if wt_lang == 'ar' %}اختر مهمة مسندة إليك{% else %}Choose one of your tasks{% endif %}</option>
+                        {% for t in available_tasks %}<option value="{{ t.id }}"{% if selected_task and selected_task.id == t.id %} selected{% endif %}>{{ t.title }}{% if t.deadline %} · {{ t.deadline|date:'j/n/Y' }}{% endif %}</option>{% endfor %}
+                        {% if selected_task and selected_task not in available_tasks %}<option value="{{ selected_task.id }}" selected>{{ selected_task.title }}</option>{% endif %}
+                    </select>
+                    {% if not available_tasks and not selected_task %}<small class="wt-tf-help"><span class="lang-en">No task is waiting for a submission from you.</span><span class="lang-ar">لا توجد مهمة تنتظر تسليمًا منك.</span> <a href="{% url 'task-list' %}"><span class="lang-en">See your tasks</span><span class="lang-ar">عرض مهامك</span></a></small>{% endif %}
+                </div>
+                {% else %}
+                <div class="wt-sf-task">
+                    <b dir="auto">{{ submission.task.title }}</b>
+                    {% if submission.task.description %}<p dir="auto">{{ submission.task.description|truncatewords:30 }}</p>{% endif %}
+                    <span class="wt-td-meta">
+                        <span class="wt-chip {% if submission.status == 'approved' %}is-ok{% elif submission.status == 'rejected' %}is-alert{% elif submission.status == 'draft' %}is-muted{% else %}is-review{% endif %}">{% include 'includes/wt_status_label.html' with s=submission.status %}</span>
+                        {% if submission.task.deadline %}<span><span class="lang-en">Due</span><span class="lang-ar">الموعد</span> <span class="wt-num">{{ submission.task.deadline|date:'j/n/Y' }}</span></span>{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                <div class="wt-tf-field">
+                    <label for="progressRange" class="form-label"><span class="lang-en">How far along is the work?</span><span class="lang-ar">ما مدى تقدم العمل؟</span> <b class="wt-num" id="progressValueLarge">{% if is_edit %}{{ submission.task.progress|default:0 }}{% elif selected_task %}{{ selected_task.progress|default:0 }}{% else %}0{% endif %}%</b></label>
+                    <input type="range" class="form-range" id="progressRange" name="progress_percentage" min="0" max="100" step="5" value="{% if is_edit %}{{ submission.task.progress|default:0 }}{% elif selected_task %}{{ selected_task.progress|default:0 }}{% else %}0{% endif %}">
+                    <span class="wt-sd-presets"><button type="button" class="wt-page preset-chip" data-value="0">0%</button><button type="button" class="wt-page preset-chip" data-value="25">25%</button><button type="button" class="wt-page preset-chip" data-value="50">50%</button><button type="button" class="wt-page preset-chip" data-value="75">75%</button><button type="button" class="wt-page preset-chip" data-value="100">100%</button></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="wt-panel wt-tf-sec" aria-labelledby="sf-files">
+            <div class="wt-panel-head"><h2 id="sf-files"><span class="lang-en">Files</span><span class="lang-ar">الملفات</span>{% if not is_edit %} <span class="wt-tf-req" aria-hidden="true">*</span>{% endif %}</h2></div>
+            <div class="wt-tf-body">
+                <div class="wt-tf-drop" id="dropZone" role="button" tabindex="0" aria-describedby="sf-drop-hint">
+                    <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+                    <b><span class="lang-en">Drop files here or choose them</span><span class="lang-ar">أفلت الملفات هنا أو اخترها</span></b>
+                    <small id="sf-drop-hint"><span class="lang-en">PDF, Word, Excel, ZIP, JPEG or PNG · up to 50 MB in total</span><span class="lang-ar">PDF أو Word أو Excel أو ZIP أو JPEG أو PNG · حتى 50 ميغابايت إجمالًا</span></small>
+                    <input type="file" id="fileInput" name="files" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.jpg,.jpeg,.png" multiple hidden>
+                </div>
+                <ul class="wt-td-files" id="fileList"></ul>
+                {% if is_edit and current_documents %}
+                <h3 class="wt-tf-subhead"><span class="lang-en">Already uploaded</span><span class="lang-ar">مرفوعة سابقًا</span> <span class="wt-num">{{ current_documents|length }}</span></h3>
+                <ul class="wt-td-files">
+                    {% for doc in current_documents %}
+                    <li><i class="fas fa-file-lines" aria-hidden="true"></i><span><a href="{{ doc.file.url }}" target="_blank" rel="noopener"><b dir="auto">{{ doc.original_filename|default:doc.file.name }}</b></a></span></li>
+                    {% endfor %}
+                </ul>
+                <p class="wt-tf-help"><span class="lang-en">New files are added to these.</span><span class="lang-ar">تُضاف الملفات الجديدة إلى هذه.</span></p>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="wt-panel wt-tf-sec" id="custom-fields-container" aria-labelledby="sf-answers" hidden>
+            <div class="wt-panel-head"><h2 id="sf-answers"><span class="lang-en">Required information</span><span class="lang-ar">المعلومات المطلوبة</span></h2><span class="wt-panel-meta wt-num" id="sf-page-of"></span></div>
+            <div class="wt-tf-body" id="dynamic-fields-area"></div>
+        </section>
+
+        <section class="wt-panel wt-tf-sec" aria-labelledby="sf-notes">
+            <div class="wt-panel-head"><h2 id="sf-notes"><span class="lang-en">Notes for the reviewer</span><span class="lang-ar">ملاحظات للمراجِع</span></h2></div>
+            <div class="wt-tf-body">
+                <div class="wt-tf-field">
+                    <label for="notesInput" class="visually-hidden"><span class="lang-en">Notes</span><span class="lang-ar">الملاحظات</span></label>
+                    <textarea class="form-control" id="notesInput" name="notes" rows="5" dir="auto" placeholder="{% if wt_lang == 'ar' %}ما الذي أنجزته، وما الذي واجهته، وما الذي يجب أن يعرفه المراجِع{% else %}What you did, anything that got in the way, and what the reviewer should know{% endif %}">{% if is_edit %}{{ submission.notes }}{% endif %}</textarea>
+                </div>
+            </div>
+        </section>
+
+        <div class="wt-tf-bar">
+            <div class="wt-tf-bar-inner" id="submission-action-buttons">
+                {% if is_edit %}<button type="button" class="btn btn-link text-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"><span class="lang-en">Delete</span><span class="lang-ar">حذف</span></button>{% endif %}
+                <span class="wt-tf-status" role="status" aria-live="polite"></span>
+                <a href="{% if is_edit %}{% url 'submission-detail' submission.id %}{% elif selected_task %}{% url 'task-detail' selected_task.id %}{% else %}{% url 'worker-portal' %}{% endif %}" class="btn btn-light"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></a>
+                <button type="submit" name="action" value="draft" id="draft-button" formnovalidate class="btn btn-light"><i class="fas fa-floppy-disk"></i><span class="lang-en">Save draft</span><span class="lang-ar">حفظ كمسودة</span></button>
+                <button type="submit" name="action" value="submit" id="submit-button" class="btn btn-primary"><i class="fas fa-paper-plane"></i><span class="lang-en">Send for review</span><span class="lang-ar">إرسال للمراجعة</span></button>
+            </div>
+        </div>
+    </form>
 </div>
 
-<!-- Delete Modal -->
 {% if is_edit %}
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: var(--radius-cards); border: 1px solid var(--line); overflow: hidden; background: var(--surface); color: var(--ink);">
-            <div class="modal-header" style="background: rgba(225, 29, 72, 0.08); border-bottom: 1px solid var(--line); padding: 1rem 1.5rem;">
-                <h5 class="modal-title" id="deleteModalLabel" style="font-weight: 800; color: var(--warn); display: flex; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined">warning</span>
-                    Delete Submission?
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="padding: 1.5rem;">
-                <p style="margin-bottom: 0.5rem; font-weight: 600;">Are you sure you want to delete this submission? This action cannot be undone.</p>
-                <p style="color: var(--mute); font-size: 0.82rem; margin: 0;">
-                    <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">info</span>
-                    Only draft or rejected submissions can be purged.
-                </p>
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid var(--line); padding: 0.85rem 1.5rem; display: flex; justify-content: flex-end; gap: 8px;">
-                <button type="button" class="tg-btn tg-btn-ghost" data-bs-dismiss="modal">
-                    <span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span>
-                </button>
-                <form method="post" action="{% url 'submission-delete' submission.id %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="tg-btn tg-btn-subtle" style="background: var(--warn); color: #fff; border-color: var(--warn);">
-                        <span class="material-symbols-outlined">delete</span>
-                        Delete Submission
-                    </button>
-                </form>
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-6" id="deleteModalLabel"><span class="lang-en">Delete this submission?</span><span class="lang-ar">حذف هذا التسليم؟</span></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% if wt_lang == 'ar' %}إغلاق{% else %}Close{% endif %}"></button></div>
+            <div class="modal-body"><p class="mb-0"><span class="lang-en">This cannot be undone. Only drafts and sent-back submissions can be deleted.</span><span class="lang-ar">لا يمكن التراجع عن ذلك. يمكن حذف المسودات والتسليمات المُعادة فقط.</span></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                <form method="post" action="{% url 'submission-delete' submission.id %}">{% csrf_token %}<button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i><span class="lang-en">Delete</span><span class="lang-ar">حذف</span></button></form>
             </div>
         </div>
     </div>
 </div>
 {% endif %}
+{% endblock %}
 
+{% block extra_js %}
 <script>
-// Progress Selection Logic (Emerald Theme)
-const progressHub = {
-    input: document.getElementById('progressRange'),
-    display: document.getElementById('progressValueLarge'),
-    status: document.getElementById('progressStatus'),
-    tooltip: document.getElementById('progressTooltip'),
-    line: document.getElementById('beadProgressLine'),
-    track: document.getElementById('beadTrack'),
-    chips: document.querySelectorAll('.preset-chip'),
-    isDragging: false,
+(function () {
+const isAr = () => document.documentElement.dir === 'rtl';
+const T = (en, ar) => isAr() ? ar : en;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const wrapper = document.getElementById('submission-page-wrapper');
+const isEdit = !!wrapper.dataset.submissionId;
+const form = document.getElementById('submissionForm');
 
-    init() {
-        if (!this.track) return;
-        
-        // Generate beads
-        for (let i = 0; i <= 100; i += 10) {
-            const bead = document.createElement('div');
-            bead.className = 'progress-bead';
-            bead.style.left = `${i}%`;
-            bead.dataset.value = i;
-            bead.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.update(i);
-            });
-            this.track.appendChild(bead);
-        }
-
-        // Mouse Events
-        this.track.addEventListener('mousedown', (e) => this.handlePointer(e));
-        window.addEventListener('mousemove', (e) => this.isDragging && this.handlePointer(e));
-        window.addEventListener('mouseup', () => this.isDragging = false);
-
-        // Touch Events
-        this.track.addEventListener('touchstart', (e) => this.handlePointer(e.touches[0]));
-        window.addEventListener('touchmove', (e) => this.isDragging && this.handlePointer(e.touches[0]));
-        window.addEventListener('touchend', () => this.isDragging = false);
-
-        // Chip listeners
-        this.chips.forEach(chip => {
-            chip.addEventListener('click', () => this.update(parseInt(chip.dataset.value)));
-        });
-
-        // Set initial state
-        this.update(parseInt(this.input.value || 0), false);
-    },
-
-    handlePointer(e) {
-        if (e.type === 'mousedown' || e.type === 'touchstart') this.isDragging = true;
-        
-        const rect = this.track.getBoundingClientRect();
-        let x = e.clientX - rect.left;
-        let percent = Math.round((x / rect.width) * 100);
-        
-        percent = Math.min(Math.max(percent, 0), 100);
-        percent = Math.round(percent / 5) * 5;
-        
-        this.update(percent);
-    },
-
-    update(val, animate = true) {
-        this.input.value = val;
-        this.display.textContent = val + '%';
-        if (this.tooltip) {
-            this.tooltip.textContent = val + '%';
-            this.tooltip.style.left = val + '%';
-        }
-        if (this.line) {
-            this.line.style.width = val + '%';
-        }
-
-        // Update beads
-        const beads = document.querySelectorAll('.progress-bead');
-        beads.forEach(bead => {
-            const bVal = parseInt(bead.dataset.value);
-            bead.classList.toggle('active', bVal <= val);
-        });
-
-        // Update chips
-        this.chips.forEach(chip => {
-            chip.classList.toggle('active', parseInt(chip.dataset.value) === val);
-        });
-
-        // Update Status Text
-        if (val === 0) this.status.textContent = "Just Starting";
-        else if (val < 40) this.status.textContent = "Early Stages";
-        else if (val < 70) this.status.textContent = "Making Progress";
-        else if (val < 100) this.status.textContent = "Almost Done";
-        else {
-            this.status.textContent = "Task Completed";
-            if (animate && !this.display.classList.contains('celebrate')) {
-                this.display.classList.add('celebrate');
-                setTimeout(() => this.display.classList.remove('celebrate'), 600);
-            }
-        }
-    }
-};
-
-// Enhanced File Management
-const fileManager = {
-    input: document.getElementById('fileInput'),
-    list: document.getElementById('fileList'),
-    dropZone: document.getElementById('dropZone'),
-    dataTransfer: new DataTransfer(),
-    
-    init() {
-        if (!this.input || !this.list) return;
-        
-        this.input.addEventListener('change', (e) => this.handleFiles(e.target.files));
-        
-        // Drag and drop listeners
-        if (this.dropZone) {
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                this.dropZone.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, false);
-            });
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                this.dropZone.addEventListener(eventName, () => {
-                    this.dropZone.classList.add('drag-over');
-                }, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                this.dropZone.addEventListener(eventName, () => {
-                    this.dropZone.classList.remove('drag-over');
-                }, false);
-            });
-
-            this.dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                this.handleFiles(dt.files);
-            }, false);
-        }
-    },
-
-    handleFiles(newFiles) {
-        Array.from(newFiles).forEach(file => {
-            const isDuplicate = Array.from(this.dataTransfer.files).some(
-                staged => staged.name === file.name && staged.size === file.size
-            );
-            if (!isDuplicate) {
-                this.dataTransfer.items.add(file);
-            }
-        });
-
-        this.input.files = this.dataTransfer.files;
-        this.render();
-    },
-
-    removeFile(index) {
-        const newDataTransfer = new DataTransfer();
-        const files = this.dataTransfer.files;
-        
-        for (let i = 0; i < files.length; i++) {
-            if (i !== index) {
-                newDataTransfer.items.add(files[i]);
-            }
-        }
-        
-        this.dataTransfer = newDataTransfer;
-        this.input.files = this.dataTransfer.files;
-        this.render();
-    },
-
-    render() {
-        const files = this.dataTransfer.files;
-        this.list.innerHTML = '';
-        
-        if (files.length === 0) {
-            if (!document.getElementById('submission-page-wrapper').dataset.submissionId) {
-                 this.input.required = true;
-            }
-            return;
-        }
-
-        this.input.required = false;
-        let totalSize = 0;
-
-        Array.from(files).forEach((file, index) => {
-            totalSize += file.size;
-            const item = document.createElement('div');
-            item.className = 'staged-file-item';
-
-            const isImage = file.type.startsWith('image/');
-            const icon = this.getFileIcon(file.name);
-
-            item.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
-                    <div style="width:36px; height:36px; border-radius:8px; background:var(--mint); color:var(--g2); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        ${isImage ? `<img src="${URL.createObjectURL(file)}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">` : `<span class="material-symbols-outlined" style="font-size:20px;">${icon}</span>`}
-                    </div>
-                    <div style="overflow:hidden;">
-                        <div style="font-weight:700; color:var(--ink); font-size:0.85rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:220px;">${file.name}</div>
-                        <div style="font-size:0.7rem; color:var(--mute);">${this.formatBytes(file.size)}</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="tg-chip tg-chip-success" style="font-size:0.7rem; padding:2px 8px;">Pending</span>
-                    <button type="button" style="background:none; border:none; color:var(--warn); cursor:pointer; font-size:18px; display:inline-flex; align-items:center;" onclick="fileManager.removeFile(${index})">
-                        <span class="material-symbols-outlined" style="font-size:18px;">cancel</span>
-                    </button>
-                </div>
-            `;
-            this.list.appendChild(item);
-        });
-
-        const maxSize = 50 * 1024 * 1024;
-        if (totalSize > maxSize) {
-            showErrorWidget('<strong>Size Limit Exceeded:</strong> Total file size exceeds the 50MB limit. Please remove some files.');
-            this.dataTransfer = new DataTransfer();
-            this.input.files = this.dataTransfer.files;
-            this.render();
-        }
-    },
-
-    getFileIcon(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        if (['jpg', 'jpeg', 'png', 'svg', 'webp'].includes(ext)) return 'image';
-        if (['pdf'].includes(ext)) return 'picture_as_pdf';
-        if (['doc', 'docx'].includes(ext)) return 'description';
-        if (['xls', 'xlsx'].includes(ext)) return 'table_chart';
-        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'folder_zip';
-        return 'draft';
-    },
-
-    formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const si = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + si[i];
-    }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    progressHub.init();
-    fileManager.init();
-});
-
-// Premium Error Display Logic
-function showErrorWidget(message) {
-    const widget = document.getElementById('errorWidget');
-    const body = document.getElementById('errorBody');
-    if (!widget || !body) return;
-
-    body.innerHTML = message;
-    widget.style.display = 'block';
-    
-    widget.classList.remove('shake');
-    void widget.offsetWidth;
-    widget.classList.add('shake');
-
-    widget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function showError(msg) {
+    const box = document.getElementById('errorWidget');
+    document.getElementById('errorBody').textContent = msg;
+    box.hidden = false;
+    box.scrollIntoView({ block: 'center' });
 }
 
-// Form validation
-document.getElementById('submissionForm').addEventListener('submit', function(e) {
-    const taskSelect = document.getElementById('taskSelect');
-    if (taskSelect && !taskSelect.value) {
-        e.preventDefault();
-        showErrorWidget('<strong>Missing Task:</strong> Please select an assigned task before submitting your work.');
-        taskSelect.focus();
-        return;
-    }
+/* Progress */
+const range = document.getElementById('progressRange');
+const pctOut = document.getElementById('progressValueLarge');
+const chips = document.querySelectorAll('.preset-chip');
+function setPct(v) { range.value = v; pctOut.textContent = v + '%'; chips.forEach(c => c.classList.toggle('is-on', +c.dataset.value === +v)); }
+range.addEventListener('input', () => setPct(range.value));
+chips.forEach(c => c.addEventListener('click', () => setPct(c.dataset.value)));
+setPct(range.value);
 
-    const wrapper = document.getElementById('submission-page-wrapper');
-    const isEdit = wrapper ? !!wrapper.dataset.submissionId : false;
-    const fileInput = document.getElementById('fileInput');
+/* Files */
+const input = document.getElementById('fileInput');
+const list = document.getElementById('fileList');
+const drop = document.getElementById('dropZone');
+let dt = new DataTransfer();
+const MAX = 50 * 1024 * 1024;
+const size = b => { const u = ['B', 'KB', 'MB', 'GB']; let i = 0; while (b >= 1024 && i < 3) { b /= 1024; i++; } return (i ? b.toFixed(1) : b) + ' ' + u[i]; };
+function render() {
+    list.innerHTML = '';
+    let total = 0;
+    Array.from(dt.files).forEach((f, i) => {
+        total += f.size;
+        const li = document.createElement('li');
+        li.innerHTML = `<i class="fas ${f.type.startsWith('image/') ? 'fa-image' : 'fa-file'}" aria-hidden="true"></i><span><b dir="auto">${esc(f.name)}</b><small class="wt-num">${size(f.size)}</small></span><button type="button" class="wt-icon-btn is-danger" aria-label="${T('Remove file', 'إزالة الملف')}"><i class="fas fa-xmark"></i></button>`;
+        li.querySelector('button').addEventListener('click', () => { const n = new DataTransfer(); Array.from(dt.files).forEach((g, j) => { if (j !== i) n.items.add(g); }); dt = n; input.files = dt.files; render(); });
+        list.appendChild(li);
+    });
+    if (total > MAX) {
+        showError(T('The files add up to more than 50 MB. Remove some and try again.', 'مجموع الملفات يتجاوز 50 ميغابايت. أزل بعضها وحاول مرة أخرى.'));
+        dt = new DataTransfer(); input.files = dt.files; list.innerHTML = '';
+    }
+}
+function add(files) {
+    Array.from(files || []).forEach(f => { if (!Array.from(dt.files).some(g => g.name === f.name && g.size === f.size)) dt.items.add(f); });
+    input.files = dt.files;
+    render();
+}
+input.addEventListener('change', () => add(input.files));
+drop.addEventListener('click', () => input.click());
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+['dragenter', 'dragover'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.add('drag-over'); }));
+['dragleave', 'drop'].forEach(n => drop.addEventListener(n, e => { e.preventDefault(); drop.classList.remove('drag-over'); }));
+drop.addEventListener('drop', e => add(e.dataTransfer.files));
+
+/* Required information (custom fields), with "section" fields splitting it into pages */
+const area = document.getElementById('dynamic-fields-area');
+const box = document.getElementById('custom-fields-container');
+const pageOf = document.getElementById('sf-page-of');
+const submitBtn = document.getElementById('submit-button');
+let pages = [], current = 0;
+const FIELDS_URL = "{% url 'get-custom-fields' 999999999 %}";
+function control(f) {
+    const name = 'custom_field_' + f.id, req = f.required ? ' required' : '', val = f.value || '';
+    const opts = (f.options || '').split(',').map(o => o.trim()).filter(Boolean);
+    const id = 'cf_' + f.id;
+    switch (f.field_type) {
+        case 'textarea': return `<textarea id="${id}" name="${name}" class="form-control" rows="3" dir="auto"${req}>${esc(val)}</textarea>`;
+        case 'number': return `<input id="${id}" type="number" name="${name}" class="form-control" value="${esc(val)}"${req}>`;
+        case 'date': return `<input id="${id}" type="date" name="${name}" class="form-control" value="${esc(val)}"${req}>`;
+        case 'file': {
+            const has = typeof val === 'string' && val.startsWith('File: ');
+            return `${has ? `<small class="wt-tf-help">${T('Current file:', 'الملف الحالي:')} <b dir="auto">${esc(val.replace('File: ', ''))}</b></small>` : ''}<input id="${id}" type="file" name="${name}" class="form-control"${!has && f.required ? ' required' : ''}>`;
+        }
+        case 'select': return `<select id="${id}" name="${name}" class="form-select"${req}><option value="">${T('Choose', 'اختر')}</option>${opts.map(o => `<option value="${esc(o)}"${val === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+        case 'checkbox': return `<label class="form-check wt-sf-check"><input class="form-check-input" type="checkbox" name="${name}" value="True" id="${id}"${val === 'True' || val === 'on' ? ' checked' : ''}${req}> ${T('Yes', 'نعم')}</label>`;
+        case 'radio': return `<div class="wt-sf-choices" role="radiogroup">${opts.map((o, i) => `<label class="form-check wt-sf-check"><input class="form-check-input" type="radio" name="${name}" value="${esc(o)}"${val === o ? ' checked' : ''}${req}> <span dir="auto">${esc(o)}</span></label>`).join('')}</div>`;
+        case 'checkbox_group': {
+            const picked = (val || '').split(',').map(v => v.trim());
+            return `<div class="wt-sf-choices">${opts.map(o => `<label class="form-check wt-sf-check"><input class="form-check-input" type="checkbox" name="${name}" value="${esc(o)}"${picked.includes(o) ? ' checked' : ''}> <span dir="auto">${esc(o)}</span></label>`).join('')}</div><input type="hidden" name="${name}_is_group" value="true">`;
+        }
+        default: return `<input id="${id}" type="text" name="${name}" class="form-control" value="${esc(val)}" dir="auto"${req}>`;
+    }
+}
+function show(i) {
+    pages.forEach((p, j) => { p.hidden = j !== i; });
+    current = i;
+    pageOf.textContent = pages.length > 1 ? (isAr() ? `الصفحة ${i + 1} من ${pages.length}` : `Page ${i + 1} of ${pages.length}`) : '';
+    submitBtn.hidden = pages.length > 1 && i < pages.length - 1;
+}
+function pageValid(p) {
+    for (const el of p.querySelectorAll('input, select, textarea')) { if (!el.checkValidity()) { el.reportValidity(); return false; } }
+    return true;
+}
+function build(fields) {
+    area.innerHTML = '';
+    pages = [];
+    let page = null;
+    const newPage = () => { page = document.createElement('div'); page.className = 'wt-sf-page'; area.appendChild(page); pages.push(page); };
+    fields.forEach((f, i) => {
+        if (f.field_type === 'section') {
+            if (i !== 0 || !page) newPage();
+            const h = document.createElement('div');
+            h.className = 'wt-sf-section';
+            h.innerHTML = `<h3 dir="auto">${esc(f.label)}</h3>${f.options ? `<p dir="auto">${esc(f.options)}</p>` : ''}`;
+            page.appendChild(h);
+            return;
+        }
+        if (!page) newPage();
+        const d = document.createElement('div');
+        d.className = 'wt-tf-field';
+        const labelFor = ['radio', 'checkbox_group', 'checkbox'].includes(f.field_type) ? '' : ` for="cf_${f.id}"`;
+        d.innerHTML = `<label class="form-label"${labelFor}><span dir="auto">${esc(f.label)}</span>${f.required ? ' <span class="wt-tf-req" aria-hidden="true">*</span>' : ''}</label>${control(f)}`;
+        page.appendChild(d);
+    });
+    if (pages.length > 1) {
+        pages.forEach((p, i) => {
+            const nav = document.createElement('div');
+            nav.className = 'wt-sf-nav';
+            nav.innerHTML = `${i > 0 ? `<button type="button" class="btn btn-light" data-go="-1"><i class="fas fa-chevron-left rtl-flip"></i>${T('Back', 'السابق')}</button>` : '<span></span>'}${i < pages.length - 1 ? `<button type="button" class="btn btn-primary" data-go="1">${T('Next', 'التالي')}<i class="fas fa-chevron-right rtl-flip"></i></button>` : ''}`;
+            nav.addEventListener('click', e => {
+                const b = e.target.closest('[data-go]');
+                if (!b) return;
+                if (+b.dataset.go > 0 && !pageValid(p)) return;
+                show(current + +b.dataset.go);
+                box.scrollIntoView({ block: 'start' });
+            });
+            p.appendChild(nav);
+        });
+    }
+    show(0);
+}
+function load(taskId) {
+    if (!taskId) { box.hidden = true; pages = []; submitBtn.hidden = false; return; }
+    fetch(FIELDS_URL.replace('999999999', taskId) + '?submission_id=' + encodeURIComponent(wrapper.dataset.submissionId || ''), { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(d => { if (d.fields && d.fields.length) { build(d.fields); box.hidden = false; } else { box.hidden = true; pages = []; submitBtn.hidden = false; } })
+        .catch(() => { box.hidden = true; });
+}
+const taskSelect = document.getElementById('taskSelect');
+if (taskSelect) taskSelect.addEventListener('change', () => load(taskSelect.value));
+const params = new URLSearchParams(location.search);
+load(wrapper.dataset.taskId || params.get('task_id') || params.get('task') || (taskSelect && taskSelect.value));
+
+/* Send */
+form.addEventListener('submit', e => {
     const action = e.submitter ? e.submitter.value : 'submit';
-    
-    if (action === 'submit' && !isEdit && (!fileInput || fileInput.files.length === 0)) {
-        e.preventDefault();
-        showErrorWidget('<strong>Missing Files:</strong> At least one deliverable file is required for a new submission.');
+    if (taskSelect && !taskSelect.value) { e.preventDefault(); taskSelect.focus(); showError(T('Choose the task this submission is for.', 'اختر المهمة التي يخصها هذا التسليم.')); return; }
+    if (action === 'draft') return;
+    if (!isEdit && input.files.length === 0) { e.preventDefault(); drop.focus(); showError(T('Add at least one file before sending.', 'أضف ملفًا واحدًا على الأقل قبل الإرسال.')); return; }
+    for (let i = 0; i < pages.length; i++) {
+        const bad = Array.from(pages[i].querySelectorAll('input, select, textarea')).find(el => !el.checkValidity());
+        if (bad) { e.preventDefault(); show(i); bad.reportValidity(); return; }
     }
+    if (!form.checkValidity()) { e.preventDefault(); const bad = form.querySelector(':invalid'); if (bad) bad.reportValidity(); }
 });
-
-// Dynamic Custom Fields Manager
-const dynamicFormManager = {
-    area: document.getElementById('dynamic-fields-area'),
-    container: document.getElementById('custom-fields-container'),
-    select: document.getElementById('taskSelect'),
-    pages: [],
-    currentPage: 0,
-
-    init() {
-        if (!this.area || !this.container) return;
-
-        if (this.select) {
-            this.select.addEventListener('change', (e) => this.fetch(e.target.value));
-        }
-
-        const wrapper = document.getElementById('submission-page-wrapper');
-        const currentTaskId = wrapper ? wrapper.dataset.taskId : '';
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlTaskId = urlParams.get('task_id') || urlParams.get('task');
-        
-        let initialTaskId = currentTaskId || urlTaskId;
-        
-        if (!initialTaskId && this.select && this.select.value) {
-            initialTaskId = this.select.value;
-        }
-
-        if (initialTaskId) {
-            this.fetch(initialTaskId);
-        }
-    },
-
-    fetch(taskId) {
-        if (!taskId) {
-            this.container.style.display = 'none';
-            return;
-        }
-
-        const wrapper = document.getElementById('submission-page-wrapper');
-        const submissionId = wrapper ? wrapper.dataset.submissionId : '';
-        const url = "/tasks/" + taskId + "/get-custom-fields/?submission_id=" + submissionId;
-
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                if (data.fields && data.fields.length > 0) {
-                    this.render(data.fields);
-                    this.container.style.display = 'block';
-                } else {
-                    this.container.style.display = 'none';
-                }
-            })
-            .catch(err => {
-                console.error('Fetch Error:', err);
-                this.container.style.display = 'none';
-            });
-    },
-
-    render(fields) {
-        this.area.innerHTML = '';
-        this.pages = [];
-        this.currentPage = 0;
-        
-        let currentPageDiv = document.createElement('div');
-        currentPageDiv.className = 'form-page';
-        currentPageDiv.dataset.page = this.pages.length;
-        this.pages.push(currentPageDiv);
-        this.area.appendChild(currentPageDiv);
-
-        let isFirstInPage = true;
-
-        fields.forEach((field, index) => {
-            if (field.field_type === 'section') {
-                if (index === 0) {
-                    const sectionTitle = document.createElement('div');
-                    sectionTitle.className = 'gf-section-header';
-                    sectionTitle.innerHTML = `<h3 style="margin-bottom:6px; font-weight:800; font-size:1.15rem; color:#eafff4;">${field.label}</h3>${field.options ? `<p style="margin:0; opacity:0.8; font-size:0.85rem;">${field.options}</p>` : ''}`;
-                    currentPageDiv.appendChild(sectionTitle);
-                    isFirstInPage = false;
-                } else {
-                    currentPageDiv = document.createElement('div');
-                    currentPageDiv.className = 'form-page';
-                    currentPageDiv.dataset.page = this.pages.length;
-                    currentPageDiv.style.display = 'none';
-                    this.pages.push(currentPageDiv);
-                    this.area.appendChild(currentPageDiv);
-                    
-                    const sectionTitle = document.createElement('div');
-                    sectionTitle.className = 'gf-section-header';
-                    sectionTitle.innerHTML = `<h3 style="margin-bottom:6px; font-weight:800; font-size:1.15rem; color:#eafff4;">${field.label}</h3>${field.options ? `<p style="margin:0; opacity:0.8; font-size:0.85rem;">${field.options}</p>` : ''}`;
-                    currentPageDiv.appendChild(sectionTitle);
-                    isFirstInPage = true;
-                }
-                return;
-            }
-
-            const div = document.createElement('div');
-            div.className = `gf-card ${isFirstInPage ? 'has-accent' : ''}`;
-            isFirstInPage = false;
-            
-            let inputHtml = '';
-            const requiredAttr = field.required ? 'required' : '';
-            const requiredLabel = field.required ? '<span style="color:var(--warn);">*</span>' : '';
-            const val = field.value || '';
-            const isReadonlyText = (typeof val === 'string' && val.startsWith('File: '));
-            
-            try {
-                if (field.field_type === 'text') {
-                    inputHtml = `<div class="gf-input-group"><input type="text" name="custom_field_${field.id}" value="${val}" class="gf-input" placeholder="Your answer" ${requiredAttr}></div>`;
-                } else if (field.field_type === 'textarea') {
-                    inputHtml = `<div class="gf-input-group"><textarea name="custom_field_${field.id}" class="gf-input" rows="3" placeholder="Your answer" ${requiredAttr}>${val}</textarea></div>`;
-                } else if (field.field_type === 'number') {
-                    inputHtml = `<div class="gf-input-group"><input type="number" name="custom_field_${field.id}" value="${val}" class="gf-input" placeholder="0" ${requiredAttr}></div>`;
-                } else if (field.field_type === 'date') {
-                    inputHtml = `<div class="gf-input-group"><input type="date" name="custom_field_${field.id}" value="${val}" class="gf-input" ${requiredAttr}></div>`;
-                } else if (field.field_type === 'file') {
-                    inputHtml = `<div style="margin-top:8px;">
-                        ${isReadonlyText ? `<div style="font-size:0.8rem; color:var(--mute); margin-bottom:6px;"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:middle;">attach_file</span> Current file: <strong>${val.replace('File: ', '')}</strong></div>` : ''}
-                        <input type="file" name="custom_field_${field.id}" class="tg-form-control" ${!isReadonlyText && field.required ? 'required' : ''}>
-                    </div>`;
-                } else if (field.field_type === 'select') {
-                    const options = (field.options || '').split(',').map(o => o.trim()).filter(o => o !== '');
-                    inputHtml = `<select name="custom_field_${field.id}" class="tg-form-select" style="margin-top:8px;" ${requiredAttr}>
-                        <option value="">Choose an option</option>
-                        ${options.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}
-                    </select>`;
-                } else if (field.field_type === 'checkbox') {
-                    const checked = val === 'True' || val === 'on' ? 'checked' : '';
-                    inputHtml = `<div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                        <input type="checkbox" name="custom_field_${field.id}" value="True" id="field_${field.id}" ${checked} style="width:20px; height:20px; accent-color:var(--g);" ${requiredAttr}>
-                        <label for="field_${field.id}" style="font-size:0.88rem; font-weight:600; color:var(--ink); cursor:pointer;">Confirmed / Completed</label>
-                    </div>`;
-                } else if (field.field_type === 'radio') {
-                    const options = (field.options || '').split(',').map(o => o.trim()).filter(o => o !== '');
-                    inputHtml = `<div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-                        ${options.map((o, i) => `
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                                <input type="radio" name="custom_field_${field.id}" value="${o}" id="field_${field.id}_${i}" ${val === o ? 'checked' : ''} ${requiredAttr} style="width:18px; height:18px; accent-color:var(--g);">
-                                <span style="font-size:0.88rem; font-weight:600; color:var(--ink);">${o}</span>
-                            </label>
-                        `).join('')}
-                    </div>`;
-                } else if (field.field_type === 'checkbox_group') {
-                    const options = (field.options || '').split(',').map(o => o.trim()).filter(o => o !== '');
-                    const selectedVals = (val || '').split(',').map(v => v.trim());
-                    inputHtml = `<div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-                        ${options.map((o, i) => `
-                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                                <input type="checkbox" name="custom_field_${field.id}" value="${o}" id="field_${field.id}_${i}" ${selectedVals.includes(o) ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--g);">
-                                <span style="font-size:0.88rem; font-weight:600; color:var(--ink);">${o}</span>
-                            </label>
-                        `).join('')}
-                    </div><input type="hidden" name="custom_field_${field.id}_is_group" value="true">`;
-                }
-            } catch (e) {
-                console.error('Render error for field', field.id, e);
-                inputHtml = `<div style="color:var(--warn); font-size:0.82rem;">Error rendering field.</div>`;
-            }
-
-            div.innerHTML = `
-                <label class="gf-label">${field.label} ${requiredLabel}</label>
-                ${inputHtml}
-            `;
-            currentPageDiv.appendChild(div);
-        });
-
-        this.renderPagination();
-    },
-
-    renderPagination() {
-        const totalPages = this.pages.length;
-        
-        this.pages.forEach((page, index) => {
-            const btnGroup = document.createElement('div');
-            btnGroup.className = 'd-flex justify-content-between align-items-center mt-4 mb-2';
-            
-            const prevBtn = document.createElement('button');
-            prevBtn.type = 'button';
-            prevBtn.className = 'tg-btn tg-btn-subtle';
-            prevBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span> Back';
-            prevBtn.onclick = () => this.navigate(-1);
-            if (index === 0) prevBtn.style.visibility = 'hidden';
-            
-            const mainActionContainer = document.createElement('div');
-            mainActionContainer.className = 'd-flex align-items-center gap-3';
-            
-            if (index < totalPages - 1) {
-                const nextBtn = document.createElement('button');
-                nextBtn.type = 'button';
-                nextBtn.className = 'tg-btn tg-btn-primary';
-                nextBtn.innerHTML = 'Next <span class="material-symbols-outlined">chevron_right</span>';
-                nextBtn.onclick = () => this.navigate(1);
-                mainActionContainer.appendChild(nextBtn);
-            }
-            
-            if (totalPages > 1) {
-                const indicator = document.createElement('span');
-                indicator.style.cssText = 'color:var(--mute); font-size:0.8rem; font-weight:700;';
-                indicator.innerText = `Page ${index + 1} of ${totalPages}`;
-                mainActionContainer.prepend(indicator);
-            }
-            
-            btnGroup.appendChild(prevBtn);
-            btnGroup.appendChild(mainActionContainer);
-            page.appendChild(btnGroup);
-        });
-
-        this.updateSubmitButtonsVisibility();
-    },
-
-    navigate(direction) {
-        if (direction > 0) {
-            const currentPageEl = this.pages[this.currentPage];
-            const inputs = currentPageEl.querySelectorAll('input[required], select[required], textarea[required]');
-            let isValid = true;
-            inputs.forEach(input => {
-                if (!input.checkValidity()) {
-                    input.reportValidity();
-                    isValid = false;
-                }
-            });
-            if (!isValid) return;
-        }
-
-        this.pages[this.currentPage].style.display = 'none';
-        this.currentPage += direction;
-        this.pages[this.currentPage].style.display = 'block';
-        this.area.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        this.updateSubmitButtonsVisibility();
-    },
-    
-    updateSubmitButtonsVisibility() {
-        const draftBtn = document.getElementById('draft-button');
-        const submitBtn = document.getElementById('submit-button');
-        const standardButtonsContainer = document.getElementById('submission-action-buttons');
-        
-        if (standardButtonsContainer) {
-            standardButtonsContainer.style.display = 'flex';
-            
-            if (submitBtn) {
-                if (this.pages.length === 0 || this.currentPage === this.pages.length - 1) {
-                    submitBtn.style.display = 'inline-flex';
-                } else {
-                    submitBtn.style.display = 'none';
-                }
-            }
-            
-            if (draftBtn) {
-                draftBtn.style.display = 'inline-flex';
-            }
-        }
-    }
-};
-
-document.addEventListener('DOMContentLoaded', () => dynamicFormManager.init());
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    dynamicFormManager.init();
-}
+})();
 </script>
 {% endblock %}

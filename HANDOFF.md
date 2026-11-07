@@ -29,8 +29,8 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 1. ~~Set up git~~ Done (branch `main`).
 2. **Phase 1, daily work:**
    - ~~`worker_portal.html` (the worker home)~~ Done
-   - tasks: ~~`tasks_list`, `task_detail`, `task_kanban`, `task_calendar`, `task_form`~~ Done (independent review skipped at the owner's request; run one before calling them finished). The submission pages still load `static/css/task-green-detail.css` and Material Symbols.
-   - submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`
+   - tasks: ~~`tasks_list`, `task_detail`, `task_kanban`, `task_calendar`, `task_form`~~ Done (independent review skipped at the owner's request; run one before calling them finished).
+   - ~~submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`~~ Done (no independent review yet). Review scores are now 0–100, matching `Submission.score` and the KPI engine.
    - `module_dashboard`
    - `messaging/messenger_page` (still loads the Tailwind script)
    - `notifications`, `profile`, `worker_performance`

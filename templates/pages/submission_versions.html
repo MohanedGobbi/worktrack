@@ -1,281 +1,68 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block title %}Submission Versions — {{ task.title }} — Worktrack Pro{% endblock %}
-
-{% block extra_css %}
-<!-- Material Symbols & Fonts -->
-<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/fonts/material_symbols.css' %}" rel="stylesheet" />
-<!-- Emerald Green Design System -->
-<link rel="stylesheet" href="{% static 'css/task-green-detail.css' %}?v=2" />
-<style>
-.snapshot-num-badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: var(--mint);
-    color: var(--g2);
-    font-weight: 800;
-    font-size: 1rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.snapshot-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: var(--mute);
-}
-.snapshot-notes-box {
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-inline-start: 4px solid var(--g);
-    border-radius: var(--radius-inputs);
-    padding: 1rem 1.25rem;
-    color: var(--ink);
-    font-size: 0.88rem;
-    line-height: 1.6;
-}
-.snapshot-kv-table {
-    width: 100%;
-    font-size: 0.82rem;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-.snapshot-kv-table tr td {
-    padding: 7px 10px;
-    border-bottom: 1px solid var(--line);
-}
-.snapshot-kv-table tr:last-child td {
-    border-bottom: none;
-}
-.snapshot-file-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 12px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-inputs);
-    color: var(--ink);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-.snapshot-file-link:hover {
-    border-color: var(--g);
-    color: var(--g2);
-    background: var(--mint);
-    transform: translateY(-1px);
-}
-</style>
-{% endblock %}
+{% block title %}{% if wt_lang == 'ar' %}نسخ التسليم · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}Submission versions · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="task-detail-page">
-    <div class="task-wrap">
+{% comment %}Every saved version of one person's submission on one task. Data: core.template_views.submission_versions.{% endcomment %}
+<div class="wt-home wt-sv">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1><span class="lang-en">Submission versions</span><span class="lang-ar">نسخ التسليم</span></h1>
+            <p class="wt-td-meta">
+                <a href="{% url 'task-detail' task.id %}" dir="auto">{{ task.title }}</a>
+                {% if target_worker %}<span dir="auto">{{ target_worker.get_full_name|default:target_worker.email }}</span>{% endif %}
+                {% if task.deadline %}<span><span class="lang-en">Due</span><span class="lang-ar">الموعد</span> <span class="wt-num">{{ task.deadline|date:"j/n/Y" }}</span></span>{% endif %}
+                <span><span class="wt-num">{{ snapshots|length }}</span> <span class="lang-en">version{{ snapshots|length|pluralize }}</span><span class="lang-ar">نسخة</span></span>
+            </p>
+        </div>
+        <div class="wt-home-actions">
+            {% if submission %}<a class="btn btn-light" href="{% url 'submission-detail' submission.id %}"><i class="fas fa-eye"></i><span class="lang-en">Current submission</span><span class="lang-ar">التسليم الحالي</span></a>{% endif %}
+            <a class="btn btn-light" href="{% url 'task-detail' task.id %}"><i class="fas fa-list-check"></i><span class="lang-en">Open task</span><span class="lang-ar">فتح المهمة</span></a>
+        </div>
+    </header>
 
-        <!-- Emerald Hero Banner -->
-        <div class="tg-hero">
-            <div class="tg-hero-top">
-                <a href="{% url 'task-detail' task.id %}" class="tg-crumb">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
-                    <span class="lang-en">Back to Task</span><span class="lang-ar">العودة للمهمة</span>
-                </a>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <span class="tg-chip tg-chip-muted" style="background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2);">
-                        <span class="material-symbols-outlined" style="font-size: 15px;">layers</span>
-                        {% if snapshots %}{{ snapshots|length }} Version{{ snapshots|length|pluralize }}{% else %}0 Versions{% endif %}
-                    </span>
-                    {% if task.work_module %}
-                    <span class="tg-chip tg-chip-muted" style="background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.2);">
-                        <i class="fas {{ task.work_module.icon_class }} me-1"></i>
-                        {{ task.work_module.name }}
-                    </span>
+    {% if snapshots %}
+    <ol class="wt-sv-list">
+        {% for s in snapshots reversed %}
+        <li class="wt-panel">
+            <div class="wt-panel-head">
+                <h2><span class="lang-en">Version</span><span class="lang-ar">النسخة</span> <span class="wt-num">{{ s.version_number }}</span>{% if forloop.first %} <span class="wt-chip is-review"><span class="lang-en">Latest</span><span class="lang-ar">الأحدث</span></span>{% endif %}</h2>
+                <span class="wt-panel-meta wt-num">{{ s.created_at|date:"j/n/Y H:i" }}</span>
+            </div>
+            <div class="wt-sv-body">
+                <div class="wt-sv-col">
+                    <div class="wt-sv-prog"><span><span class="lang-en">Progress reported</span><span class="lang-ar">التقدم المُبلَّغ</span></span><b class="wt-num">{{ s.progress|default:0 }}%</b><span class="wt-today-bar" aria-hidden="true"><i style="--p: {{ s.progress|default:0 }}%;"></i></span></div>
+                    <h3><span class="lang-en">Notes</span><span class="lang-ar">الملاحظات</span></h3>
+                    {% if s.notes %}<p class="wt-td-prose" dir="auto">{{ s.notes|linebreaksbr }}</p>{% else %}<p class="wt-td-empty"><span class="lang-en">No notes.</span><span class="lang-ar">لا ملاحظات.</span></p>{% endif %}
+                </div>
+                <div class="wt-sv-col">
+                    <h3><span class="lang-en">Answers</span><span class="lang-ar">الإجابات</span></h3>
+                    {% if s.custom_fields_data %}
+                    <dl class="wt-sd-answers">{% for label, val in s.custom_fields_data.items %}<div><dt dir="auto">{{ label }}</dt><dd dir="auto">{{ val|default:"–" }}</dd></div>{% endfor %}</dl>
+                    {% else %}<p class="wt-td-empty"><span class="lang-en">No answers in this version.</span><span class="lang-ar">لا إجابات في هذه النسخة.</span></p>{% endif %}
+                    {% if s.snapshot_files.exists %}
+                    <h3><span class="lang-en">Files</span><span class="lang-ar">الملفات</span> <span class="wt-num">{{ s.snapshot_files.count }}</span></h3>
+                    <ul class="wt-td-files">
+                        {% for doc in s.snapshot_files.all %}
+                        <li><i class="fas fa-file-lines" aria-hidden="true"></i><span><b dir="auto">{{ doc.original_filename|default:doc.file.name }}</b></span><a href="{{ doc.file.url }}" download class="btn btn-sm btn-light"><i class="fas fa-download"></i><span class="lang-en">Download</span><span class="lang-ar">تنزيل</span></a></li>
+                        {% endfor %}
+                    </ul>
                     {% endif %}
                 </div>
             </div>
-
-            <h1 class="tg-hero-title" style="color: #ffffff !important; margin-top: 1rem;">
-                <span class="lang-en">Submission Version Archive</span>
-                <span class="lang-ar">أرشيف إصدارات التسليم</span>
-            </h1>
-            <p class="tg-hero-subtitle">
-                <strong>{{ task.title }}</strong> · {{ target_worker.get_full_name }}
-            </p>
-
-            <div class="tg-hero-meta" style="margin-top: 1.25rem;">
-                <div class="tg-meta-item">
-                    <span class="material-symbols-outlined">person</span>
-                    <span><strong style="color: #fff;">{{ target_worker.get_full_name }}</strong> ({{ target_worker.email }})</span>
-                </div>
-                <div class="tg-meta-item">
-                    <span class="material-symbols-outlined">flag</span>
-                    <span><span class="lang-en">Status:</span><span class="lang-ar">الحالة:</span> {{ task.get_status_display }}</span>
-                </div>
-                {% if task.deadline %}
-                <div class="tg-meta-item">
-                    <span class="material-symbols-outlined">event</span>
-                    <span><span class="lang-en">Due:</span><span class="lang-ar">الموعد:</span> {{ task.deadline|date:"M d, Y" }}</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        {% if snapshots %}
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-            {% for s in snapshots %}
-            <div class="tg-snapshot-card">
-                <!-- Card Header -->
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--line);">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div class="snapshot-num-badge">
-                            v{{ s.version_number }}
-                        </div>
-                        <div>
-                            <div style="font-size: 1.05rem; font-weight: 800; color: var(--ink);">
-                                <span class="lang-en">Version Snapshot #{{ s.version_number }}</span>
-                                <span class="lang-ar">نسخة الإصدار #{{ s.version_number }}</span>
-                            </div>
-                            <div class="snapshot-meta-item">
-                                <span class="material-symbols-outlined" style="font-size: 15px;">schedule</span>
-                                <span>{{ s.created_at|date:"M d, Y · H:i" }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="tg-chip tg-chip-success">
-                            <span class="material-symbols-outlined" style="font-size: 15px;">trending_up</span>
-                            <span>{{ s.progress|default:0 }}% Complete</span>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Two Column Details -->
-                <div class="row g-4">
-                    <!-- Left Column: Notes & Progress -->
-                    <div class="col-lg-6">
-                        <div class="tg-form-label" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute);">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">notes</span>
-                            <span class="lang-en">Worker Submission Notes</span>
-                            <span class="lang-ar">ملاحظات التسليم</span>
-                        </div>
-                        <div class="snapshot-notes-box">
-                            {% if s.notes %}
-                                {{ s.notes|linebreaksbr }}
-                            {% else %}
-                                <em style="color: var(--mute);">No notes recorded for this version.</em>
-                            {% endif %}
-                        </div>
-
-                        <!-- Progress Bar Visualizer -->
-                        <div style="margin-top: 1.25rem;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--mute); margin-bottom: 6px;">
-                                <span>Reported Progress</span>
-                                <span style="color: var(--g2);">{{ s.progress|default:0 }}%</span>
-                            </div>
-                            <div class="tg-todo-progress-bar" style="height: 8px;">
-                                <div class="tg-todo-progress-fill" style="width: {{ s.progress|default:0 }}%;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Custom Field Responses & Deliverables -->
-                    <div class="col-lg-6">
-                        <!-- Custom Fields -->
-                        <div class="tg-form-label" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute);">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">dynamic_form</span>
-                            <span class="lang-en">Custom Field Responses</span>
-                            <span class="lang-ar">بيانات الحقول المخصصة</span>
-                        </div>
-
-                        <div style="background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-inputs); padding: 0.5rem 0.75rem; margin-bottom: 1.25rem;">
-                            {% if s.custom_fields_data %}
-                            <table class="snapshot-kv-table">
-                                <tbody>
-                                    {% for label, val in s.custom_fields_data.items %}
-                                    <tr>
-                                        <td style="color: var(--mute); font-weight: 600; width: 45%;">{{ label }}</td>
-                                        <td style="color: var(--ink); font-weight: 700; text-align: end;">{{ val|default:"—" }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            {% else %}
-                            <div style="text-align: center; padding: 1rem; color: var(--mute); font-size: 0.8rem; font-style: italic;">
-                                No custom field data for this snapshot.
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Snapshot Deliverables -->
-                        {% if s.snapshot_files.exists %}
-                        <div class="tg-form-label" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mute);">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">attachment</span>
-                            <span class="lang-en">Version Deliverables</span>
-                            <span class="lang-ar">ملفات هذا الإصدار</span>
-                            <span class="tg-badge" style="margin-inline-start: 4px;">{{ s.snapshot_files.count }}</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            {% for doc in s.snapshot_files.all %}
-                            <a href="{{ doc.file.url }}" target="_blank" class="snapshot-file-link" download>
-                                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                                    <span class="material-symbols-outlined" style="color: var(--g); font-size: 18px;">description</span>
-                                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        {{ doc.original_filename|default:doc.file.name|slice:"12:" }}
-                                    </span>
-                                </div>
-                                <span class="material-symbols-outlined" style="color: var(--mute); font-size: 16px;">download</span>
-                            </a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% elif submission %}
-        <!-- Fallback for legacy submission -->
-        <div class="tg-card" style="padding: 2.5rem; text-align: center;">
-            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--amber); margin-bottom: 0.75rem;">info</span>
-            <h3 style="font-weight: 800; color: var(--ink); margin-bottom: 0.5rem;">Legacy Submission Tracking</h3>
-            <p style="color: var(--mute); max-width: 500px; margin: 0 auto 1.5rem;">
-                Historical snapshots are not available for this legacy record, but the current submission can be inspected directly.
-            </p>
-            <a href="{% url 'submission-detail' submission.id %}" class="tg-btn tg-btn-primary">
-                <span class="material-symbols-outlined">visibility</span>
-                View Current Submission
-            </a>
-        </div>
-        {% else %}
-        <!-- Empty State -->
-        <div class="tg-card" style="padding: 3.5rem 1.5rem; text-align: center;">
-            <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--mint); color: var(--g2); display: inline-flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 1rem;">
-                <span class="material-symbols-outlined">inbox</span>
-            </div>
-            <h3 style="font-weight: 800; color: var(--ink); margin-bottom: 0.4rem;">
-                <span class="lang-en">No Submissions Found</span>
-                <span class="lang-ar">لا توجد تسليمات</span>
-            </h3>
-            <p style="color: var(--mute); max-width: 480px; margin: 0 auto 1.5rem; font-size: 0.92rem;">
-                There are no archived version snapshots for this task yet. When deliverables are submitted, each version will be cataloged here.
-            </p>
-            <a href="{% url 'submission-create' %}?task={{ task.id }}" class="tg-btn tg-btn-primary">
-                <span class="material-symbols-outlined">add_task</span>
-                <span class="lang-en">Create First Submission</span>
-                <span class="lang-ar">إنشاء أول تسليم</span>
-            </a>
-        </div>
-        {% endif %}
-
-    </div>
+        </li>
+        {% endfor %}
+    </ol>
+    {% elif submission %}
+    <section class="wt-panel"><div class="wt-empty">
+        <p><span class="lang-en">This submission was made before versions were kept, so there are no earlier copies. The current submission is still available.</span><span class="lang-ar">قُدّم هذا التسليم قبل حفظ النسخ، لذلك لا توجد نسخ سابقة. ما يزال التسليم الحالي متاحًا.</span></p>
+        <a class="btn btn-primary" href="{% url 'submission-detail' submission.id %}"><span class="lang-en">Open the current submission</span><span class="lang-ar">فتح التسليم الحالي</span></a>
+    </div></section>
+    {% else %}
+    <section class="wt-panel"><div class="wt-empty">
+        <p><span class="lang-en">Nothing has been submitted on this task yet. Each version will be listed here.</span><span class="lang-ar">لم يُسلَّم شيء على هذه المهمة بعد. ستُدرج هنا كل نسخة.</span></p>
+        {% if user in task.assigned_to.all %}<a class="btn btn-primary" href="{% url 'submission-create' %}?task_id={{ task.id }}"><i class="fas fa-paper-plane"></i><span class="lang-en">Submit work</span><span class="lang-ar">تسليم العمل</span></a>{% endif %}
+    </div></section>
+    {% endif %}
 </div>
 {% endblock %}
