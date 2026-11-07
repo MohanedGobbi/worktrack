@@ -3539,6 +3539,27 @@ def task_detail(request, task_id):
         context['todo_pending_count'] = todos.filter(status='pending').count()
         context['todo_completed_count'] = todos.filter(status='completed').count()
 
+    # Due line: "5 days left" / "overdue by 2 days", in both languages
+    now = timezone.now()
+    context['wt_now'] = now
+    if task.deadline:
+        secs = (task.deadline - now).total_seconds()
+        late = secs < 0
+        secs = abs(secs)
+        days, hours = int(secs // 86400), int((secs % 86400) // 3600)
+        done = task.status in ('approved', 'completed')
+        if days:
+            en = f"{days} day{'s' if days != 1 else ''}"
+            ar = _ar_count(days, 'يوم واحد', 'يومان', 'أيام', 'يومًا')
+        else:
+            en = f"{hours} hour{'s' if hours != 1 else ''}"
+            ar = _ar_count(hours, 'ساعة واحدة', 'ساعتان', 'ساعات', 'ساعة')
+        context['wt_due'] = {
+            'late': late and not done,
+            'en': '' if done else (f'overdue by {en}' if late else f'{en} left'),
+            'ar': '' if done else (f'التأخير: {ar}' if late else f'المتبقي: {ar}'),
+        }
+
     return render(request, 'pages/task_detail.html', context)
 
 

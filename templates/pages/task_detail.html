@@ -1,802 +1,256 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}{{ task.title }} · WorkTrack Pro{% endblock %}
+{% block title %}{{ task.title }} · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}{{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
 {% block extra_css %}
-<!-- Material Symbols & Fonts -->
-<link href="{% static 'vendor/fonts/local_fonts.css' %}" rel="stylesheet" />
-<link href="{% static 'vendor/fonts/material_symbols.css' %}" rel="stylesheet" />
-<!-- Leaflet CSS (Local for Offline Support) -->
-<link rel="stylesheet" href="{% static 'vendor/leaflet-offline/leaflet.css' %}" />
-<!-- Emerald Green Design System for Task Detail -->
-<link rel="stylesheet" href="{% static 'css/task-green-detail.css' %}?v=2" />
-<style>
-/* Additional inline refinements */
-.tg-todo-item.completed {
-    opacity: 0.7;
-    background: rgba(var(--wt-brand-rgb), 0.05);
-}
-.tg-todo-item.completed .tg-todo-text {
-    text-decoration: line-through;
-    color: var(--mute);
-}
-.tg-file-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--mint);
-    color: var(--g2);
-    padding: 2px 8px;
-    border-radius: 99px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    margin-top: 4px;
-    margin-inline-end: 4px;
-}
-.todo-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 46, 34, 0.6);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1070;
-}
-.todo-modal-overlay.active {
-    display: flex;
-}
-.todo-modal {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-cards);
-    box-shadow: var(--shadow);
-    width: 100%;
-    max-width: 460px;
-    padding: 1.5rem;
-    color: var(--ink);
-}
-.todo-modal-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-.todo-modal-head h5 {
-    margin: 0;
-    font-weight: 800;
-    color: var(--ink);
-}
-.todo-modal-body input, .todo-modal-body textarea, .todo-modal-body select {
-    width: 100%;
-    border: 1.5px solid var(--line);
-    border-radius: var(--radius-inputs);
-    padding: 8px 12px;
-    background: var(--surface);
-    color: var(--ink);
-    font: inherit;
-    outline: none;
-    margin-top: 4px;
-}
-.todo-modal-foot {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 1.25rem;
-}
-</style>
+{% if task.location_enabled %}<link rel="stylesheet" href="{% static 'vendor/leaflet-offline/leaflet.css' %}">{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="task-detail-page">
-<div class="task-wrap">
-
-    <!-- ===== 1. HERO BANNER ===== -->
-    <header class="tg-hero task-hero task-hero-{{ task.status }}">
-        <!-- Top row: breadcrumbs, chips, theme toggle -->
-        <div class="tg-hero-top">
-            <div class="d-flex align-items-center gap-2">
-                <a class="tg-crumb" href="{% if task.work_module %}{% url 'module-dashboard' task.work_module.slug %}{% else %}{% url 'task-list' %}{% endif %}">
-                    <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>
-                    <span class="lang-en">Back to {{ task.work_module.name|default:"Tasks" }}</span>
-                    <span class="lang-ar">رجوع إلى {{ task.work_module.name|default:"المهام" }}</span>
-                </a>
-            </div>
-            <div class="tg-badges" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <!-- Priority chip -->
-                <span class="tg-chip priority-{{ task.priority }}" style="backdrop-filter: blur(8px); font-weight: 700; padding: 5px 12px; border-radius: 99px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span class="material-symbols-outlined" style="font-size: 15px;">flag</span>
-                    <span class="lang-en">{{ task.get_priority_display }} Priority</span>
-                    <span class="lang-ar">أولوية {{ task.get_priority_display }}</span>
-                </span>
-
-                <!-- Recurrence chip -->
-                {% if task.is_recurring %}
-                <span class="tg-chip recurrence" style="backdrop-filter: blur(8px); background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); font-weight: 700; padding: 5px 12px; border-radius: 99px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span class="material-symbols-outlined" style="font-size: 15px;">sync</span>
-                    <span>{{ task.recurrence_display }}</span>
+{% comment %}
+  Task detail, "Action rail": page head, tabs in the main column, and a side rail led by "Your next step".
+  Data: core.template_views.task_detail. Element ids used by the script below are kept from the previous page.
+{% endcomment %}
+{% with is_mgr=user.role|default:'' %}
+<div class="wt-home wt-td">
+    <header class="wt-home-head wt-td-head">
+        <div class="wt-home-title">
+            <h1 dir="auto">{{ task.title }}</h1>
+            <p class="wt-td-meta">
+                {% if task.work_module %}<a href="{% url 'module-dashboard' task.work_module.slug %}" dir="auto">{{ task.work_module.name }}</a>{% endif %}
+                <span class="wt-chip {% if task.status == 'approved' or task.status == 'completed' %}is-ok{% elif task.status == 'rejected' or task.status == 'overdue' %}is-alert{% elif task.status == 'submitted' %}is-review{% else %}is-muted{% endif %}" id="stChip">{% include 'includes/wt_status_label.html' with s=task.status %}</span>
+                {% if task.priority == 'high' or task.priority == 'critical' %}<span class="wt-chip is-review">{% include 'includes/wt_priority_label.html' with p=task.priority %}</span>{% endif %}
+                {% if task.is_recurring %}<span class="wt-chip is-muted"><i class="fas fa-rotate" aria-hidden="true"></i> {{ task.recurrence_display }}</span>{% endif %}
+                {% if task.deadline %}
+                <span class="wt-td-due{% if wt_due.late %} is-late{% endif %}">
+                    <span class="lang-en">Due <span class="wt-num">{% if task.deadline|date:"H:i" == "00:00" %}{{ task.deadline|date:"j M Y" }}{% else %}{{ task.deadline|date:"j M Y, H:i" }}{% endif %}</span>{% if wt_due.en %} · {{ wt_due.en }}{% endif %}</span>
+                    <span class="lang-ar">الموعد <span class="wt-num">{% if task.deadline|date:"H:i" == "00:00" %}{{ task.deadline|date:"j/n/Y" }}{% else %}{{ task.deadline|date:"j/n/Y H:i" }}{% endif %}</span>{% if wt_due.ar %} · {{ wt_due.ar }}{% endif %}</span>
                 </span>
                 {% endif %}
-
-                <!-- Status chip -->
-                <span class="tg-chip" id="stChip" style="backdrop-filter: blur(8px); background: rgba(255, 255, 255, 0.16); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.28); font-weight: 800; padding: 5px 14px; border-radius: 99px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                    <span class="material-symbols-outlined" style="font-size: 15px; color: var(--wt-brand-tint);">hourglass_top</span>
-                    <span>{{ task.get_status_display }}</span>
-                </span>
-            </div>
+            </p>
         </div>
-
-        <!-- Task Title -->
-        <h1 class="tg-hero-title" style="color: #ffffff !important;">{{ task.title }}</h1>
-        <p class="tg-hero-subtitle">
-            <span>{{ task.work_module.name|default:"WorkTrack" }}</span>
-            {% if task.task_type == 'correspondence' %} · <span>{{ task.get_correspondence_type_display }}</span>{% endif %}
-            {% if task.reference_number %} · <span style="font-family:monospace;letter-spacing:0.5px;">REF: {{ task.reference_number }}</span>{% endif %}
-            · <span class="lang-en">Created by {{ task.created_by.first_name }} on {{ task.created_at|date:"M d, Y" }}</span>
-              <span class="lang-ar">أنشأها {{ task.created_by.first_name }} في {{ task.created_at|date:"M d, Y" }}</span>
-        </p>
-
-        <!-- Meta row & Live Countdown -->
-        <div class="tg-hero-row">
-            <div class="tg-metas">
-                <div class="tg-meta">
-                    <small><span class="lang-en">Start Date</span><span class="lang-ar">تاريخ البدء</span></small>
-                    <b>{{ task.start_date|date:"M d, Y"|default:"—" }}</b>
-                </div>
-                <div class="tg-meta">
-                    <small><span class="lang-en">Due Date</span><span class="lang-ar">الموعد النهائي</span></small>
-                    <b class="{% if task.deadline and task.deadline < now and task.status != 'completed' %}text-warning{% endif %}">{{ task.deadline|date:"M d, Y"|default:"—" }}</b>
-                </div>
-                <div class="tg-meta">
-                    <small><span class="lang-en">Planned Hours</span><span class="lang-ar">الجهد المخطط</span></small>
-                    <b>{{ task.estimated_hours|default:"0.0" }}h</b>
-                </div>
-            </div>
-
-            <!-- Live Countdown (Tabular numbers) -->
-            <div class="tg-cd" id="countdown-timer" data-deadline="{{ task.deadline|date:'c' }}" aria-label="Countdown to due date">
-                <div class="tg-cd-box">
-                    <b id="cd-days">00</b>
-                    <span><span class="lang-en">Days</span><span class="lang-ar">يوم</span></span>
-                </div>
-                <div class="tg-cd-box">
-                    <b id="cd-hours">00</b>
-                    <span><span class="lang-en">Hrs</span><span class="lang-ar">ساعة</span></span>
-                </div>
-                <div class="tg-cd-box">
-                    <b id="cd-mins">00</b>
-                    <span><span class="lang-en">Min</span><span class="lang-ar">دقيقة</span></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 4-step status tracker -->
-        <ol class="tg-steps" aria-label="Task progress stages">
-            <li class="{% if task.progress >= 0 %}on{% endif %}"><span class="lang-en">Not started</span><span class="lang-ar">لم تبدأ</span></li>
-            <li class="{% if task.progress >= 1 %}ok{% endif %}"><span class="lang-en">In progress</span><span class="lang-ar">قيد التنفيذ</span></li>
-            <li class="{% if task.progress >= 80 %}ok{% endif %}"><span class="lang-en">Review</span><span class="lang-ar">مراجعة</span></li>
-            <li class="{% if task.progress >= 100 or task.status == 'completed' %}ok on{% endif %}"><span class="lang-en">Done</span><span class="lang-ar">مكتملة</span></li>
-        </ol>
-
-        <!-- Action buttons -->
-        <div class="tg-hero-actions">
-            <!-- Quick Complete Button -->
-            <button type="button" class="tg-btn tg-btn-primary" id="taskDetailQuickCompleteBtn" onclick="quickCompleteTaskDetail({{ task.id }})">
-                <span class="material-symbols-outlined" id="taskDetailCompleteIcon" style="font-size:20px;">{% if task.status == 'completed' %}done_all{% else %}check_circle{% endif %}</span>
-                <span id="taskDetailCompleteTxt">
-                    {% if task.status == 'completed' %}
-                        <span class="lang-en">Task Completed</span><span class="lang-ar">المهمة مكتملة</span>
-                    {% else %}
-                        <span class="lang-en">Complete Task</span><span class="lang-ar">اكتملت المهمة</span>
-                    {% endif %}
-                </span>
-            </button>
-
-            <!-- Edit Task (Manager / Admin) -->
-            {% if user.role == 'manager' or user.role == 'super_admin' %}
-            <a href="{% url 'task-edit' task.id %}" class="tg-btn tg-btn-ghost">
-                <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
-                <span class="lang-en">Edit Task</span><span class="lang-ar">تعديل المهمة</span>
-            </a>
+        <div class="wt-home-actions">
+            <button type="button" class="btn btn-light" onclick="openShareTaskModal()"><i class="fas fa-share-nodes"></i><span class="lang-en">Share</span><span class="lang-ar">مشاركة</span></button>
+            {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+            <a href="{% url 'task-edit' task.id %}" class="btn btn-light"><i class="fas fa-pen"></i><span class="lang-en">Edit</span><span class="lang-ar">تعديل</span></a>
             {% endif %}
-
-            <!-- Share Task -->
-            <button type="button" class="tg-btn tg-btn-ghost" onclick="openShareTaskModal()">
-                <span class="material-symbols-outlined" style="font-size:18px;">share</span>
-                <span class="lang-en">Share</span><span class="lang-ar">مشاركة</span>
+            <button type="button" class="btn {% if task.status == 'completed' or task.status == 'approved' %}btn-light is-done{% else %}btn-light{% endif %} wt-td-done" id="taskDetailQuickCompleteBtn" onclick="quickCompleteTaskDetail({{ task.id }})" aria-pressed="{% if task.status == 'completed' or task.status == 'approved' %}true{% else %}false{% endif %}">
+                <i class="fas fa-check" aria-hidden="true"></i>
+                <span id="taskDetailCompleteTxt">{% if task.status == 'completed' or task.status == 'approved' %}<span class="lang-en">Done · reopen</span><span class="lang-ar">مكتملة · إعادة فتح</span>{% else %}<span class="lang-en">Mark done</span><span class="lang-ar">تعليم كمكتملة</span>{% endif %}</span>
             </button>
         </div>
     </header>
 
-    <!-- ===== 2. TWO-COLUMN LAYOUT ===== -->
-    <div class="tg-layout-grid">
-        
-        <!-- SIDEBAR (Stacked Cards) -->
-        <aside class="tg-col tg-sidebar">
-            
-            <!-- a. Progress Card -->
-            <section class="tg-card">
-                <h3><span class="lang-en">Progress</span><span class="lang-ar">التقدم</span></h3>
-                <div class="tg-ring-box">
-                    <svg class="tg-ring-svg" width="96" height="96" viewBox="0 0 96 96" aria-hidden="true">
-                        <circle cx="48" cy="48" r="40" fill="none" stroke="var(--mint)" stroke-width="9"/>
-                        <circle id="arc" class="donut-fill" cx="48" cy="48" r="40" fill="none" stroke="var(--g)" stroke-width="9" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="calc(251.3 - (251.3 * {{ task.progress|default:0 }}) / 100)" style="transition: stroke-dashoffset 0.4s;"/>
-                    </svg>
-                    <div>
-                        <div class="tg-ring-val"><span id="donut-progress-num">{{ task.progress|default:0 }}</span>%</div>
-                        <small style="color:var(--mute);"><span class="lang-en">of work complete</span><span class="lang-ar">من العمل مكتمل</span></small>
-                    </div>
-                </div>
-
-                {% if user.role == 'manager' or user.role == 'super_admin' or user in task.assigned_to.all %}
-                <div style="margin-top: 14px;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small style="font-weight:700;color:var(--mute);"><span class="lang-en">Adjust progress</span><span class="lang-ar">تعديل النسبة</span></small>
-                        <small style="font-weight:800;color:var(--g2);"><span id="progressValDisplay">{{ task.progress|default:0 }}</span>%</small>
-                    </div>
-                    <input type="range" class="tg-range" id="progressRange" min="0" max="100" step="5" value="{{ task.progress|default:0 }}" 
-                           aria-label="Update task progress"
-                           oninput="document.getElementById('progressValDisplay').textContent=this.value; document.getElementById('donut-progress-num').textContent=this.value; document.getElementById('arc').style.strokeDashoffset=251.3*(1 - this.value/100);"
-                           onchange="saveTaskProgress(event)">
-                </div>
-                {% endif %}
-            </section>
-
-            <!-- b. Submit Card -->
-            <section class="tg-card tg-card-submit">
-                {% if user_submission %}
-                    <!-- User already has a submission: show full status and icon -->
-                    <div class="tg-submit-icon">
-                        {% if user_submission.status == 'approved' %}
-                            <span class="material-symbols-outlined" style="font-size:42px;color:var(--wt-accent);filter:drop-shadow(0 0 12px rgba(25, 190, 220,0.5));">verified</span>
-                        {% elif user_submission.status == 'rejected' %}
-                            <span class="material-symbols-outlined" style="font-size:42px;color:#f87171;filter:drop-shadow(0 0 12px rgba(248,113,113,0.5));">warning</span>
-                        {% elif user_submission.status == 'submitted' or user_submission.status == 'under_review' %}
-                            <span class="material-symbols-outlined" style="font-size:42px;color:#fde68a;filter:drop-shadow(0 0 12px rgba(253,230,138,0.5));">pending_actions</span>
-                        {% else %}
-                            <span class="material-symbols-outlined" style="font-size:42px;color:#93c5fd;filter:drop-shadow(0 0 12px rgba(147,197,253,0.5));">edit_document</span>
-                        {% endif %}
-                    </div>
-
-                    <h3 style="color:#ffffff !important;font-weight:800;font-size:1.15rem;margin-bottom:8px;">
-                        {% if user_submission.status == 'approved' %}
-                            <span class="lang-en">Submission Approved</span><span class="lang-ar">التسليم معتمد</span>
-                        {% elif user_submission.status == 'rejected' %}
-                            <span class="lang-en">Revisions Requested</span><span class="lang-ar">مطلوب تعديل التسليم</span>
-                        {% elif user_submission.status == 'submitted' or user_submission.status == 'under_review' %}
-                            <span class="lang-en">Under Review</span><span class="lang-ar">التسليم قيد المراجعة</span>
-                        {% else %}
-                            <span class="lang-en">Draft in Progress</span><span class="lang-ar">مسودة قيد التجهيز</span>
-                        {% endif %}
-                    </h3>
-
-                    <!-- Status Chip with Icon -->
-                    <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-                        <span class="tg-chip" style="{% if user_submission.status == 'approved' %}background:rgba(var(--wt-brand-rgb),0.25);border-color:var(--wt-ok);color:var(--wt-ok-soft);{% elif user_submission.status == 'rejected' %}background:rgba(225,29,72,0.25);border-color:#e11d48;color:#fecdd3;{% elif user_submission.status == 'draft' %}background:rgba(59,130,246,0.25);border-color:#3b82f6;color:#bfdbfe;{% else %}background:rgba(245,158,11,0.25);border-color:#f59e0b;color:#fef08a;{% endif %}font-weight:800;font-size:0.78rem;">
-                            <span class="material-symbols-outlined" style="font-size:14px;">
-                                {% if user_submission.status == 'approved' %}check_circle
-                                {% elif user_submission.status == 'rejected' %}error
-                                {% elif user_submission.status == 'draft' %}edit
-                                {% else %}hourglass_top{% endif %}
-                            </span>
-                            {{ user_submission.get_status_display }}
-                        </span>
-                        <span class="tg-chip" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.25);color:#ffffff;font-size:0.75rem;">
-                            v{{ user_submission.version }} · {{ user_submission.progress|default:0 }}%
-                        </span>
-                        {% if user_submission.score is not None %}
-                        <span class="tg-chip" style="background:rgba(245,158,11,0.25);border-color:#f59e0b;color:#fde68a;font-size:0.75rem;">
-                            <span class="material-symbols-outlined" style="font-size:13px;">star</span> {{ user_submission.score|floatformat:1 }}/10
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <p style="color:#a7e8c9;font-size:0.82rem;margin-bottom:14px;">
-                        {% if user_submission.status == 'draft' %}
-                            <span class="lang-en">Continue updating your draft before final review.</span>
-                            <span class="lang-ar">واصل تعديل مسودتك قبل الإرسال النهائي للمراجعة.</span>
-                        {% else %}
-                            <span class="lang-en">Submitted on {{ user_submission.submitted_at|default:user_submission.created_at|date:"M d, Y" }}.</span>
-                            <span class="lang-ar">تم التسليم في {{ user_submission.submitted_at|default:user_submission.created_at|date:"M d, Y" }}.</span>
-                        {% endif %}
-                    </p>
-
-                    {% if user_submission.status == 'draft' %}
-                    <a href="{% url 'submission-edit' user_submission.id %}" class="tg-btn tg-btn-primary" style="width:100%;color:#ffffff !important;font-weight:800;text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">arrow_forward</span>
-                        <span class="lang-en" style="color:#ffffff !important;">Continue Submission</span><span class="lang-ar" style="color:#ffffff !important;">متابعة مسودة التسليم</span>
-                    </a>
-                    {% else %}
-                    <a href="{% url 'submission-detail' user_submission.id %}" class="tg-btn tg-btn-primary" style="width:100%;color:#ffffff !important;font-weight:800;text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">visibility</span>
-                        <span class="lang-en" style="color:#ffffff !important;">View My Submission</span><span class="lang-ar" style="color:#ffffff !important;">عرض تفاصيل التسليم</span>
-                    </a>
-                    {% endif %}
-
-                {% elif needs_new_version %}
-                    <div class="tg-submit-icon">
-                        <span class="material-symbols-outlined" style="font-size:40px;color:var(--wt-accent);">replay</span>
-                    </div>
-                    <h3 style="color:#ffffff !important;font-weight:800;"><span class="lang-en">Resubmission Ready</span><span class="lang-ar">جاهز لإعادة التسليم</span></h3>
-                    <p style="color:#a7e8c9;"><span class="lang-en">A new revision has been authorized for this task.</span><span class="lang-ar">تم التصريح بإصدار جديد لهذه المهمة.</span></p>
-                    <form method="post" action="{% url 'task-start-new-version' task.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="tg-btn tg-btn-primary" style="width:100%;color:#ffffff !important;font-weight:800;">
-                            <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">autorenew</span>
-                            <span class="lang-en" style="color:#ffffff !important;">Start New Version</span><span class="lang-ar" style="color:#ffffff !important;">بدء إصدار جديد</span>
-                        </button>
-                    </form>
-
-                {% elif can_acknowledge %}
-                    <div class="tg-submit-icon">
-                        <span class="material-symbols-outlined" style="font-size:40px;color:#60a5fa;">mark_email_read</span>
-                    </div>
-                    <h3 style="color:#ffffff !important;font-weight:800;"><span class="lang-en">Acknowledgment Required</span><span class="lang-ar">مطلوب تأكيد الاستلام</span></h3>
-                    <p style="color:#a7e8c9;"><span class="lang-en">Confirm your review and receipt of this directive.</span><span class="lang-ar">أكد استلامك واطلاعك على هذه المراسلة.</span></p>
-                    <form method="post" action="{% url 'task-acknowledge' task.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="tg-btn tg-btn-primary" style="width:100%;color:#ffffff !important;font-weight:800;">
-                            <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">check_circle</span>
-                            <span class="lang-en" style="color:#ffffff !important;">Acknowledge Receipt</span><span class="lang-ar" style="color:#ffffff !important;">تأكيد الاستلام</span>
-                        </button>
-                    </form>
-
-                {% elif can_submit %}
-                    <div class="tg-submit-icon">🚀</div>
-                    <h3 style="color:#ffffff !important;font-weight:800;"><span class="lang-en">Ready to Submit?</span><span class="lang-ar">جاهز للتسليم؟</span></h3>
-                    <p style="color:#a7e8c9;"><span class="lang-en">Upload your work deliverables or submission files for review.</span><span class="lang-ar">ارفع ملفاتك ونتائج عملك لتوثيق التسليم للمراجعة.</span></p>
-                    <a href="{% url 'submission-create' %}?task_id={{ task.id }}" class="tg-btn tg-btn-primary" style="width:100%;color:#ffffff !important;font-weight:800;text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">send</span>
-                        <span class="lang-en" style="color:#ffffff !important;">Submit Work</span><span class="lang-ar" style="color:#ffffff !important;">تسليم العمل</span>
-                    </a>
-
+    <div class="wt-td-grid">
+        {# ── Your next step ─────────────────────────────────────────── #}
+        <section class="wt-panel wt-td-next" aria-labelledby="wt-next-title">
+            <div class="wt-panel-head"><h2 id="wt-next-title"><span class="lang-en">Your next step</span><span class="lang-ar">خطوتك التالية</span></h2></div>
+            <div class="wt-td-next-body">
+            {% if user_submission %}
+                <p class="wt-td-next-state">
+                    <span class="wt-chip {% if user_submission.status == 'approved' %}is-ok{% elif user_submission.status == 'rejected' %}is-alert{% elif user_submission.status == 'draft' %}is-muted{% else %}is-review{% endif %}">{% include 'includes/wt_status_label.html' with s=user_submission.status %}</span>
+                    <span class="wt-num">v{{ user_submission.version }}</span>
+                    {% if user_submission.score is not None %}<span><span class="lang-en">Score</span><span class="lang-ar">الدرجة</span> <b class="wt-num">{{ user_submission.score|floatformat:0 }}</b><span class="wt-num"> / 100</span></span>{% endif %}
+                </p>
+                <p class="wt-td-next-text">
+                    {% if user_submission.status == 'draft' %}<span class="lang-en">Your draft is saved. Finish it and send it for review.</span><span class="lang-ar">مسودتك محفوظة. أكملها وأرسلها للمراجعة.</span>
+                    {% elif user_submission.status == 'rejected' %}<span class="lang-en">Your manager asked for changes. Read the feedback, then submit a new version.</span><span class="lang-ar">طلب مديرك تعديلات. اقرأ الملاحظات ثم قدّم نسخة جديدة.</span>
+                    {% elif user_submission.status == 'approved' %}<span class="lang-en">Approved. Nothing else is needed from you on this task.</span><span class="lang-ar">تم الاعتماد. لا شيء آخر مطلوب منك في هذه المهمة.</span>
+                    {% else %}<span class="lang-en">Submitted <span class="wt-num">{{ user_submission.submitted_at|default:user_submission.created_at|date:"j/n/Y" }}</span>. Waiting for review.</span><span class="lang-ar">سُلّمت في <span class="wt-num">{{ user_submission.submitted_at|default:user_submission.created_at|date:"j/n/Y" }}</span>. بانتظار المراجعة.</span>{% endif %}
+                </p>
+                {% if user_submission.status == 'draft' %}
+                <a href="{% url 'submission-edit' user_submission.id %}" class="btn btn-primary w-100"><i class="fas fa-pen-to-square"></i><span class="lang-en">Continue draft</span><span class="lang-ar">متابعة المسودة</span></a>
                 {% else %}
-                    <div class="tg-submit-icon">
-                        <span class="material-symbols-outlined" style="font-size:40px;color:#94a3b8;">lock</span>
-                    </div>
-                    <h3 style="color:#ffffff !important;font-weight:800;"><span class="lang-en">Submissions Closed</span><span class="lang-ar">التسليم مغلق</span></h3>
-                    <p style="color:#a7e8c9;"><span class="lang-en">This task is not currently open for new submissions.</span><span class="lang-ar">هذه المهمة مغلقة للتسليم حالياً.</span></p>
-                    <button type="button" class="tg-btn tg-btn-ghost" disabled style="opacity:0.6;cursor:not-allowed;width:100%;color:#ffffff !important;">
-                        <span class="material-symbols-outlined" style="font-size:18px;color:#ffffff !important;">lock</span>
-                        <span class="lang-en" style="color:#ffffff !important;">Submissions Closed</span><span class="lang-ar" style="color:#ffffff !important;">التسليم مغلق</span>
-                    </button>
+                <a href="{% url 'submission-detail' user_submission.id %}" class="btn {% if user_submission.status == 'rejected' %}btn-primary{% else %}btn-light{% endif %} w-100"><i class="fas fa-eye"></i><span class="lang-en">{% if user_submission.status == 'rejected' %}Read feedback{% else %}View my submission{% endif %}</span><span class="lang-ar">{% if user_submission.status == 'rejected' %}قراءة الملاحظات{% else %}عرض تسليمي{% endif %}</span></a>
                 {% endif %}
-            </section>
-
-            <!-- c. Assigned Team Card -->
-            <section class="tg-card" id="team-card-section">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--line);">
-                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                        <span class="material-symbols-outlined" style="color: var(--g); font-size: 20px;">group</span>
-                        <span><span class="lang-en">Assigned Team</span><span class="lang-ar">فريق العمل</span></span>
-                    </h3>
-                    <span class="tg-tag-lead" style="font-weight: 800; font-size: 0.74rem;">{{ task.assigned_to.count }} member{{ task.assigned_to.count|pluralize }}</span>
-                </div>
-
-                <div id="team-members-list" class="team-members-container" style="display: flex; flex-direction: column; gap: 8px;">
-                    {% for u in task.assigned_to.all %}
-                    <div class="tg-person-item team-member-item" data-index="{{ forloop.counter0 }}" style="padding: 0.6rem 0.85rem; border: 1px solid var(--line); border-radius: var(--radius-inputs, 10px); background: var(--bg); transition: all 0.2s ease; display: flex; align-items: center; gap: 10px;">
-                        <div class="tg-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--g), var(--deep)); color: #fff; font-size: 0.82rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                            {{ u.first_name|first|default:"U"|upper }}{{ u.last_name|first|default:""|upper }}
-                        </div>
-                        <div class="tg-person-info" style="min-width: 0; flex: 1;">
-                            <div class="tg-person-name" style="font-weight: 800; font-size: 0.85rem; color: var(--ink); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                                {{ u.get_full_name }}
-                            </div>
-                            <div class="tg-person-role" style="font-size: 0.72rem; color: var(--mute);">
-                                {% if forloop.first %}
-                                    <span style="color: var(--g2); font-weight: 700;">★ Team Lead</span>
-                                {% else %}
-                                    {{ u.get_role_display|default:"Member" }}
-                                {% endif %}
-                                {% if u.email %} · <span style="opacity: 0.8;">{{ u.email|truncatechars:18 }}</span>{% endif %}
-                            </div>
-                        </div>
-                        {% if forloop.first %}
-                        <span class="tg-tag-lead" style="font-size: 0.68rem; padding: 2px 7px; background: var(--mint); color: var(--g2); border: 1px solid var(--g); border-radius: 99px; font-weight: 800;">
-                            <span class="lang-en">Lead</span><span class="lang-ar">قائد</span>
-                        </span>
-                        {% endif %}
-                    </div>
-                    {% empty %}
-                    <div class="tg-empty-state" style="padding: 1.5rem; text-align: center; color: var(--mute); font-size: 0.85rem;">
-                        <span class="lang-en">No team members assigned yet.</span>
-                        <span class="lang-ar">لم يتم تعيين أعضاء بعد.</span>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Pagination Footer (7 items per page) -->
-                <div id="team-pagination-ctrls" style="{% if task.assigned_to.count <= 7 %}display: none;{% else %}display: flex;{% endif %} align-items: center; justify-content: space-between; margin-top: 0.85rem; padding-top: 0.65rem; border-top: 1px dashed var(--line); font-size: 0.78rem;">
-                    <span id="team-page-indicator" style="color: var(--mute); font-weight: 600;">Page 1 of 1</span>
-                    <div style="display: flex; gap: 4px; align-items: center;">
-                        <button type="button" class="tg-btn tg-btn-subtle" id="team-prev-page" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 6px;" title="Previous Page">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_left</span>
-                        </button>
-                        <div id="team-page-numbers" style="display: flex; gap: 3px;"></div>
-                        <button type="button" class="tg-btn tg-btn-subtle" id="team-next-page" style="padding: 3px 8px; font-size: 0.75rem; border-radius: 6px;" title="Next Page">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">chevron_right</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- d. Info Card -->
-            <section class="tg-card">
-                <h3><span class="lang-en">Information</span><span class="lang-ar">معلومات</span></h3>
-                <div class="tg-info-row">
-                    <span><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></span>
-                    <b>{{ task.get_priority_display }}</b>
-                </div>
-                <div class="tg-info-row">
-                    <span><span class="lang-en">Indicator Weight</span><span class="lang-ar">وزن المؤشر</span></span>
-                    <b>{{ task.kpi_weight }}×</b>
-                </div>
-                <div class="tg-info-row">
-                    <span><span class="lang-en">Created Date</span><span class="lang-ar">تاريخ الإنشاء</span></span>
-                    <b>{{ task.created_at|date:"M d, Y" }}</b>
-                </div>
-                {% if task.is_timeline_task %}
-                <div class="tg-info-row">
-                    <span><span class="lang-en">Timeline Order</span><span class="lang-ar">الترتيب الزمني</span></span>
-                    <b>#{{ task.sequence_order }}</b>
-                </div>
-                {% endif %}
-            </section>
-
-            <!-- e. Admin Oversight Card (Manager / Super Admin ONLY) -->
-            {% if user.role == 'manager' or user.role == 'super_admin' %}
-            <section class="tg-card tg-card-admin">
-                <h3><span class="lang-en">Admin Oversight</span><span class="lang-ar">الرقابة الإدارية</span></h3>
-                <button type="button" class="tg-btn tg-btn-line" data-bs-toggle="modal" data-bs-target="#resubmitModal">
-                    <span class="material-symbols-outlined" style="font-size:18px;">replay</span>
-                    <span class="lang-en">Authorize Resubmission</span><span class="lang-ar">السماح بإعادة التسليم</span>
-                </button>
-                <a href="{% url 'task-edit' task.id %}" class="tg-btn tg-btn-line">
-                    <span class="material-symbols-outlined" style="font-size:18px;">settings</span>
-                    <span class="lang-en">Configure Task</span><span class="lang-ar">تكوين المهمة</span>
-                </a>
-            </section>
+            {% elif needs_new_version %}
+                <p class="wt-td-next-text"><span class="lang-en">You can submit a new version of this task.</span><span class="lang-ar">يمكنك تقديم نسخة جديدة من هذه المهمة.</span></p>
+                <form method="post" action="{% url 'task-start-new-version' task.id %}">{% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-rotate-right"></i><span class="lang-en">Start new version</span><span class="lang-ar">بدء نسخة جديدة</span></button>
+                </form>
+            {% elif can_acknowledge %}
+                <p class="wt-td-next-text"><span class="lang-en">Confirm that you have received and read this.</span><span class="lang-ar">أكّد أنك استلمت هذا واطّلعت عليه.</span></p>
+                <form method="post" action="{% url 'task-acknowledge' task.id %}">{% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-check"></i><span class="lang-en">Acknowledge receipt</span><span class="lang-ar">تأكيد الاستلام</span></button>
+                </form>
+            {% elif can_submit %}
+                <p class="wt-td-next-text"><span class="lang-en">Upload your work and the required data for review.</span><span class="lang-ar">ارفع عملك والبيانات المطلوبة للمراجعة.</span></p>
+                <a href="{% url 'submission-create' %}?task_id={{ task.id }}" class="btn btn-primary w-100"><i class="fas fa-paper-plane"></i><span class="lang-en">Submit work</span><span class="lang-ar">تسليم العمل</span></a>
+            {% elif is_mgr == 'manager' or is_mgr == 'super_admin' %}
+                <dl class="wt-today-list wt-td-mini">
+                    <div><dt><span class="lang-en">Submitted</span><span class="lang-ar">سلّموا</span></dt><dd class="wt-num">{{ sub_submitted_count }} / {{ total_assigned }}</dd></div>
+                    <div><dt><span class="lang-en">Waiting for your review</span><span class="lang-ar">بانتظار مراجعتك</span></dt><dd class="wt-num">{{ sub_pending_count }}</dd></div>
+                    <div><dt><span class="lang-en">Approved</span><span class="lang-ar">معتمدة</span></dt><dd class="wt-num">{{ sub_approved_count }}</dd></div>
+                </dl>
+                <a href="{% url 'submission-versions' task.id %}" class="btn btn-light w-100"><i class="fas fa-clock-rotate-left"></i><span class="lang-en">All submissions and versions</span><span class="lang-ar">كل التسليمات والنسخ</span></a>
+            {% else %}
+                <p class="wt-td-next-text"><span class="lang-en">This task is not open for submissions right now.</span><span class="lang-ar">هذه المهمة غير مفتوحة للتسليم حاليًا.</span></p>
             {% endif %}
+            </div>
+        </section>
 
-        </aside>
+        {# ── Main column: tabs ──────────────────────────────────────── #}
+        <section class="wt-panel wt-td-main" aria-label="{% if wt_lang == 'ar' %}تفاصيل المهمة{% else %}Task details{% endif %}">
+            <div class="wt-td-tabs" role="tablist" aria-label="{% if wt_lang == 'ar' %}أقسام المهمة{% else %}Task sections{% endif %}">
+                <button type="button" class="tg-tab-btn" role="tab" aria-selected="true" aria-controls="panel-details" data-tab-panel="panel-details" id="tab-btn-details"><span class="lang-en">Details</span><span class="lang-ar">التفاصيل</span></button>
+                {% if todos is not None %}
+                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="panel-subtasks" tabindex="-1" data-tab-panel="panel-subtasks" id="tab-btn-subtasks"><span class="lang-en">Sub-tasks</span><span class="lang-ar">المهام الفرعية</span> <span class="wt-num wt-td-count" id="todo-tab-count">{{ todo_pending_count|default:0 }}</span></button>
+                {% endif %}
+                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="panel-discussion" tabindex="-1" data-tab-panel="panel-discussion" id="tab-btn-discussion"><span class="lang-en">Discussion</span><span class="lang-ar">النقاش</span> <span class="wt-num wt-td-count" id="comment-tab-count">{{ task.comments.count|default:0 }}</span></button>
+                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" aria-controls="panel-activity" tabindex="-1" data-tab-panel="panel-activity" id="tab-btn-activity"><span class="lang-en">Activity</span><span class="lang-ar">النشاط</span></button>
+            </div>
 
-        <!-- MAIN COLUMN (Pill Tabs & Content Panels) -->
-        <main class="tg-col tg-main">
-            
-            <!-- Pill Navigation Tabs -->
-            <nav class="tg-tabs" role="tablist" aria-label="Task Sections">
-                <button type="button" class="tg-tab-btn" role="tab" aria-selected="true" data-tab-panel="panel-details" id="tab-btn-details">
-                    <span class="material-symbols-outlined" style="font-size:18px;">info</span>
-                    <span class="lang-en">Details</span><span class="lang-ar">التفاصيل</span>
-                </button>
-                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" data-tab-panel="panel-subtasks" id="tab-btn-subtasks">
-                    <span class="material-symbols-outlined" style="font-size:18px;">checklist</span>
-                    <span class="lang-en">Sub-tasks</span><span class="lang-ar">المهام الفرعية</span>
-                    <span class="tg-tab-count" id="todo-tab-count">{{ todo_pending_count|default:0 }}</span>
-                </button>
-                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" data-tab-panel="panel-discussion" id="tab-btn-discussion">
-                    <span class="material-symbols-outlined" style="font-size:18px;">forum</span>
-                    <span class="lang-en">Discussion</span><span class="lang-ar">النقاش</span>
-                    <span class="tg-tab-count" id="comment-tab-count">{{ task.comments.count|default:0 }}</span>
-                </button>
-                <button type="button" class="tg-tab-btn" role="tab" aria-selected="false" data-tab-panel="panel-activity" id="tab-btn-activity">
-                    <span class="material-symbols-outlined" style="font-size:18px;">history</span>
-                    <span class="lang-en">Activity</span><span class="lang-ar">النشاط</span>
-                </button>
-            </nav>
-
-            <!-- ===== TAB 1: DETAILS ===== -->
-            <div class="tg-panel" id="panel-details">
-                
-                <!-- Contact Inquiry Details (if applicable) -->
+            {# Details #}
+            <div class="tg-panel wt-td-pane" id="panel-details" role="tabpanel" aria-labelledby="tab-btn-details">
                 {% if contact_info %}
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">contact_page</span>
-                            <span class="lang-en">Contact Inquiry Details</span><span class="lang-ar">بيانات استفسار العميل</span>
-                        </span>
-                    </h3>
-                    <div class="tg-kv-grid">
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Client Name</span><span class="lang-ar">اسم العميل</span></small>
-                            <b>{{ contact_info.name|default:"—" }}</b>
-                        </div>
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Email</span><span class="lang-ar">البريد الإلكتروني</span></small>
-                            <b>{% if contact_info.email %}<a href="mailto:{{ contact_info.email }}" style="color:var(--g2);text-decoration:none;">{{ contact_info.email }}</a>{% else %}—{% endif %}</b>
-                        </div>
-                        {% if contact_info.phone %}
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Phone</span><span class="lang-ar">الهاتف</span></small>
-                            <b><a href="tel:{{ contact_info.phone }}" style="color:inherit;text-decoration:none;">{{ contact_info.phone }}</a></b>
-                        </div>
-                        {% endif %}
-                        {% if contact_info.service %}
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Requested Service</span><span class="lang-ar">الخدمة المطلوبة</span></small>
-                            <b style="color:var(--g2);">{{ contact_info.service }}</b>
-                        </div>
-                        {% endif %}
-                        {% if contact_info.message %}
-                        <div class="tg-kv-item" style="grid-column: 1 / -1;">
-                            <small><span class="lang-en">Requirements / Message</span><span class="lang-ar">الرسالة والمتطلبات</span></small>
-                            <div style="margin-top:4px;white-space:pre-wrap;font-size:0.92rem;color:var(--ink);">{{ contact_info.message }}</div>
-                        </div>
-                        {% endif %}
-                    </div>
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Contact inquiry</span><span class="lang-ar">بيانات الاستفسار</span></h3>
+                    <dl class="wt-td-kv">
+                        <div><dt><span class="lang-en">Name</span><span class="lang-ar">الاسم</span></dt><dd dir="auto">{{ contact_info.name|default:"–" }}</dd></div>
+                        <div><dt><span class="lang-en">Email</span><span class="lang-ar">البريد الإلكتروني</span></dt><dd>{% if contact_info.email %}<a href="mailto:{{ contact_info.email }}">{{ contact_info.email }}</a>{% else %}–{% endif %}</dd></div>
+                        {% if contact_info.phone %}<div><dt><span class="lang-en">Phone</span><span class="lang-ar">الهاتف</span></dt><dd><a class="wt-num" href="tel:{{ contact_info.phone }}">{{ contact_info.phone }}</a></dd></div>{% endif %}
+                        {% if contact_info.service %}<div><dt><span class="lang-en">Requested service</span><span class="lang-ar">الخدمة المطلوبة</span></dt><dd dir="auto">{{ contact_info.service }}</dd></div>{% endif %}
+                        {% if contact_info.message %}<div class="is-wide"><dt><span class="lang-en">Message</span><span class="lang-ar">الرسالة</span></dt><dd class="wt-td-prose" dir="auto">{{ contact_info.message|linebreaksbr }}</dd></div>{% endif %}
+                    </dl>
                 </section>
                 {% endif %}
 
-                <!-- Task Description Overview -->
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">description</span>
-                            <span class="lang-en">Task Overview</span><span class="lang-ar">وصف المهمة</span>
-                        </span>
-                    </h3>
-                    <div style="font-size:0.95rem;line-height:1.7;color:var(--ink);">
-                        {% if task.description %}
-                            {{ task.description|linebreaks }}
-                        {% else %}
-                            <p class="tg-empty-state" style="padding:14px 0;"><span class="lang-en">No description provided.</span><span class="lang-ar">لا يوجد وصف متاح لهذه المهمة.</span></p>
-                        {% endif %}
-                    </div>
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></h3>
+                    {% if task.description %}<div class="wt-td-prose" dir="auto">{{ task.description|linebreaks }}</div>
+                    {% else %}<p class="wt-td-empty"><span class="lang-en">No description.</span><span class="lang-ar">لا يوجد وصف.</span></p>{% endif %}
                 </section>
 
-                <!-- Location & Mapping (if enabled) -->
-                {% if task.location_enabled %}
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">pin_drop</span>
-                            <span class="lang-en">Task Location & Mapping</span><span class="lang-ar">موقع المهمة والخريطة</span>
-                        </span>
-                        <span class="tg-chip">{{ task.wilaya|default:"National" }}, {{ task.country|default:"Algeria" }}</span>
-                    </h3>
-                    <div id="task-view-map" style="height: 320px; width: 100%; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 1rem;"></div>
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <small style="color:var(--mute);"><span class="lang-en">Coordinates</span><span class="lang-ar">الإحداثيات الجغرافية</span>:</small>
-                            <code style="color:var(--g2);font-weight:700;margin-inline-start:4px;">{{ task.latitude }}, {{ task.longitude }}</code>
-                        </div>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination={{ task.latitude }},{{ task.longitude }}" target="_blank" class="tg-btn tg-btn-line">
-                            <span class="material-symbols-outlined" style="font-size:18px;">directions</span>
-                            <span class="lang-en">Get Directions</span><span class="lang-ar">الاتجاهات</span>
-                        </a>
-                    </div>
-                </section>
-                {% endif %}
-
-                <!-- Required Submission Data (Custom Fields) -->
                 {% if task.custom_fields.exists %}
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">fact_check</span>
-                            <span class="lang-en">Required Submission Data</span><span class="lang-ar">بيانات التسليم المطلوبة</span>
-                        </span>
-                    </h3>
-                    <div class="tg-kv-grid">
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Data to submit</span><span class="lang-ar">البيانات المطلوبة في التسليم</span></h3>
+                    <ul class="wt-td-fields">
                         {% for field in task.custom_fields.all %}
-                        <div class="tg-kv-item">
-                            <small>{{ field.get_field_type_display }} {% if field.required %}<span style="color:var(--warn);">*</span>{% endif %}</small>
-                            <b>{{ field.label }}</b>
-                            {% if field.options_list %}
-                            <div class="d-flex flex-wrap gap-1 mt-1">
-                                {% for opt in field.options_list %}
-                                <span class="tg-chip" style="font-size:0.7rem;padding:1px 6px;">{{ opt }}</span>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
+                        <li>
+                            <b dir="auto">{{ field.label }}{% if field.required %} <span class="wt-td-req" title="{% if wt_lang == 'ar' %}مطلوب{% else %}Required{% endif %}">*</span>{% endif %}</b>
+                            <small>{{ field.get_field_type_display }}</small>
+                            {% if field.options_list %}<span class="wt-td-opts">{% for opt in field.options_list %}<span class="wt-chip is-muted" dir="auto">{{ opt }}</span>{% endfor %}</span>{% endif %}
+                        </li>
                         {% endfor %}
-                    </div>
+                    </ul>
                 </section>
                 {% endif %}
 
-                <!-- Resources & Deliverables -->
                 {% if task.documents.exists or task.attachment %}
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">attachment</span>
-                            <span class="lang-en">Resources & Deliverables</span><span class="lang-ar">الملفات والمخرجات</span>
-                        </span>
-                    </h3>
-                    
-                    {% if task.attachment %}
-                    <div class="tg-file-item">
-                        <div class="tg-file-icon">📄</div>
-                        <div>
-                            <b>{{ task.attachment_filename|default:task.attachment.name }}</b>
-                            <br><small style="color:var(--mute);"><span class="lang-en">Primary Document</span><span class="lang-ar">المستند الأساسي</span></small>
-                        </div>
-                        <a href="{{ task.attachment.url }}" download class="tg-btn tg-btn-line">
-                            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
-                            <span class="lang-en">Download</span><span class="lang-ar">تنزيل</span>
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% for doc in task.documents.all %}
-                    <div class="tg-file-item">
-                        <div class="tg-file-icon">📁</div>
-                        <div>
-                            <b>{{ doc.filename }}</b>
-                            <br><small style="color:var(--mute);"><span class="lang-en">Resource Attachment</span><span class="lang-ar">مرفق إضافي</span></small>
-                        </div>
-                        <a href="{{ doc.file.url }}" download class="tg-btn tg-btn-line">
-                            <span class="material-symbols-outlined" style="font-size:18px;">download</span>
-                            <span class="lang-en">Download</span><span class="lang-ar">تنزيل</span>
-                        </a>
-                    </div>
-                    {% endfor %}
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Files</span><span class="lang-ar">الملفات</span></h3>
+                    <ul class="wt-td-files">
+                        {% if task.attachment %}
+                        <li><i class="fas fa-file-lines" aria-hidden="true"></i><span><b dir="auto">{{ task.attachment_filename|default:task.attachment.name }}</b><small><span class="lang-en">Main document</span><span class="lang-ar">المستند الأساسي</span></small></span>
+                            <a href="{{ task.attachment.url }}" download class="btn btn-sm btn-light"><i class="fas fa-download"></i><span class="lang-en">Download</span><span class="lang-ar">تنزيل</span></a></li>
+                        {% endif %}
+                        {% for doc in task.documents.all %}
+                        <li><i class="fas fa-paperclip" aria-hidden="true"></i><span><b dir="auto">{{ doc.filename }}</b><small><span class="lang-en">Attachment</span><span class="lang-ar">مرفق</span></small></span>
+                            <a href="{{ doc.file.url }}" download class="btn btn-sm btn-light"><i class="fas fa-download"></i><span class="lang-en">Download</span><span class="lang-ar">تنزيل</span></a></li>
+                        {% endfor %}
+                    </ul>
                 </section>
                 {% endif %}
 
-                <!-- Recurring Cycle (if applicable) -->
-                {% if task.is_recurring %}
-                <section class="tg-card mb-3">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">update</span>
-                            <span class="lang-en">Recurring Cycle</span><span class="lang-ar">الدورة المتكررة</span>
-                        </span>
-                    </h3>
-                    <div class="tg-kv-grid">
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Frequency</span><span class="lang-ar">التكرار</span></small>
-                            <b style="color:var(--g2);">↻ {{ task.recurrence_display }}</b>
-                        </div>
-                        {% if next_reactivation %}
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Next Cycle Starts</span><span class="lang-ar">تبدأ الدورة التالية</span></small>
-                            <b style="color:var(--warn);">{{ next_reactivation|date:"M d, H:i" }}</b>
-                        </div>
-                        {% endif %}
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Cycle Limit</span><span class="lang-ar">عدد الدورات</span></small>
-                            <b>{% if task.recurrence_limit == -1 %}<span class="lang-en">Unlimited</span><span class="lang-ar">غير محدود</span>{% else %}{{ task.recurrence_limit }} Remaining{% endif %}</b>
-                        </div>
-                        {% if task.last_reactivated_at %}
-                        <div class="tg-kv-item">
-                            <small><span class="lang-en">Last Reactivation</span><span class="lang-ar">آخر إعادة تفعيل</span></small>
-                            <b>{{ task.last_reactivated_at|date:"M d, H:i" }}</b>
-                        </div>
-                        {% endif %}
+                {% if task.location_enabled %}
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Location</span><span class="lang-ar">الموقع</span> <span class="wt-chip is-muted" dir="auto">{{ task.wilaya|default:"" }}{% if task.wilaya and task.country %}, {% endif %}{{ task.country|default:"" }}</span></h3>
+                    <div id="task-view-map" class="wt-td-map"></div>
+                    <div class="wt-td-maprow">
+                        <span><span class="lang-en">Coordinates</span><span class="lang-ar">الإحداثيات</span>: <span class="wt-num">{{ task.latitude }}, {{ task.longitude }}</span></span>
+                        <a href="https://www.google.com/maps/dir/?api=1&amp;destination={{ task.latitude }},{{ task.longitude }}" target="_blank" rel="noopener" class="btn btn-sm btn-light"><i class="fas fa-diamond-turn-right"></i><span class="lang-en">Directions</span><span class="lang-ar">الاتجاهات</span></a>
                     </div>
-                    {% if user.role == 'manager' or user.role == 'super_admin' %}
-                    <form action="{% url 'task-reactivate' task.id %}" method="post" style="margin-top:12px;">
-                        {% csrf_token %}
-                        <button type="button" class="tg-btn tg-btn-line" onclick="amazingConfirm('This will bypass the current deadline and immediately reset the task progress for the next cycle. Continue?').then(c => { if(c) this.form.submit(); })">
-                            <span class="material-symbols-outlined" style="font-size:18px;">fast_forward</span>
-                            <span class="lang-en">Force Next Cycle Now</span><span class="lang-ar">فرض الدورة التالية الآن</span>
-                        </button>
+                </section>
+                {% endif %}
+
+                {% if task.is_recurring %}
+                <section class="wt-td-sec">
+                    <h3><span class="lang-en">Recurring cycle</span><span class="lang-ar">الدورة المتكررة</span></h3>
+                    <dl class="wt-td-kv">
+                        <div><dt><span class="lang-en">Repeats</span><span class="lang-ar">التكرار</span></dt><dd>{{ task.recurrence_display }}</dd></div>
+                        {% if next_reactivation %}<div><dt><span class="lang-en">Next cycle</span><span class="lang-ar">الدورة التالية</span></dt><dd class="wt-num">{{ next_reactivation|date:"j/n/Y H:i" }}</dd></div>{% endif %}
+                        <div><dt><span class="lang-en">Cycles left</span><span class="lang-ar">الدورات المتبقية</span></dt><dd>{% if task.recurrence_limit == -1 %}<span class="lang-en">Unlimited</span><span class="lang-ar">غير محدودة</span>{% else %}<span class="wt-num">{{ task.recurrence_limit }}</span>{% endif %}</dd></div>
+                        {% if task.last_reactivated_at %}<div><dt><span class="lang-en">Last restarted</span><span class="lang-ar">آخر إعادة تفعيل</span></dt><dd class="wt-num">{{ task.last_reactivated_at|date:"j/n/Y H:i" }}</dd></div>{% endif %}
+                    </dl>
+                    {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+                    <form action="{% url 'task-reactivate' task.id %}" method="post" class="wt-td-inline-form">{% csrf_token %}
+                        <button type="button" class="btn btn-sm btn-light" data-confirm-submit="{% if wt_lang == 'ar' %}سيتجاوز هذا الموعد الحالي ويعيد ضبط تقدم المهمة للدورة التالية فورًا. هل تريد المتابعة؟{% else %}This skips the current deadline and resets the task's progress for the next cycle now. Continue?{% endif %}"><i class="fas fa-forward"></i><span class="lang-en">Start next cycle now</span><span class="lang-ar">بدء الدورة التالية الآن</span></button>
                     </form>
                     {% endif %}
                 </section>
                 {% endif %}
 
-                <!-- Submission Summary Matrix (For Admins / Managers) -->
                 {% if submission_summary.show and user.role != 'worker' %}
-                <section class="tg-card mb-3">
+                <section class="wt-td-sec">
                     <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">grid_on</span>
-                            <span class="lang-en">Submission Matrix</span><span class="lang-ar">مصفوفة التسليمات</span>
-                        </span>
-                        <div class="dropdown">
-                            <button class="tg-btn tg-btn-line py-1 px-3" data-bs-toggle="dropdown" id="exportLinksBtn">
-                                <span class="material-symbols-outlined" style="font-size:16px;">download</span>
-                                <span class="lang-en">Export</span><span class="lang-ar">تصدير</span>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'submission-summary-xlsx' task.id %}" target="_blank" onclick="updateExportLinks(event, this)">
-                                    <span class="material-symbols-outlined text-success">table_view</span> Excel (.xlsx)
-                                </a></li>
-                                <li><a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'submission-summary-pdf' task.id %}" target="_blank" onclick="updateExportLinks(event, this)">
-                                    <span class="material-symbols-outlined text-danger">picture_as_pdf</span> PDF Document
-                                </a></li>
+                        <span><span class="lang-en">Submitted data</span><span class="lang-ar">البيانات المسلّمة</span></span>
+                        <span class="dropdown">
+                            <button class="btn btn-sm btn-light" data-bs-toggle="dropdown" id="exportLinksBtn" aria-expanded="false"><i class="fas fa-download"></i><span class="lang-en">Export</span><span class="lang-ar">تصدير</span></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'submission-summary-xlsx' task.id %}" target="_blank" onclick="updateExportLinks(event, this)"><i class="fas fa-file-excel"></i> Excel (.xlsx)</a></li>
+                                <li><a class="dropdown-item" href="{% url 'submission-summary-pdf' task.id %}" target="_blank" onclick="updateExportLinks(event, this)"><i class="fas fa-file-pdf"></i> PDF</a></li>
                             </ul>
-                        </div>
+                        </span>
                     </h3>
-                    <div class="table-responsive">
-                        {% if submission_summary.has_custom_fields and submission_summary.matrix %}
-                        <table class="tg-matrix-table" id="summary-table">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3 text-start">FIELD NAME</th>
-                                    {% for sub in submission_summary.all_subs %}
-                                    <th class="text-center user-col" data-user-index="{{ forloop.counter0 }}">
-                                        {{ sub.worker.first_name }}
-                                    </th>
-                                    {% endfor %}
-                                    <th class="text-center agg-column">AGGREGATION</th>
-                                </tr>
-                            </thead>
+                    {% if submission_summary.has_custom_fields and submission_summary.matrix %}
+                    <div class="table-responsive wt-td-table">
+                        <table class="table mb-0" id="summary-table">
+                            <thead><tr>
+                                <th><span class="lang-en">Field</span><span class="lang-ar">الحقل</span></th>
+                                {% for sub in submission_summary.all_subs %}<th class="text-center user-col" data-user-index="{{ forloop.counter0 }}" dir="auto">{{ sub.worker.first_name|default:sub.worker.email }}</th>{% endfor %}
+                                <th class="text-center agg-column"><span class="lang-en">Total</span><span class="lang-ar">المجموع</span></th>
+                            </tr></thead>
                             <tbody>
                                 {% for row in submission_summary.matrix %}
                                 <tr>
-                                    <td class="ps-3 fw-bold">{{ row.field.label }}</td>
-                                    {% for uv in row.user_values %}
-                                    <td class="text-center user-col" data-user-index="{{ forloop.counter0 }}">
-                                        {{ uv.value|default:"—"|truncatechars:14 }}
-                                    </td>
-                                    {% endfor %}
+                                    <th scope="row" dir="auto">{{ row.field.label }}</th>
+                                    {% for uv in row.user_values %}<td class="text-center user-col" data-user-index="{{ forloop.counter0 }}" dir="auto">{{ uv.value|default:"–"|truncatechars:14 }}</td>{% endfor %}
                                     <td class="text-center agg-column">
                                         {% if row.is_numeric and row.numeric_values %}
-                                        <div class="d-flex align-items-center justify-content-center gap-2">
-                                            <select class="form-select form-select-sm py-0 px-2 small row-agg-select" data-field-id="{{ row.field.id }}" data-values="{{ row.numeric_values|join:',' }}" onchange="updateRowResult(this)">
-                                                <option value="sum">Sum</option>
-                                                <option value="avg">Avg</option>
-                                                <option value="max">Max</option>
+                                        <span class="wt-td-agg">
+                                            <select class="form-select form-select-sm row-agg-select" data-field-id="{{ row.field.id }}" data-values="{{ row.numeric_values|join:',' }}" onchange="updateRowResult(this)" aria-label="{% if wt_lang == 'ar' %}طريقة الحساب{% else %}Aggregation{% endif %}">
+                                                <option value="sum">{% if wt_lang == 'ar' %}المجموع{% else %}Sum{% endif %}</option>
+                                                <option value="avg">{% if wt_lang == 'ar' %}المتوسط{% else %}Average{% endif %}</option>
+                                                <option value="max">{% if wt_lang == 'ar' %}الأعلى{% else %}Max{% endif %}</option>
                                             </select>
-                                            <span class="badge bg-success" id="result-{{ row.field.id }}"><span class="agg-result-val">-</span></span>
-                                        </div>
-                                        {% else %}
-                                        <span style="color:var(--mute);">—</span>
-                                        {% endif %}
+                                            <b class="wt-num" id="result-{{ row.field.id }}"><span class="agg-result-val">–</span></b>
+                                        </span>
+                                        {% else %}<span class="wt-cell-muted">–</span>{% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                        {% else %}
-                        <p class="tg-empty-state"><span class="lang-en">No matrix entries recorded yet.</span><span class="lang-ar">لا توجد مدخلات مصفوفة بعد.</span></p>
-                        {% endif %}
                     </div>
+                    {% else %}
+                    <p class="wt-td-empty"><span class="lang-en">No data submitted yet.</span><span class="lang-ar">لم تُسلَّم أي بيانات بعد.</span></p>
+                    {% endif %}
                 </section>
                 {% endif %}
 
-                <!-- Version History (if any) -->
                 {% if all_versions %}
-                <section class="tg-card mb-3">
+                <section class="wt-td-sec">
                     <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">history</span>
-                            <span class="lang-en">Version History</span><span class="lang-ar">سجل الإصدارات</span>
-                        </span>
-                        <a href="{% url 'submission-versions' task.id %}" class="tg-btn tg-btn-line py-1 px-3" style="font-size:0.75rem;">
-                            <span class="lang-en">Archive</span><span class="lang-ar">الأرشيف</span>
-                        </a>
+                        <span><span class="lang-en">Version history</span><span class="lang-ar">سجل النسخ</span></span>
+                        <a href="{% url 'submission-versions' task.id %}" class="btn btn-sm btn-light"><span class="lang-en">All versions</span><span class="lang-ar">كل النسخ</span></a>
                     </h3>
-                    <div class="table-responsive">
-                        <table class="tg-matrix-table">
-                            <thead>
-                                <tr>
-                                    <th>VERSION</th>
-                                    <th>WORKER</th>
-                                    <th>DATE</th>
-                                    <th>STATUS</th>
-                                    <th>ACTION</th>
-                                </tr>
-                            </thead>
+                    <div class="table-responsive wt-td-table">
+                        <table class="table mb-0">
+                            <thead><tr>
+                                <th><span class="lang-en">Version</span><span class="lang-ar">النسخة</span></th>
+                                <th><span class="lang-en">By</span><span class="lang-ar">بواسطة</span></th>
+                                <th><span class="lang-en">Date</span><span class="lang-ar">التاريخ</span></th>
+                                <th><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
+                                <th class="text-end"><span class="visually-hidden"><span class="lang-en">Open</span><span class="lang-ar">فتح</span></span></th>
+                            </tr></thead>
                             <tbody>
                                 {% for ver in all_versions %}
                                 <tr>
-                                    <td><b style="color:var(--g2);">v{{ ver.version_number }}</b></td>
-                                    <td>{{ ver.submission.worker.get_full_name }}</td>
-                                    <td>{{ ver.submitted_at|default:ver.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <span class="tg-chip" style="{% if ver.status == 'approved' %}background:rgba(var(--wt-brand-rgb),0.2);border-color:var(--wt-ok);color:var(--g2);{% elif ver.status == 'rejected' %}background:rgba(225,29,72,0.2);border-color:#e11d48;color:var(--warn);{% elif ver.status == 'draft' %}background:rgba(59,130,246,0.2);border-color:#3b82f6;color:#2563eb;{% else %}background:rgba(245,158,11,0.2);border-color:#f59e0b;color:#d97706;{% endif %}font-size:0.75rem;">
-                                            <span class="material-symbols-outlined" style="font-size:14px;">
-                                                {% if ver.status == 'approved' %}check_circle
-                                                {% elif ver.status == 'rejected' %}error
-                                                {% elif ver.status == 'draft' %}edit
-                                                {% else %}hourglass_top{% endif %}
-                                            </span>
-                                            {{ ver.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'submission-detail' ver.submission.id %}" class="tg-btn tg-btn-line py-1 px-2" style="font-size:0.75rem;">
-                                            <span class="material-symbols-outlined" style="font-size:14px;">visibility</span>
-                                            <span class="lang-en">Details</span><span class="lang-ar">عرض</span>
-                                        </a>
-                                    </td>
+                                    <td><b class="wt-num">v{{ ver.version_number }}</b></td>
+                                    <td dir="auto">{{ ver.submission.worker.get_full_name|default:ver.submission.worker.email }}</td>
+                                    <td class="wt-num">{{ ver.submitted_at|default:ver.created_at|date:"j/n/Y" }}</td>
+                                    <td><span class="wt-chip {% if ver.status == 'approved' %}is-ok{% elif ver.status == 'rejected' %}is-alert{% elif ver.status == 'draft' %}is-muted{% else %}is-review{% endif %}">{% include 'includes/wt_status_label.html' with s=ver.status %}</span></td>
+                                    <td class="text-end"><a href="{% url 'submission-detail' ver.submission.id %}" class="btn btn-sm btn-light"><span class="lang-en">Open</span><span class="lang-ar">فتح</span></a></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -804,224 +258,200 @@
                     </div>
                 </section>
                 {% endif %}
+            </div>
 
-            </div><!-- /panel-details -->
-
-
-            <!-- ===== TAB 2: SUB-TASKS (TODO LIST) ===== -->
-            <div class="tg-panel" id="panel-subtasks" hidden>
-                <section class="tg-card" id="todo-section"
-                         data-add-url="{% url 'task-todo-add' task.id %}"
-                         data-csrf="{{ csrf_token }}">
+            {# Sub-tasks (managers) #}
+            {% if todos is not None %}
+            <div class="tg-panel wt-td-pane" id="panel-subtasks" role="tabpanel" aria-labelledby="tab-btn-subtasks" hidden>
+                <section class="wt-td-sec" id="todo-section" data-add-url="{% url 'task-todo-add' task.id %}">
                     <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">task_alt</span>
-                            <span class="lang-en">Internal TODO List</span><span class="lang-ar">قائمة المهام الداخلية</span>
-                        </span>
-                        <button type="button" class="tg-btn tg-btn-line py-1 px-3" onclick="openTodoModal()" style="font-size:0.8rem;">
-                            <span class="material-symbols-outlined" style="font-size:16px;">add</span>
-                            <span class="lang-en">Add Item</span><span class="lang-ar">إضافة عنصر</span>
-                        </button>
+                        <span><span class="lang-en">Sub-tasks</span><span class="lang-ar">المهام الفرعية</span></span>
+                        <button type="button" class="btn btn-sm btn-light" onclick="openTodoModal()"><i class="fas fa-plus"></i><span class="lang-en">Add with details</span><span class="lang-ar">إضافة بالتفاصيل</span></button>
                     </h3>
-
-                    <div id="todo-list">
+                    <ul class="wt-td-todos" id="todo-list">
                         {% for todo in todos %}
-                        <div class="tg-todo-item {% if todo.status == 'completed' %}completed{% endif %}" id="todo-{{ todo.id }}"
-                             data-id="{{ todo.id }}"
-                             data-update-url="{% url 'task-todo-update' todo.id %}"
-                             data-toggle-url="{% url 'task-todo-toggle' todo.id %}"
-                             data-delete-url="{% url 'task-todo-delete' todo.id %}"
-                             data-upload-url="{% url 'task-todo-upload' todo.id %}">
-                            <input type="checkbox" class="tg-todo-input" {% if todo.status == 'completed' %}checked{% endif %}
-                                   onchange="toggleTodo(this)" title="Mark completed / in progress">
-                            <span class="tg-todo-text">{{ todo.title }}</span>
-                            <span class="tg-chip priority-{{ todo.priority }}" style="font-size:0.7rem;padding:2px 8px;">{{ todo.get_priority_display }}</span>
-                            
-                            <div class="tg-todo-actions">
-                                <button type="button" class="tg-todo-btn-icon" onclick="editTodo(this)" title="Edit">
-                                    <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
-                                </button>
-                                <label class="tg-todo-btn-icon" title="Upload Attachment" style="margin:0;cursor:pointer;">
-                                    <span class="material-symbols-outlined" style="font-size:18px;">attach_file</span>
-                                    <input type="file" multiple class="d-none" onchange="uploadTodoFile(this)">
-                                </label>
-                                <button type="button" class="tg-todo-btn-icon del" onclick="deleteTodo(this)" title="Delete">
-                                    <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div id="todo-empty" class="tg-empty-state">
-                            <span class="material-symbols-outlined" style="font-size:36px;color:var(--mute);display:block;margin-bottom:8px;">assignment_add</span>
-                            <span class="lang-en">No TODO items yet. Add your first sub-task below.</span>
-                            <span class="lang-ar">لا توجد عناصر بعد. أضف أول مهمة فرعية أدناه.</span>
-                        </div>
+                        <li class="tg-todo-item{% if todo.status == 'completed' %} completed{% endif %}" id="todo-{{ todo.id }}"
+                            data-id="{{ todo.id }}" data-desc="{{ todo.description }}" data-priority="{{ todo.priority }}"
+                            data-update-url="{% url 'task-todo-update' todo.id %}"
+                            data-toggle-url="{% url 'task-todo-toggle' todo.id %}"
+                            data-delete-url="{% url 'task-todo-delete' todo.id %}"
+                            data-upload-url="{% url 'task-todo-upload' todo.id %}">
+                            <input type="checkbox" class="form-check-input tg-todo-input" {% if todo.status == 'completed' %}checked{% endif %} onchange="toggleTodo(this)" aria-label="{% if wt_lang == 'ar' %}تم{% else %}Done{% endif %}: {{ todo.title }}">
+                            <span class="wt-td-todo-main">
+                                <span class="tg-todo-text" dir="auto">{{ todo.title }}</span>
+                                {% if todo.description or todo.attachments.all %}
+                                <small>
+                                    {% if todo.description %}<span dir="auto">{{ todo.description|truncatechars:120 }}</span>{% endif %}
+                                    {% for a in todo.attachments.all %}<a class="wt-td-file" href="{{ a.file.url }}" target="_blank" rel="noopener"><i class="fas fa-paperclip" aria-hidden="true"></i>{{ a.original_filename|default:"file" }}</a>{% endfor %}
+                                </small>
+                                {% endif %}
+                            </span>
+                            {% if todo.priority == 'high' or todo.priority == 'critical' %}<span class="wt-chip is-review">{% include 'includes/wt_priority_label.html' with p=todo.priority %}</span>{% endif %}
+                            <span class="wt-td-todo-tools">
+                                <button type="button" class="wt-icon-btn" onclick="editTodo(this)" title="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}" aria-label="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pen"></i></button>
+                                <label class="wt-icon-btn" title="{% if wt_lang == 'ar' %}إرفاق ملف{% else %}Attach a file{% endif %}"><i class="fas fa-paperclip"></i><input type="file" multiple class="d-none" onchange="uploadTodoFile(this)" aria-label="{% if wt_lang == 'ar' %}إرفاق ملف{% else %}Attach a file{% endif %}"></label>
+                                <button type="button" class="wt-icon-btn is-danger" onclick="deleteTodo(this)" title="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}" aria-label="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash"></i></button>
+                            </span>
+                        </li>
                         {% endfor %}
-                    </div>
-
-                    <!-- Inline quick add form -->
-                    <form class="tg-todo-add-form" id="todo-inline-form" onsubmit="event.preventDefault(); saveTodoInline();">
-                        <input type="text" id="todo-inline-input" placeholder="Type a sub-task and press Enter..." aria-label="New Sub-task Title">
-                        <button type="submit" class="tg-btn tg-btn-primary" id="todo-inline-add-btn">
-                            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-                            <span class="lang-en">Add</span><span class="lang-ar">إضافة</span>
-                        </button>
+                    </ul>
+                    <p class="wt-td-empty" id="todo-empty"{% if todos %} hidden{% endif %}><span class="lang-en">No sub-tasks yet.</span><span class="lang-ar">لا مهام فرعية بعد.</span></p>
+                    <form class="wt-td-addline" id="todo-inline-form" onsubmit="event.preventDefault(); saveTodoInline();">
+                        <input type="text" class="form-control" id="todo-inline-input" placeholder="{% if wt_lang == 'ar' %}اكتب مهمة فرعية واضغط Enter{% else %}Type a sub-task and press Enter{% endif %}" aria-label="{% if wt_lang == 'ar' %}مهمة فرعية جديدة{% else %}New sub-task{% endif %}">
+                        <button type="submit" class="btn btn-primary" id="todo-inline-add-btn"><i class="fas fa-plus"></i><span class="lang-en">Add</span><span class="lang-ar">إضافة</span></button>
                     </form>
                 </section>
-            </div><!-- /panel-subtasks -->
-
-
-            <!-- ===== TAB 3: DISCUSSION ===== -->
-            <div class="tg-panel" id="panel-discussion" hidden>
-                <section class="tg-card">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">question_answer</span>
-                            <span class="lang-en">Discussion</span><span class="lang-ar">النقاش</span>
-                        </span>
-                    </h3>
-
-                    <div id="comments-list">
-                        {% for c in task.comments.all %}
-                        <div class="tg-msg-bubble" id="comment-{{ c.id }}">
-                            <div class="tg-avatar" style="width:36px;height:36px;font-size:0.8rem;">
-                                {{ c.author.first_name|first|upper }}{{ c.author.last_name|first|upper }}
-                            </div>
-                            <div class="tg-msg-content">
-                                <div class="tg-msg-head">
-                                    <span class="tg-msg-author">{{ c.author.get_full_name }}</span>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="tg-msg-time">{{ c.created_at|date:"M d, H:i" }}</span>
-                                        {% if c.author == request.user or request.user.role == 'manager' or request.user.role == 'super_admin' %}
-                                        <button type="button" onclick="deleteComment('{{ c.id }}')" class="tg-todo-btn-icon del" title="Delete comment">
-                                            <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="tg-msg-text">{{ c.message|linebreaksbr }}</div>
-                                {% for doc in c.attached_documents.all %}
-                                <a href="{{ doc.file.url }}" target="_blank" class="tg-file-chip" style="text-decoration:none;margin-top:8px;">
-                                    <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
-                                    <span>{{ doc.original_filename|default:"Attachment" }}</span>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div id="no-comments-msg" class="tg-empty-state">
-                            <span class="material-symbols-outlined" style="font-size:36px;color:var(--mute);display:block;margin-bottom:8px;">chat_bubble_outline</span>
-                            <span class="lang-en">No comments yet. Start the conversation.</span>
-                            <span class="lang-ar">لا توجد تعليقات بعد. ابدأ النقاش.</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Post Comment Form -->
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line);">
-                        <textarea id="comment-message" class="tg-textarea" rows="3" placeholder="Write a comment..." aria-label="Comment Message"></textarea>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <label class="tg-btn tg-btn-line" style="cursor:pointer;padding:8px 14px;font-size:0.82rem;">
-                                <span class="material-symbols-outlined" style="font-size:18px;">attach_file</span>
-                                <span class="lang-en">Attach</span><span class="lang-ar">إرفاق ملف</span>
-                                <input type="file" id="comment-attachment" class="d-none">
-                            </label>
-                            <button type="button" id="comment-post-btn" onclick="postComment()" class="tg-btn tg-btn-primary">
-                                <span class="material-symbols-outlined" style="font-size:18px;">send</span>
-                                <span class="lang-en">Post Comment</span><span class="lang-ar">نشر التعليق</span>
-                            </button>
-                        </div>
-                    </div>
-                </section>
-            </div><!-- /panel-discussion -->
-
-
-            <!-- ===== TAB 4: ACTIVITY ===== -->
-            <div class="tg-panel" id="panel-activity" hidden>
-                <section class="tg-card">
-                    <h3>
-                        <span>
-                            <span class="material-symbols-outlined text-emerald-600 align-middle me-1">timeline</span>
-                            <span class="lang-en">Recent Activity</span><span class="lang-ar">سجل النشاط</span>
-                        </span>
-                    </h3>
-                    <div class="tg-tl">
-                        <div class="tg-ev">
-                            <b><span class="lang-en">Task Created</span><span class="lang-ar">تم إنشاء المهمة</span></b><br>
-                            <small style="color:var(--mute);">{{ task.created_at|date:"M d, Y · H:i" }} — {{ task.created_by.first_name }}</small>
-                        </div>
-                        {% if task.last_reactivated_at %}
-                        <div class="tg-ev">
-                            <b><span class="lang-en">Task Reactivated</span><span class="lang-ar">تمت إعادة تفعيل المهمة</span></b><br>
-                            <small style="color:var(--mute);">{{ task.last_reactivated_at|date:"M d, Y · H:i" }}</small>
-                        </div>
-                        {% endif %}
-                        <div class="tg-ev">
-                            <b><span class="lang-en">Viewing Task Details</span><span class="lang-ar">عُرضت تفاصيل المهمة</span></b><br>
-                            <small style="color:var(--mute);"><span class="lang-en">Just now</span><span class="lang-ar">الآن</span></small>
-                        </div>
-                    </div>
-                </section>
-            </div><!-- /panel-activity -->
-
-            <!-- Low-emphasis Delete Task Button (Managers / Super Admin only) -->
-            {% if user.role == 'manager' or user.role == 'super_admin' %}
-            <button type="button" class="tg-btn-danger-text" onclick="deleteTask()">
-                <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
-                <span class="lang-en">Delete Task</span><span class="lang-ar">حذف المهمة</span>
-            </button>
+            </div>
             {% endif %}
 
-        </main>
-    </div><!-- /tg-layout-grid -->
-
-</div><!-- /task-wrap -->
-</div><!-- /task-detail-page -->
-
-<!-- Toast Notification Pill -->
-<div class="tg-toast" id="toast" role="status" aria-live="polite"></div>
-
-<!-- ======= RESUBMISSION REQUEST MODAL ======= -->
-{% if user.role == 'manager' or user.role == 'super_admin' %}
-<div class="modal fade" id="resubmitModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-bottom p-3" style="background:var(--bg);">
-                <h6 class="modal-title fw-bold"><i class="fas fa-redo text-success me-2"></i> Request New Version</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <p class="text-muted small mb-0">Select the workers you want to allow to submit a new version.</p>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size:.7rem;" onclick="toggleAllWorkers(true)">Select All</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="font-size:.7rem;" onclick="toggleAllWorkers(false)">Clear All</button>
+            {# Discussion #}
+            <div class="tg-panel wt-td-pane" id="panel-discussion" role="tabpanel" aria-labelledby="tab-btn-discussion" hidden>
+                <section class="wt-td-sec">
+                    <div class="wt-td-compose">
+                        <label class="visually-hidden" for="comment-message"><span class="lang-en">Comment</span><span class="lang-ar">التعليق</span></label>
+                        <textarea id="comment-message" class="form-control" rows="3" placeholder="{% if wt_lang == 'ar' %}اكتب تعليقًا{% else %}Write a comment{% endif %}"></textarea>
+                        <div class="wt-td-compose-row">
+                            <label class="btn btn-sm btn-light mb-0"><i class="fas fa-paperclip"></i><span class="lang-en">Attach</span><span class="lang-ar">إرفاق</span><input type="file" id="comment-attachment" class="d-none"></label>
+                            <span class="wt-td-attached" id="comment-attachment-name"></span>
+                            <button type="button" id="comment-post-btn" onclick="postComment()" class="btn btn-primary"><i class="fas fa-paper-plane"></i><span class="lang-en">Post</span><span class="lang-ar">نشر</span></button>
+                        </div>
                     </div>
+                    <ul class="wt-td-comments" id="comments-list">
+                        {% for c in task.comments.all %}
+                        <li class="wt-td-comment" id="comment-{{ c.id }}">
+                            <span class="wt-avatar">{{ c.author.first_name|default:c.author.email|first|upper }}{{ c.author.last_name|first|upper }}</span>
+                            <div>
+                                <div class="wt-td-comment-head">
+                                    <b dir="auto">{{ c.author.get_full_name|default:c.author.email }}</b>
+                                    <small class="wt-num">{{ c.created_at|date:"j/n/Y H:i" }}</small>
+                                    {% if c.author == request.user or request.user.role == 'manager' or request.user.role == 'super_admin' %}
+                                    <button type="button" onclick="deleteComment('{{ c.id }}')" class="wt-icon-btn is-danger" title="{% if wt_lang == 'ar' %}حذف التعليق{% else %}Delete comment{% endif %}" aria-label="{% if wt_lang == 'ar' %}حذف التعليق{% else %}Delete comment{% endif %}"><i class="fas fa-trash"></i></button>
+                                    {% endif %}
+                                </div>
+                                <p class="wt-td-prose" dir="auto">{{ c.message|linebreaksbr }}</p>
+                                {% for doc in c.attached_documents.all %}<a href="{{ doc.file.url }}" target="_blank" rel="noopener" class="wt-td-file"><i class="fas fa-paperclip" aria-hidden="true"></i>{{ doc.original_filename|default:"file" }}</a>{% endfor %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <p class="wt-td-empty" id="no-comments-msg"{% if task.comments.exists %} hidden{% endif %}><span class="lang-en">No comments yet.</span><span class="lang-ar">لا تعليقات بعد.</span></p>
+                </section>
+            </div>
+
+            {# Activity #}
+            <div class="tg-panel wt-td-pane" id="panel-activity" role="tabpanel" aria-labelledby="tab-btn-activity" hidden>
+                <section class="wt-td-sec">
+                    <ol class="wt-td-timeline">
+                        {% if task.last_reactivated_at %}
+                        <li><b><span class="lang-en">Next cycle started</span><span class="lang-ar">بدأت دورة جديدة</span></b><small class="wt-num">{{ task.last_reactivated_at|date:"j/n/Y H:i" }}</small></li>
+                        {% endif %}
+                        {% for ver in all_versions %}
+                        <li><b><span class="lang-en">Version</span><span class="lang-ar">النسخة</span> <span class="wt-num">{{ ver.version_number }}</span> · {% include 'includes/wt_status_label.html' with s=ver.status %}</b><small><span dir="auto">{{ ver.submission.worker.get_full_name|default:ver.submission.worker.email }}</span> · <span class="wt-num">{{ ver.submitted_at|default:ver.created_at|date:"j/n/Y H:i" }}</span></small></li>
+                        {% endfor %}
+                        <li><b><span class="lang-en">Task created</span><span class="lang-ar">أُنشئت المهمة</span></b><small><span dir="auto">{{ task.created_by.get_full_name|default:task.created_by.email }}</span> · <span class="wt-num">{{ task.created_at|date:"j/n/Y H:i" }}</span></small></li>
+                    </ol>
+                </section>
+            </div>
+        </section>
+
+        {# ── Rest of the rail ───────────────────────────────────────── #}
+        <div class="wt-td-rail">
+            <section class="wt-panel" aria-labelledby="wt-prog-title">
+                <div class="wt-panel-head">
+                    <h2 id="wt-prog-title"><span class="lang-en">Progress</span><span class="lang-ar">التقدم</span></h2>
+                    <span class="wt-td-pct wt-num"><span id="donut-progress-num">{{ task.progress|default:0 }}</span>%</span>
+                </div>
+                <div class="wt-td-prog">
+                    <span class="wt-today-bar" aria-hidden="true"><i id="wt-prog-fill" style="--p: {{ task.progress|default:0 }}%;"></i></span>
+                    {% if user.role == 'manager' or user.role == 'super_admin' or user in task.assigned_to.all %}
+                    <label class="wt-td-range">
+                        <span><span class="lang-en">Set progress</span><span class="lang-ar">تعديل النسبة</span> <b class="wt-num"><span id="progressValDisplay">{{ task.progress|default:0 }}</span>%</b></span>
+                        <input type="range" class="form-range" id="progressRange" min="0" max="100" step="5" value="{{ task.progress|default:0 }}" onchange="saveTaskProgress(event)">
+                    </label>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="wt-panel" id="team-card-section" aria-labelledby="wt-team-title">
+                <div class="wt-panel-head">
+                    <h2 id="wt-team-title"><span class="lang-en">Team</span><span class="lang-ar">الفريق</span> <span class="wt-count-pill wt-num">{{ task.assigned_to.count }}</span></h2>
+                </div>
+                <ul class="wt-side-list" id="team-members-list">
+                    {% for u in task.assigned_to.all %}
+                    <li class="wt-side-row team-member-item" data-index="{{ forloop.counter0 }}">
+                        <span class="wt-avatar">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>
+                        <span class="wt-side-main"><b dir="auto">{{ u.get_full_name|default:u.email }}</b><small dir="auto">{{ u.email }}</small></span>
+                        {% if forloop.first %}<span class="wt-chip is-muted"><span class="lang-en">Lead</span><span class="lang-ar">المسؤول</span></span>{% endif %}
+                    </li>
+                    {% empty %}
+                    <li class="wt-side-empty"><span class="lang-en">Nobody is assigned yet.</span><span class="lang-ar">لم يُسند أحد بعد.</span></li>
+                    {% endfor %}
+                </ul>
+                <div class="wt-panel-foot" id="team-pagination-ctrls" hidden>
+                    <span class="wt-num" id="team-page-indicator"></span>
+                    <nav class="wt-pager" aria-label="{% if wt_lang == 'ar' %}صفحات الفريق{% else %}Team pages{% endif %}">
+                        <button type="button" class="wt-page" id="team-prev-page" aria-label="{% if wt_lang == 'ar' %}السابق{% else %}Previous{% endif %}"><i class="fas fa-chevron-left rtl-flip"></i></button>
+                        <span id="team-page-numbers" class="wt-pager"></span>
+                        <button type="button" class="wt-page" id="team-next-page" aria-label="{% if wt_lang == 'ar' %}التالي{% else %}Next{% endif %}"><i class="fas fa-chevron-right rtl-flip"></i></button>
+                    </nav>
+                </div>
+            </section>
+
+            <section class="wt-panel wt-today" aria-labelledby="wt-info-title">
+                <div class="wt-panel-head"><h2 id="wt-info-title"><span class="lang-en">Information</span><span class="lang-ar">معلومات</span></h2></div>
+                <dl class="wt-today-list wt-td-mini">
+                    <div><dt><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></dt><dd class="wt-td-dd">{% include 'includes/wt_priority_label.html' with p=task.priority %}</dd></div>
+                    <div><dt><span class="lang-en">Start date</span><span class="lang-ar">تاريخ البدء</span></dt><dd class="wt-td-dd wt-num">{{ task.start_date|date:"j/n/Y"|default:"–" }}</dd></div>
+                    <div><dt><span class="lang-en">Planned hours</span><span class="lang-ar">الساعات المخططة</span></dt><dd class="wt-td-dd wt-num">{{ task.estimated_hours|default:"0" }}</dd></div>
+                    <div><dt><span class="lang-en">Score weight</span><span class="lang-ar">وزن المؤشر</span></dt><dd class="wt-td-dd wt-num">{{ task.kpi_weight }}×</dd></div>
+                    {% if task.reference_number %}<div><dt><span class="lang-en">Reference</span><span class="lang-ar">المرجع</span></dt><dd class="wt-td-dd wt-num">{{ task.reference_number }}</dd></div>{% endif %}
+                    {% if task.is_timeline_task %}<div><dt><span class="lang-en">Order in timeline</span><span class="lang-ar">الترتيب الزمني</span></dt><dd class="wt-td-dd wt-num">#{{ task.sequence_order }}</dd></div>{% endif %}
+                    <div><dt><span class="lang-en">Created</span><span class="lang-ar">أُنشئت</span></dt><dd class="wt-td-dd"><span class="wt-num">{{ task.created_at|date:"j/n/Y" }}</span> · <span dir="auto">{{ task.created_by.get_full_name|default:task.created_by.email }}</span></dd></div>
+                </dl>
+            </section>
+
+            {% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+            <section class="wt-panel" aria-labelledby="wt-admin-title">
+                <div class="wt-panel-head"><h2 id="wt-admin-title"><span class="lang-en">Manage</span><span class="lang-ar">إدارة</span></h2></div>
+                <div class="wt-td-admin">
+                    <button type="button" class="btn btn-light w-100" data-bs-toggle="modal" data-bs-target="#resubmitModal"><i class="fas fa-rotate-left"></i><span class="lang-en">Allow a new version</span><span class="lang-ar">السماح بنسخة جديدة</span></button>
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="deleteTask()"><i class="fas fa-trash"></i><span class="lang-en">Delete task</span><span class="lang-ar">حذف المهمة</span></button>
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if is_mgr == 'manager' or is_mgr == 'super_admin' %}
+<div class="modal fade" id="resubmitModal" tabindex="-1" aria-labelledby="resubmitModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-6" id="resubmitModalTitle"><span class="lang-en">Allow a new version</span><span class="lang-ar">السماح بنسخة جديدة</span></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% if wt_lang == 'ar' %}إغلاق{% else %}Close{% endif %}"></button>
+            </div>
+            <div class="modal-body">
+                <div class="wt-td-modal-row">
+                    <p class="mb-0"><span class="lang-en">Choose who may submit a new version.</span><span class="lang-ar">اختر من يُسمح له بتقديم نسخة جديدة.</span></p>
+                    <span class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-light" onclick="toggleAllWorkers(true)"><span class="lang-en">All</span><span class="lang-ar">الكل</span></button>
+                        <button type="button" class="btn btn-sm btn-light" onclick="toggleAllWorkers(false)"><span class="lang-en">None</span><span class="lang-ar">لا أحد</span></button>
+                    </span>
                 </div>
                 <form id="resubmit-form">
-                    <div class="mb-4" style="max-height:300px; overflow-y:auto;">
+                    <ul class="wt-side-list wt-td-pick">
                         {% for u in task.assigned_to.all %}
-                        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 mb-1" style="border-bottom:1px solid #f1f5f9;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div style="width:36px;height:36px;border-radius:50%;background:#10b98120;color:var(--wt-brand);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;">
-                                    {{ u.first_name|first }}{{ u.last_name|first }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold small">{{ u.get_full_name }}</div>
-                                    <div class="text-muted" style="font-size:.7rem;">{{ u.get_role_display }}</div>
-                                </div>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input worker-check" type="checkbox" value="{{ u.id }}" id="worker-{{ u.id }}">
-                            </div>
-                        </div>
+                        <li><label class="wt-side-row" for="worker-{{ u.id }}">
+                            <span class="wt-avatar">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>
+                            <span class="wt-side-main"><b dir="auto">{{ u.get_full_name|default:u.email }}</b><small>{{ u.get_role_display }}</small></span>
+                            <input class="form-check-input worker-check" type="checkbox" value="{{ u.id }}" id="worker-{{ u.id }}">
+                        </label></li>
                         {% empty %}
-                        <div class="text-center py-4 text-muted small">No workers assigned to this task.</div>
+                        <li class="wt-side-empty"><span class="lang-en">Nobody is assigned to this task.</span><span class="lang-ar">لا أحد مسند إلى هذه المهمة.</span></li>
                         {% endfor %}
-                    </div>
-                    <button type="button" id="confirm-resubmit-btn" class="tg-btn tg-btn-primary w-100" {% if not task.assigned_to.exists %}disabled{% endif %}>
-                        Confirm Authorization
-                    </button>
+                    </ul>
+                    <button type="button" id="confirm-resubmit-btn" class="btn btn-primary w-100" {% if not task.assigned_to.exists %}disabled{% endif %}><span class="lang-en">Allow</span><span class="lang-ar">سماح</span></button>
                 </form>
             </div>
         </div>
@@ -1029,707 +459,434 @@
 </div>
 {% endif %}
 
-<!-- ======= SHARE TO MESSENGER MODAL ======= -->
-<div class="modal fade" id="shareTaskModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+<div class="modal fade" id="shareTaskModal" tabindex="-1" aria-labelledby="shareTaskTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-0">
-                <h6 class="modal-title fw-bold">Share to Chat</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.6rem;"></button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-6" id="shareTaskTitle"><span class="lang-en">Share in chat</span><span class="lang-ar">مشاركة في المحادثات</span></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% if wt_lang == 'ar' %}إغلاق{% else %}Close{% endif %}"></button>
             </div>
-            <div class="modal-body p-3">
-                <input type="text" id="share-search-input" class="form-control form-control-sm rounded-pill mb-2" placeholder="Search contacts...">
-                <div id="share-contacts-list" style="max-height: 250px; overflow-y: auto;">
-                    <div class="text-center p-3 text-muted small">Loading...</div>
+            <div class="modal-body">
+                <input type="search" id="share-search-input" class="form-control mb-2" placeholder="{% if wt_lang == 'ar' %}ابحث عن جهة اتصال{% else %}Search contacts{% endif %}" aria-label="{% if wt_lang == 'ar' %}ابحث عن جهة اتصال{% else %}Search contacts{% endif %}">
+                <ul class="wt-side-list wt-td-pick" id="share-contacts-list"><li class="wt-side-empty"><span class="lang-en">Loading…</span><span class="lang-ar">جارٍ التحميل…</span></li></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="confirm-share-btn" class="btn btn-primary w-100" disabled><span class="lang-en">Send</span><span class="lang-ar">إرسال</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if todos is not None %}
+<div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-6" id="todoModalTitle"></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% if wt_lang == 'ar' %}إغلاق{% else %}Close{% endif %}"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="todoEditId" value="">
+                <div class="mb-3">
+                    <label for="todoTitle" class="form-label"><span class="lang-en">Title</span><span class="lang-ar">العنوان</span></label>
+                    <input type="text" id="todoTitle" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="todoDesc" class="form-label"><span class="lang-en">Details</span><span class="lang-ar">التفاصيل</span></label>
+                    <textarea id="todoDesc" rows="3" class="form-control"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="todoPriority" class="form-label"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></label>
+                    <select id="todoPriority" class="form-select">
+                        <option value="low">{% if wt_lang == 'ar' %}منخفضة{% else %}Low{% endif %}</option>
+                        <option value="medium">{% if wt_lang == 'ar' %}متوسطة{% else %}Medium{% endif %}</option>
+                        <option value="high">{% if wt_lang == 'ar' %}عالية{% else %}High{% endif %}</option>
+                    </select>
+                </div>
+                <div id="todoFileGroup">
+                    <label for="todoFiles" class="form-label"><span class="lang-en">Files</span><span class="lang-ar">الملفات</span></label>
+                    <input type="file" id="todoFiles" multiple class="form-control">
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" id="confirm-share-btn" class="tg-btn tg-btn-primary w-100 py-2" disabled>Send</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                <button type="button" class="btn btn-primary" id="todoSaveBtn" onclick="saveTodo()"><span class="lang-en">Save</span><span class="lang-ar">حفظ</span></button>
             </div>
         </div>
     </div>
 </div>
-
-<!-- ======= TODO MODAL ======= -->
-<div class="todo-modal-overlay" id="todoModalOverlay" onclick="if(event.target===this)closeTodoModal()">
-    <div class="todo-modal">
-        <div class="todo-modal-head">
-            <h5 id="todoModalTitle">Add Sub-task</h5>
-            <button type="button" onclick="closeTodoModal()" style="background:none;border:none;color:var(--mute);cursor:pointer;"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="todo-modal-body">
-            <input type="hidden" id="todoEditId" value="">
-            <div class="mb-3">
-                <label for="todoTitle" class="small fw-bold">Title *</label>
-                <input type="text" id="todoTitle" placeholder="What needs to be done?">
-            </div>
-            <div class="mb-3">
-                <label for="todoDesc" class="small fw-bold"><span class="lang-en">Description</span><span class="lang-ar">الوصف</span></label>
-                <textarea id="todoDesc" rows="3" placeholder="Add details or notes..."></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="todoPriority" class="small fw-bold"><span class="lang-en">Priority</span><span class="lang-ar">الأولوية</span></label>
-                <select id="todoPriority">
-                    <option value="low">Low</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="high">High</option>
-                </select>
-            </div>
-            <div class="mb-0" id="todoFileGroup">
-                <label class="small fw-bold">Attachments</label>
-                <input type="file" id="todoFiles" multiple class="form-control" style="font-size:.8rem;">
-            </div>
-        </div>
-        <div class="todo-modal-foot">
-            <button type="button" class="tg-btn tg-btn-line" onclick="closeTodoModal()"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
-            <button type="button" class="tg-btn tg-btn-primary" id="todoSaveBtn" onclick="saveTodo()"><span class="lang-en">Save</span><span class="lang-ar">حفظ</span></button>
-        </div>
-    </div>
-</div>
-
-<!-- Context Data for JS -->
-<div id="task-context" style="display:none;" 
-     data-csrf="{{ csrf_token }}" 
-     data-task-id="{{ task.id }}" 
-     data-user-id="{{ request.user.id }}"></div>
-{% if task.location_enabled %}
-<div id="task-map-data" style="display:none;"
-     data-lat="{{ task.latitude|default:0 }}"
-     data-lng="{{ task.longitude|default:0 }}"></div>
 {% endif %}
 
+<div id="task-context" hidden data-csrf="{{ csrf_token }}" data-task-id="{{ task.id }}" data-user-id="{{ request.user.id }}"></div>
+{% if task.location_enabled %}<div id="task-map-data" hidden data-lat="{{ task.latitude|default:0 }}" data-lng="{{ task.longitude|default:0 }}"></div>{% endif %}
+{% endwith %}
 {% endblock %}
 
 {% block extra_js %}
-<!-- Leaflet JS (Local Offline) -->
+{% if task.location_enabled %}
 <script src="{% static 'vendor/leaflet-offline/leaflet.js' %}"></script>
-<script>
-    if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) {
-        L.Icon.Default.imagePath = "{% static 'vendor/leaflet-offline/images/' %}";
-    }
-</script>
+<script>if (typeof L !== 'undefined' && L.Icon && L.Icon.Default) { L.Icon.Default.imagePath = "{% static 'vendor/leaflet-offline/images/' %}"; }</script>
 <script src="{% static 'vendor/leaflet-offline/idb.js' %}"></script>
 <script src="{% static 'vendor/leaflet-offline/leaflet.offline.js' %}"></script>
-
+{% endif %}
 <script>
-// ===== Global Context & Toast =====
-const CSRF_TOKEN = document.getElementById('task-context').dataset.csrf;
-const TASK_ID = document.getElementById('task-context').dataset.taskId;
-const CURRENT_USER_ID = document.getElementById('task-context').dataset.userId;
+(function () {
+const ctx = document.getElementById('task-context').dataset;
+const CSRF_TOKEN = ctx.csrf;
+const isAr = () => document.documentElement.dir === 'rtl';
+const T = (en, ar) => isAr() ? ar : en;
+const toast = (msg, type) => { if (window.showToast) window.showToast(msg, type || 'success', 2600); };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const url = (pattern, id) => pattern.replace('999999999', id);
+const URLS = {
+    quick: "{% url 'task-quick-complete' 999999999 %}",
+    commentDel: "{% url 'task-comment-delete' 999999999 %}",
+    send: "{% url 'messaging:api-send-message' %}",
+};
 
-let toastTimer;
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.textContent = msg;
-    t.classList.add('on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('on'), 2500);
+/* Tabs (arrow keys move between them) */
+const tabs = Array.from(document.querySelectorAll('.tg-tab-btn'));
+function selectTab(btn) {
+    tabs.forEach(b => {
+        const on = b === btn;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
+        const p = document.getElementById(b.dataset.tabPanel);
+        if (p) p.hidden = !on;
+    });
+    if (btn.dataset.tabPanel === 'panel-details' && window.taskLeafletMap) setTimeout(() => window.taskLeafletMap.invalidateSize(), 150);
 }
-window.showToast = showToast;
-
-// ===== Dark Mode Support =====
-(function initTheme() {
-    const saved = localStorage.getItem('worktrack-theme');
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialDark = saved ? (saved === 'dark') : prefersDark;
-    document.documentElement.setAttribute('data-theme', initialDark ? 'dark' : 'light');
-})();
-
-// ===== Tab Navigation =====
-document.addEventListener('DOMContentLoaded', () => {
-    const tabBtns = document.querySelectorAll('.tg-tab-btn');
-    const panels = document.querySelectorAll('.tg-panel');
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.dataset.tabPanel;
-            tabBtns.forEach(b => b.setAttribute('aria-selected', b === btn));
-            panels.forEach(p => {
-                p.hidden = (p.id !== targetId);
-            });
-            // If map is in details tab and was hidden, invalidate size
-            if (targetId === 'panel-details' && window.taskLeafletMap) {
-                setTimeout(() => window.taskLeafletMap.invalidateSize(), 150);
-            }
-        });
+tabs.forEach((b, i) => {
+    b.addEventListener('click', () => selectTab(b));
+    b.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        const fwd = (e.key === 'ArrowRight') !== isAr();
+        const n = tabs[(i + (fwd ? 1 : tabs.length - 1)) % tabs.length];
+        n.focus(); selectTab(n);
     });
 });
 
-// ===== Progress Update =====
-window.saveTaskProgress = async function(event) {
-    const newVal = document.getElementById('progressRange').value;
+/* Confirm-then-submit buttons */
+document.querySelectorAll('[data-confirm-submit]').forEach(b => b.addEventListener('click', async () => {
+    if (await amazingConfirm(b.dataset.confirmSubmit)) b.form.submit();
+}));
+
+/* Progress */
+function paintProgress(v) {
+    const n = document.getElementById('donut-progress-num'); if (n) n.textContent = v;
+    const d = document.getElementById('progressValDisplay'); if (d) d.textContent = v;
+    const f = document.getElementById('wt-prog-fill'); if (f) f.style.setProperty('--p', v + '%');
+}
+const range = document.getElementById('progressRange');
+if (range) range.addEventListener('input', () => paintProgress(range.value));
+window.saveTaskProgress = async function () {
+    if (!range) return;
+    const v = parseInt(range.value, 10);
     try {
-        const response = await fetch('{% url "task-api-detail" task.id %}', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF_TOKEN
-            },
-            body: JSON.stringify({ progress: parseInt(newVal) })
+        const r = await fetch("{% url 'task-api-detail' task.id %}", {
+            method: 'PATCH', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ progress: v })
         });
-        if (response.ok) {
-            const donutPct = document.getElementById('donut-progress-num');
-            const arc = document.getElementById('arc');
-            if (donutPct) donutPct.textContent = newVal;
-            if (arc) arc.style.strokeDashoffset = 251.3 * (1 - newVal / 100);
-            
-            // Update 4-step status tracker
-            const si = newVal >= 100 ? 3 : newVal >= 80 ? 2 : newVal > 0 ? 1 : 0;
-            document.querySelectorAll('.tg-steps li').forEach((li, idx) => {
-                li.className = idx < si ? 'ok' : idx === si ? 'on' : '';
-            });
-
-            // Update status chip
-            const stChip = document.getElementById('stChip');
-            if (stChip) {
-                stChip.textContent = newVal >= 100 ? 'Done / مكتملة' : newVal > 0 ? 'In Progress / قيد التنفيذ' : 'Not Started / لم تبدأ';
-            }
-
-            showToast('Progress updated: ' + newVal + '%');
-        } else {
-            alert('Error updating progress.');
-        }
-    } catch (e) {
-        console.error(e);
-        alert('Network error updating progress.');
-    }
+        if (!r.ok) throw new Error();
+        paintProgress(v);
+        toast(T('Progress saved: ', 'حُفظ التقدم: ') + v + '%');
+    } catch (e) { toast(T('Could not save progress. Try again.', 'تعذّر حفظ التقدم. حاول مرة أخرى.'), 'error'); }
 };
 
-// ===== Quick Complete Task =====
-async function quickCompleteTaskDetail(taskId) {
+/* Mark done / reopen */
+window.quickCompleteTaskDetail = async function (taskId) {
     const btn = document.getElementById('taskDetailQuickCompleteBtn');
-    const icon = document.getElementById('taskDetailCompleteIcon');
-    const txt = document.getElementById('taskDetailCompleteTxt');
-    if (!btn || !taskId) return;
-
+    if (!btn || btn.disabled) return;
     btn.disabled = true;
     try {
-        const res = await fetch(`/tasks/${taskId}/quick-complete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': CSRF_TOKEN,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        const data = await res.json();
-        if (data.status === 'success') {
-            const isCompleted = (data.task_status === 'completed' || data.is_completed);
-            if (isCompleted) {
-                if (icon) icon.textContent = 'done_all';
-                if (txt) txt.innerHTML = `<span class="lang-en">Task Completed</span><span class="lang-ar">المهمة مكتملة</span>`;
-                const range = document.getElementById('progressRange');
-                if (range) range.value = 100;
-                const donutPct = document.getElementById('donut-progress-num');
-                if (donutPct) donutPct.textContent = '100';
-                const arc = document.getElementById('arc');
-                if (arc) arc.style.strokeDashoffset = '0';
-            } else {
-                if (icon) icon.textContent = 'check_circle';
-                if (txt) txt.innerHTML = `<span class="lang-en">Complete Task</span><span class="lang-ar">اكتملت المهمة</span>`;
-            }
-            showToast(isCompleted ? 'Task marked as completed!' : 'Task reopened');
+        const r = await fetch(url(URLS.quick, taskId), { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN, 'X-Requested-With': 'XMLHttpRequest' } });
+        const d = await r.json();
+        if (d.status !== 'success') throw new Error();
+        const done = !!d.is_completed;
+        btn.classList.toggle('is-done', done);
+        btn.setAttribute('aria-pressed', done ? 'true' : 'false');
+        document.getElementById('taskDetailCompleteTxt').innerHTML = done
+            ? '<span class="lang-en">Done · reopen</span><span class="lang-ar">مكتملة · إعادة فتح</span>'
+            : '<span class="lang-en">Mark done</span><span class="lang-ar">تعليم كمكتملة</span>';
+        const chip = document.getElementById('stChip');
+        if (chip) {
+            chip.className = 'wt-chip ' + (done ? 'is-ok' : 'is-muted');
+            chip.innerHTML = done ? '<span class="lang-en">Completed</span><span class="lang-ar">مكتملة</span>' : '<span class="lang-en">In progress</span><span class="lang-ar">قيد التنفيذ</span>';
         }
-    } catch (err) {
-        console.error(err);
-        showToast('Network error updating task.');
-    } finally {
-        btn.disabled = false;
-    }
-}
+        if (done) { if (range) range.value = 100; paintProgress(100); }
+        toast(done ? T('Task marked as done.', 'تم تعليم المهمة كمكتملة.') : T('Task reopened.', 'أُعيد فتح المهمة.'));
+    } catch (e) { toast(T('Could not update the task. Try again.', 'تعذّر تحديث المهمة. حاول مرة أخرى.'), 'error'); }
+    finally { btn.disabled = false; }
+};
 
-// ===== Live Countdown Timer =====
-(function initCountdown() {
-    const container = document.getElementById('countdown-timer');
-    const daysEl = document.getElementById('cd-days');
-    const hoursEl = document.getElementById('cd-hours');
-    const minsEl = document.getElementById('cd-mins');
-    if (!container || !daysEl) return;
-
-    const deadlineStr = container.dataset.deadline;
-    if (!deadlineStr) return;
-    const target = new Date(deadlineStr).getTime();
-
-    function tick() {
-        const now = new Date().getTime();
-        const diff = Math.max(0, target - now);
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        daysEl.textContent = String(d).padStart(2, '0');
-        hoursEl.textContent = String(h).padStart(2, '0');
-        minsEl.textContent = String(m).padStart(2, '0');
-    }
-    tick();
-    setInterval(tick, 30000);
-})();
-
-// ===== Leaflet Offline Map =====
+/* Map */
 {% if task.location_enabled %}
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     try {
-        const mapDataEl = document.getElementById('task-map-data');
-        if (!mapDataEl) return;
-        const lat = parseFloat(mapDataEl.dataset.lat) || 0;
-        const lng = parseFloat(mapDataEl.dataset.lng) || 0;
+        const m = document.getElementById('task-map-data').dataset;
+        const lat = parseFloat(m.lat) || 0, lng = parseFloat(m.lng) || 0;
         const map = L.map('task-view-map').setView([lat, lng], 13);
         window.taskLeafletMap = map;
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CARTO',
-            maxZoom: 19
-        }).addTo(map);
-
-        L.marker([lat, lng]).addTo(map).bindPopup('<b>{{ task.title|escapejs }}</b>').openPopup();
-        setTimeout(() => map.invalidateSize(), 500);
-    } catch (err) {
-        console.warn('Map initialization:', err);
-    }
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '&copy; CARTO', maxZoom: 19 }).addTo(map);
+        L.marker([lat, lng]).addTo(map).bindPopup('<b>' + esc("{{ task.title|escapejs }}") + '</b>');
+        setTimeout(() => map.invalidateSize(), 400);
+    } catch (err) { console.warn('Map:', err); }
 });
 {% endif %}
 
-// ===== TODO / Sub-tasks Logic =====
-(function initTodos() {
-    const section = document.getElementById('todo-section');
-    if (!section) return;
-    const addUrl = section.dataset.addUrl;
-    const hdrs = {'X-CSRFToken': CSRF_TOKEN};
-
-    function updateCounter() {
-        const count = document.querySelectorAll('.tg-todo-item:not(.completed)').length;
+/* Sub-tasks */
+const todoSection = document.getElementById('todo-section');
+if (todoSection) {
+    const addUrl = todoSection.dataset.addUrl;
+    const hdrs = { 'X-CSRFToken': CSRF_TOKEN };
+    const modalEl = document.getElementById('todoModal');
+    const modal = () => bootstrap.Modal.getOrCreateInstance(modalEl);
+    const updateCounter = () => {
+        const open = document.querySelectorAll('.tg-todo-item:not(.completed)').length;
         const total = document.querySelectorAll('.tg-todo-item').length;
-        const countBadge = document.getElementById('todo-tab-count');
-        if (countBadge) countBadge.textContent = count;
-        const empty = document.getElementById('todo-empty');
-        if (empty) empty.style.display = total ? 'none' : '';
-    }
-
-    window.openTodoModal = function(editData) {
-        document.getElementById('todoEditId').value = editData ? editData.id : '';
-        document.getElementById('todoTitle').value = editData ? editData.title : '';
-        document.getElementById('todoDesc').value = editData ? editData.desc : '';
-        document.getElementById('todoPriority').value = editData ? editData.priority : 'medium';
-        document.getElementById('todoModalTitle').textContent = editData ? 'Edit Sub-task' : 'Add Sub-task';
-        document.getElementById('todoFileGroup').style.display = editData ? 'none' : '';
-        document.getElementById('todoModalOverlay').classList.add('active');
-        setTimeout(() => document.getElementById('todoTitle').focus(), 100);
+        const c = document.getElementById('todo-tab-count'); if (c) c.textContent = open;
+        const e = document.getElementById('todo-empty'); if (e) e.hidden = total > 0;
     };
-
-    window.closeTodoModal = function() {
-        document.getElementById('todoModalOverlay').classList.remove('active');
-        document.getElementById('todoTitle').value = '';
-        document.getElementById('todoDesc').value = '';
+    window.openTodoModal = function (d) {
+        document.getElementById('todoEditId').value = d ? d.id : '';
+        document.getElementById('todoTitle').value = d ? d.title : '';
+        document.getElementById('todoDesc').value = d ? d.desc : '';
+        document.getElementById('todoPriority').value = d ? (d.priority || 'medium') : 'medium';
+        document.getElementById('todoModalTitle').textContent = d ? T('Edit sub-task', 'تعديل المهمة الفرعية') : T('Add a sub-task', 'إضافة مهمة فرعية');
+        document.getElementById('todoFileGroup').hidden = !!d;
         document.getElementById('todoFiles').value = '';
+        modal().show();
+        modalEl.addEventListener('shown.bs.modal', () => document.getElementById('todoTitle').focus(), { once: true });
     };
-
-    window.saveTodo = function() {
-        const editId = document.getElementById('todoEditId').value;
+    window.closeTodoModal = () => modal().hide();
+    const post = (u, fd) => fetch(u, { method: 'POST', credentials: 'same-origin', headers: hdrs, body: fd }).then(r => { if (!r.ok) throw new Error(); return r.json(); });
+    window.saveTodo = function () {
+        const id = document.getElementById('todoEditId').value;
         const title = document.getElementById('todoTitle').value.trim();
         if (!title) { document.getElementById('todoTitle').focus(); return; }
         const fd = new FormData();
         fd.append('title', title);
         fd.append('description', document.getElementById('todoDesc').value.trim());
         fd.append('priority', document.getElementById('todoPriority').value);
-        if (!editId) {
-            const files = document.getElementById('todoFiles').files;
-            for (let i = 0; i < files.length; i++) fd.append('files', files[i]);
-        }
-        const url = editId ? document.getElementById('todo-' + editId).dataset.updateUrl : addUrl;
-        fetch(url, {method: 'POST', headers: hdrs, body: fd})
-            .then(r => r.json())
-            .then(() => { closeTodoModal(); location.reload(); })
-            .catch(() => alert('Network error'));
+        if (!id) for (const f of document.getElementById('todoFiles').files) fd.append('files', f);
+        post(id ? document.getElementById('todo-' + id).dataset.updateUrl : addUrl, fd)
+            .then(() => location.reload())
+            .catch(() => toast(T('Could not save the sub-task.', 'تعذّر حفظ المهمة الفرعية.'), 'error'));
     };
-
-    window.saveTodoInline = function() {
+    window.saveTodoInline = function () {
         const input = document.getElementById('todo-inline-input');
         const title = input.value.trim();
         if (!title) return;
         const fd = new FormData();
-        fd.append('title', title);
-        fd.append('description', '');
-        fd.append('priority', 'medium');
-        fetch(addUrl, {method: 'POST', headers: hdrs, body: fd})
-            .then(r => r.json())
-            .then(() => location.reload())
-            .catch(() => alert('Network error'));
+        fd.append('title', title); fd.append('description', ''); fd.append('priority', 'medium');
+        post(addUrl, fd).then(() => location.reload()).catch(() => toast(T('Could not add the sub-task.', 'تعذّرت إضافة المهمة الفرعية.'), 'error'));
     };
-
-    window.toggleTodo = function(el) {
+    window.toggleTodo = function (el) {
         const item = el.closest('.tg-todo-item');
-        fetch(item.dataset.toggleUrl, {method: 'POST', headers: hdrs})
+        fetch(item.dataset.toggleUrl, { method: 'POST', credentials: 'same-origin', headers: hdrs })
             .then(r => r.json())
             .then(d => {
-                if (d.status === 'completed') {
-                    item.classList.add('completed');
-                    el.checked = true;
-                } else {
-                    item.classList.remove('completed');
-                    el.checked = false;
-                }
+                const done = d.status === 'completed';
+                item.classList.toggle('completed', done);
+                el.checked = done;
                 updateCounter();
-                
-                // Recalculate progress from todos
                 const total = document.querySelectorAll('.tg-todo-item').length;
-                const completed = document.querySelectorAll('.tg-todo-item.completed').length;
-                if (total > 0) {
-                    const newPct = Math.round((completed / total) * 100 / 5) * 5;
-                    const rng = document.getElementById('progressRange');
-                    if (rng) {
-                        rng.value = newPct;
-                        saveTaskProgress();
-                    }
-                }
-            });
+                const fin = document.querySelectorAll('.tg-todo-item.completed').length;
+                if (total && range) { range.value = Math.round((fin / total) * 100 / 5) * 5; saveTaskProgress(); }
+            })
+            .catch(() => { el.checked = !el.checked; toast(T('Could not update the sub-task.', 'تعذّر تحديث المهمة الفرعية.'), 'error'); });
     };
-
-    window.editTodo = function(btn) {
+    window.editTodo = function (btn) {
         const item = btn.closest('.tg-todo-item');
-        const title = item.querySelector('.tg-todo-text').textContent;
-        openTodoModal({id: item.dataset.id, title, desc: '', priority: 'medium'});
+        openTodoModal({ id: item.dataset.id, title: item.querySelector('.tg-todo-text').textContent.trim(), desc: item.dataset.desc || '', priority: item.dataset.priority });
     };
-
-    window.deleteTodo = async function(btn) {
-        if (!(await amazingConfirm('Delete this item?'))) return;
+    window.deleteTodo = async function (btn) {
+        if (!(await amazingConfirm(T('Delete this sub-task?', 'حذف هذه المهمة الفرعية؟')))) return;
         const item = btn.closest('.tg-todo-item');
-        fetch(item.dataset.deleteUrl, {method: 'POST', headers: hdrs})
-            .then(r => { if (r.ok) { item.remove(); updateCounter(); showToast('Sub-task deleted'); } });
+        fetch(item.dataset.deleteUrl, { method: 'POST', credentials: 'same-origin', headers: hdrs })
+            .then(r => { if (!r.ok) throw new Error(); item.remove(); updateCounter(); toast(T('Sub-task deleted.', 'حُذفت المهمة الفرعية.')); })
+            .catch(() => toast(T('Could not delete the sub-task.', 'تعذّر حذف المهمة الفرعية.'), 'error'));
     };
-
-    window.uploadTodoFile = function(input) {
-        const item = input.closest('.tg-todo-item');
+    window.uploadTodoFile = function (input) {
         const fd = new FormData();
-        for (let f of input.files) fd.append('files', f);
-        fetch(item.dataset.uploadUrl, {method: 'POST', headers: hdrs, body: fd})
-            .then(r => r.json())
-            .then(() => location.reload());
+        for (const f of input.files) fd.append('files', f);
+        post(input.closest('.tg-todo-item').dataset.uploadUrl, fd).then(() => location.reload())
+            .catch(() => toast(T('Could not upload the file.', 'تعذّر رفع الملف.'), 'error'));
     };
-})();
+}
 
-// ===== Discussion / Comments Logic =====
-async function postComment() {
+/* Discussion */
+const attach = document.getElementById('comment-attachment');
+if (attach) attach.addEventListener('change', () => { document.getElementById('comment-attachment-name').textContent = attach.files[0] ? attach.files[0].name : ''; });
+window.postComment = async function () {
     const msgEl = document.getElementById('comment-message');
     const msg = msgEl.value.trim();
-    if (!msg) return;
-    const postBtn = document.getElementById('comment-post-btn');
-    postBtn.disabled = true;
+    if (!msg) { msgEl.focus(); return; }
+    const btn = document.getElementById('comment-post-btn');
+    btn.disabled = true;
     const fd = new FormData();
     fd.append('message', msg);
-    const fileInput = document.getElementById('comment-attachment');
-    if (fileInput && fileInput.files[0]) fd.append('attachment', fileInput.files[0]);
-
+    if (attach && attach.files[0]) fd.append('attachment', attach.files[0]);
     try {
-        const resp = await fetch('{% url "task-comment-add" task.id %}', {
-            method: 'POST',
-            headers: {'X-CSRFToken': CSRF_TOKEN},
-            body: fd,
-        });
-        if (resp.ok) {
-            const data = await resp.json();
-            msgEl.value = '';
-            if (fileInput) fileInput.value = '';
-            prependComment(data);
-            document.getElementById('no-comments-msg')?.remove();
-            showToast('Comment posted');
-        } else {
-            alert('Could not post comment.');
-        }
-    } catch (e) {
-        console.error(e);
-        alert('Network error posting comment.');
-    } finally {
-        postBtn.disabled = false;
-    }
-}
-
-function prependComment(c) {
-    const list = document.getElementById('comments-list');
-    const div = document.createElement('div');
-    div.id = 'comment-' + c.id;
-    div.className = 'tg-msg-bubble';
-    div.innerHTML = `
-        <div class="tg-avatar" style="width:36px;height:36px;font-size:0.8rem;">${c.author_initials || 'ME'}</div>
-        <div class="tg-msg-content">
-            <div class="tg-msg-head">
-                <span class="tg-msg-author">${c.author}</span>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="tg-msg-time">${c.created_at}</span>
-                    <button type="button" onclick="deleteComment(${c.id})" class="tg-todo-btn-icon del" title="Delete comment">
-                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                    </button>
-                </div>
-            </div>
-            <div class="tg-msg-text">${c.message.replace(/\n/g, '<br>')}</div>
-            ${c.has_attachment ? `<a href="${c.attachment_url}" target="_blank" class="tg-file-chip" style="text-decoration:none;margin-top:8px;"><span class="material-symbols-outlined" style="font-size:14px;">attach_file</span><span>Attachment</span></a>` : ''}
-        </div>`;
-    list.prepend(div);
-}
-
-async function deleteComment(cid) {
-    if (!(await amazingConfirm('Delete this comment?'))) return;
-    const deleteUrl = '{% url "task-comment-delete" 0 %}'.replace('0', cid);
-    const resp = await fetch(deleteUrl, {
-        method: 'POST', headers: {'X-CSRFToken': CSRF_TOKEN}
-    });
-    if (resp.ok) {
+        const r = await fetch("{% url 'task-comment-add' task.id %}", { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN }, body: fd });
+        if (!r.ok) throw new Error();
+        const c = await r.json();
+        msgEl.value = '';
+        if (attach) { attach.value = ''; document.getElementById('comment-attachment-name').textContent = ''; }
+        const li = document.createElement('li');
+        li.className = 'wt-td-comment';
+        li.id = 'comment-' + c.id;
+        li.innerHTML = `<span class="wt-avatar">${esc(c.author_initials || '')}</span><div>
+            <div class="wt-td-comment-head"><b dir="auto">${esc(c.author)}</b><small class="wt-num">${esc(c.created_at)}</small>
+            <button type="button" class="wt-icon-btn is-danger" aria-label="${T('Delete comment', 'حذف التعليق')}" title="${T('Delete comment', 'حذف التعليق')}"><i class="fas fa-trash"></i></button></div>
+            <p class="wt-td-prose" dir="auto">${esc(c.message).replace(/\n/g, '<br>')}</p>
+            ${c.has_attachment ? `<a href="${esc(c.attachment_url)}" target="_blank" rel="noopener" class="wt-td-file"><i class="fas fa-paperclip" aria-hidden="true"></i>${T('Attachment', 'مرفق')}</a>` : ''}</div>`;
+        li.querySelector('button').addEventListener('click', () => deleteComment(c.id));
+        document.getElementById('comments-list').prepend(li);
+        document.getElementById('no-comments-msg').hidden = true;
+        const cnt = document.getElementById('comment-tab-count'); if (cnt) cnt.textContent = (+cnt.textContent || 0) + 1;
+        toast(T('Comment posted.', 'نُشر التعليق.'));
+    } catch (e) { toast(T('Could not post the comment. Try again.', 'تعذّر نشر التعليق. حاول مرة أخرى.'), 'error'); }
+    finally { btn.disabled = false; }
+};
+window.deleteComment = async function (cid) {
+    if (!(await amazingConfirm(T('Delete this comment?', 'حذف هذا التعليق؟')))) return;
+    const r = await fetch(url(URLS.commentDel, cid), { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN } });
+    if (r.ok) {
         document.getElementById('comment-' + cid)?.remove();
-        showToast('Comment deleted');
-    }
-}
+        const cnt = document.getElementById('comment-tab-count'); if (cnt) cnt.textContent = Math.max(0, (+cnt.textContent || 0) - 1);
+        if (!document.querySelector('.wt-td-comment')) document.getElementById('no-comments-msg').hidden = false;
+        toast(T('Comment deleted.', 'حُذف التعليق.'));
+    } else toast(T('Could not delete the comment.', 'تعذّر حذف التعليق.'), 'error');
+};
 
-// ===== Delete Task =====
-async function deleteTask() {
-    const confirmed = await amazingConfirm({
-        title: 'Delete Task?',
-        text: 'This action cannot be undone and will permanently remove this task and all related submissions.',
-        confirmButtonText: 'Yes, Delete Task'
+/* Delete task */
+window.deleteTask = async function () {
+    const ok = await amazingConfirm({
+        title: T('Delete this task?', 'حذف هذه المهمة؟'),
+        text: T('This permanently removes the task and all its submissions. It cannot be undone.', 'سيؤدي هذا إلى حذف المهمة وكل تسليماتها نهائيًا، ولا يمكن التراجع عنه.'),
+        confirmButtonText: T('Delete task', 'حذف المهمة')
     });
-    if (confirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{% url "task-delete" task.id %}';
-        form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_TOKEN}">`;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
+    if (!ok) return;
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = "{% url 'task-delete' task.id %}";
+    f.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="${esc(CSRF_TOKEN)}">`;
+    document.body.appendChild(f);
+    f.submit();
+};
 
-// ===== Share Task Modal Script =====
-let shareContacts = [];
-let shareSelectedRecipients = new Set();
-let shareModal;
-
-function getShareModal() {
-    const el = document.getElementById('shareTaskModal');
-    if (!el) return null;
-    if (!shareModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-        shareModal = new bootstrap.Modal(el);
-    }
-    return shareModal;
-}
-
-function openShareTaskModal() {
-    const m = getShareModal();
-    if (!m) return;
-    shareSelectedRecipients.clear();
-    const confirmBtn = document.getElementById('confirm-share-btn');
-    if (confirmBtn) confirmBtn.disabled = true;
-    m.show();
-
-    fetch("{% url 'messaging:api-get-contacts' %}")
-        .then(r => r.json())
-        .then(data => {
-            shareContacts = data.contacts || [];
-            renderShareContacts();
-        })
-        .catch(() => {
-            document.getElementById('share-contacts-list').innerHTML = '<div class="text-center p-3 text-danger small">Failed to load contacts</div>';
-        });
-}
-
-function renderShareContacts(filter = '') {
+/* Share in chat */
+let contacts = [];
+const picked = new Set();
+const shareEl = document.getElementById('shareTaskModal');
+window.openShareTaskModal = function () {
+    picked.clear();
+    document.getElementById('confirm-share-btn').disabled = true;
+    bootstrap.Modal.getOrCreateInstance(shareEl).show();
+    fetch("{% url 'messaging:api-get-contacts' %}", { credentials: 'same-origin' })
+        .then(r => r.json()).then(d => { contacts = d.contacts || []; renderContacts(); })
+        .catch(() => { document.getElementById('share-contacts-list').innerHTML = `<li class="wt-side-empty">${T('Could not load contacts.', 'تعذّر تحميل جهات الاتصال.')}</li>`; });
+};
+function renderContacts(filter = '') {
     const list = document.getElementById('share-contacts-list');
-    list.innerHTML = '';
-    const filtered = shareContacts.filter(c => (c.full_name || '').toLowerCase().includes(filter.toLowerCase()));
-    if (!filtered.length) {
-        list.innerHTML = '<div class="text-center p-3 text-muted small">No contacts found</div>';
-        return;
-    }
-    filtered.forEach(contact => {
-        const item = document.createElement('div');
-        const isSelected = shareSelectedRecipients.has(contact.id);
-        item.className = 'd-flex align-items-center gap-2 p-2 rounded-3 mb-1 ' + (isSelected ? 'bg-success bg-opacity-10' : '');
-        item.style.cursor = 'pointer';
-        item.innerHTML = `
-            <div class="tg-avatar" style="width:30px;height:30px;font-size:0.75rem;">${contact.initial || '?'}</div>
-            <div class="flex-grow-1 overflow-hidden">
-                <div class="fw-bold small text-truncate">${contact.full_name}</div>
-                <div class="text-muted" style="font-size:0.7rem;">${contact.role || ''}</div>
-            </div>
-            <input type="checkbox" class="form-check-input" ${isSelected ? 'checked' : ''} style="cursor:pointer;">
-        `;
-        item.onclick = (e) => {
-            const cb = item.querySelector('input');
-            if (e.target !== cb) cb.checked = !cb.checked;
-            if (cb.checked) {
-                shareSelectedRecipients.add(contact.id);
-                item.classList.add('bg-success', 'bg-opacity-10');
-            } else {
-                shareSelectedRecipients.delete(contact.id);
-                item.classList.remove('bg-success', 'bg-opacity-10');
-            }
-            const btn = document.getElementById('confirm-share-btn');
-            if (btn) btn.disabled = (shareSelectedRecipients.size === 0);
-        };
-        list.appendChild(item);
-    });
+    const rows = contacts.filter(c => (c.full_name || '').toLowerCase().includes(filter.toLowerCase()));
+    if (!rows.length) { list.innerHTML = `<li class="wt-side-empty">${T('No contacts found.', 'لا توجد جهات اتصال.')}</li>`; return; }
+    list.innerHTML = rows.map(c => `<li><label class="wt-side-row" for="share-${esc(c.id)}">
+        <span class="wt-avatar">${esc(c.initial || '?')}</span>
+        <span class="wt-side-main"><b dir="auto">${esc(c.full_name)}</b><small>${esc(c.role || '')}</small></span>
+        <input type="checkbox" class="form-check-input" id="share-${esc(c.id)}" data-id="${esc(c.id)}" ${picked.has(String(c.id)) ? 'checked' : ''}></label></li>`).join('');
+    list.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+        cb.checked ? picked.add(cb.dataset.id) : picked.delete(cb.dataset.id);
+        document.getElementById('confirm-share-btn').disabled = picked.size === 0;
+    }));
 }
-
-document.getElementById('share-search-input')?.addEventListener('input', e => renderShareContacts(e.target.value));
-
-document.getElementById('confirm-share-btn')?.addEventListener('click', function() {
-    if (shareSelectedRecipients.size === 0) return;
+document.getElementById('share-search-input').addEventListener('input', e => renderContacts(e.target.value));
+document.getElementById('confirm-share-btn').addEventListener('click', async function () {
+    if (!picked.size) return;
     this.disabled = true;
-    this.innerHTML = 'Sending...';
-
-    const taskTitle = "{{ task.title|escapejs }}";
-    const taskUrl = window.location.origin + "{% url 'task-detail' task.id %}";
-    const htmlContent = `Task: <b>${taskTitle}</b><br><a href="${taskUrl}">View Task Details</a>`;
-
-    const sendPromises = Array.from(shareSelectedRecipients).map(recipientId => {
-        const fd = new FormData();
-        fd.append('recipient_id', recipientId);
-        fd.append('content', htmlContent);
-        return fetch(`/messaging/api/send/`, {
-            method: 'POST',
-            headers: {'X-CSRFToken': CSRF_TOKEN},
-            body: fd
-        });
-    });
-
-    Promise.all(sendPromises).then(() => {
-        getShareModal()?.hide();
-        this.disabled = false;
-        this.innerHTML = 'Send';
-        showToast('Shared successfully to Chat!');
-    }).catch(() => {
-        this.disabled = false;
-        this.innerHTML = 'Send';
-        alert('Failed to share task.');
-    });
+    const title = "{{ task.title|escapejs }}";
+    const link = window.location.origin + "{% url 'task-detail' task.id %}";
+    const html = `${T('Task', 'مهمة')}: <b>${esc(title)}</b><br><a href="${esc(link)}">${T('Open task', 'فتح المهمة')}</a>`;
+    try {
+        const res = await Promise.all(Array.from(picked).map(id => {
+            const fd = new FormData(); fd.append('recipient_id', id); fd.append('content', html);
+            return fetch(URLS.send, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN }, body: fd });
+        }));
+        if (res.some(r => !r.ok)) throw new Error();
+        bootstrap.Modal.getOrCreateInstance(shareEl).hide();
+        toast(T('Shared in chat.', 'تمت المشاركة في المحادثات.'));
+    } catch (e) { toast(T('Could not share the task.', 'تعذّرت مشاركة المهمة.'), 'error'); }
+    finally { this.disabled = picked.size === 0; }
 });
 
-// ===== Resubmission Request Modal Handler =====
-{% if user.role == 'manager' or user.role == 'super_admin' %}
-document.addEventListener('DOMContentLoaded', function() {
-    const resubmitBtn = document.getElementById('confirm-resubmit-btn');
-    if (resubmitBtn) {
-        resubmitBtn.addEventListener('click', async () => {
-            const checks = document.querySelectorAll('.worker-check:checked');
-            if (checks.length === 0) {
-                alert('Please select at least one worker.');
-                return;
-            }
-            const worker_ids = Array.from(checks).map(c => c.value);
-            resubmitBtn.disabled = true;
-            resubmitBtn.innerHTML = 'Processing...';
-
-            try {
-                const fd = new FormData();
-                worker_ids.forEach(id => fd.append('worker_ids[]', id));
-                const response = await fetch('{% url "task-allow-resubmission" task.id %}', {
-                    method: 'POST',
-                    headers: {'X-CSRFToken': CSRF_TOKEN},
-                    body: fd
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    showToast(data.message || 'Resubmission authorized');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    alert(data.message || 'Something went wrong.');
-                    resubmitBtn.disabled = false;
-                    resubmitBtn.innerHTML = 'Confirm Authorization';
-                }
-            } catch (e) {
-                alert('Connection error.');
-                resubmitBtn.disabled = false;
-                resubmitBtn.innerHTML = 'Confirm Authorization';
-            }
-        });
-    }
-});
-
-function toggleAllWorkers(selected) {
-    document.querySelectorAll('.worker-check').forEach(cb => cb.checked = selected);
-}
-{% endif %}
-
-// ===== Matrix Aggregation Handler =====
-function calcRow(valsStr, method) {
-    const nums = valsStr.split(',').map(Number).filter(n => !isNaN(n));
-    if (!nums.length) return '—';
-    if (method === 'sum') return nums.reduce((a, b) => a + b, 0).toLocaleString(undefined, {maximumFractionDigits: 2});
-    if (method === 'avg') return (nums.reduce((a, b) => a + b, 0) / nums.length).toLocaleString(undefined, {maximumFractionDigits: 2});
-    if (method === 'max') return Math.max(...nums).toLocaleString(undefined, {maximumFractionDigits: 2});
-    return '—';
+/* Allow a new version */
+const resubmitBtn = document.getElementById('confirm-resubmit-btn');
+if (resubmitBtn) {
+    window.toggleAllWorkers = on => document.querySelectorAll('.worker-check').forEach(cb => { cb.checked = on; });
+    resubmitBtn.addEventListener('click', async () => {
+        const ids = Array.from(document.querySelectorAll('.worker-check:checked')).map(c => c.value);
+        if (!ids.length) { toast(T('Choose at least one person.', 'اختر شخصًا واحدًا على الأقل.'), 'error'); return; }
+        resubmitBtn.disabled = true;
+        try {
+            const fd = new FormData(); ids.forEach(id => fd.append('worker_ids[]', id));
+            const r = await fetch("{% url 'task-allow-resubmission' task.id %}", { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': CSRF_TOKEN }, body: fd });
+            const d = await r.json();
+            if (d.status !== 'success') throw new Error(d.message || '');
+            toast(d.message || T('New version allowed.', 'تم السماح بنسخة جديدة.'));
+            setTimeout(() => location.reload(), 900);
+        } catch (e) { toast(e.message || T('Something went wrong. Try again.', 'حدث خطأ. حاول مرة أخرى.'), 'error'); resubmitBtn.disabled = false; }
+    });
 }
 
-window.updateRowResult = function(sel) {
-    const method = sel.value;
-    const fieldId = sel.dataset.fieldId;
-    const display = document.querySelector(`#result-${fieldId} .agg-result-val`);
-    if (display) display.textContent = calcRow(sel.dataset.values, method);
-};
-
-window.updateExportLinks = function(e, anchor) {
+/* Submitted data: per-row totals and export with the chosen totals */
+function calcRow(vals, how) {
+    const n = vals.split(',').map(Number).filter(x => !isNaN(x));
+    if (!n.length) return '–';
+    const fmt = x => x.toLocaleString(isAr() ? 'ar' : undefined, { maximumFractionDigits: 2 });
+    if (how === 'sum') return fmt(n.reduce((a, b) => a + b, 0));
+    if (how === 'avg') return fmt(n.reduce((a, b) => a + b, 0) / n.length);
+    if (how === 'max') return fmt(Math.max(...n));
+    return '–';
+}
+window.updateRowResult = sel => { const el = document.querySelector(`#result-${sel.dataset.fieldId} .agg-result-val`); if (el) el.textContent = calcRow(sel.dataset.values, sel.value); };
+window.updateExportLinks = function (e, a) {
     e.preventDefault();
-    const params = new URLSearchParams();
-    document.querySelectorAll('.row-agg-select').forEach(sel => {
-        params.set('agg_' + sel.dataset.fieldId, sel.value);
-    });
-    const base = anchor.href.split('?')[0];
-    window.open(base + '?' + params.toString(), '_blank');
+    const p = new URLSearchParams();
+    document.querySelectorAll('.row-agg-select').forEach(s => p.set('agg_' + s.dataset.fieldId, s.value));
+    window.open(a.href.split('?')[0] + '?' + p.toString(), '_blank', 'noopener');
 };
+document.querySelectorAll('.row-agg-select').forEach(s => updateRowResult(s));
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.row-agg-select').forEach(sel => updateRowResult(sel));
-
-    // Assigned Team Pagination (7 items per page)
-    (function initTeamPagination() {
-        const items = document.querySelectorAll('.team-member-item');
-        const ctrls = document.getElementById('team-pagination-ctrls');
-        if (!items || items.length <= 7) {
-            if (ctrls) ctrls.style.display = 'none';
-            return;
+/* Team: 7 per page */
+(function () {
+    const items = Array.from(document.querySelectorAll('.team-member-item'));
+    const box = document.getElementById('team-pagination-ctrls');
+    const size = 7, pages = Math.ceil(items.length / size);
+    if (pages <= 1 || !box) return;
+    box.hidden = false;
+    const nums = document.getElementById('team-page-numbers');
+    const prev = document.getElementById('team-prev-page'), next = document.getElementById('team-next-page');
+    let cur = 1;
+    function show(p) {
+        cur = Math.max(1, Math.min(p, pages));
+        items.forEach((it, i) => { it.hidden = i < (cur - 1) * size || i >= cur * size; });
+        document.getElementById('team-page-indicator').textContent = `${cur} / ${pages}`;
+        nums.innerHTML = '';
+        for (let i = 1; i <= pages; i++) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'wt-page' + (i === cur ? ' is-on' : ''); b.textContent = i;
+            if (i === cur) b.setAttribute('aria-current', 'page');
+            b.addEventListener('click', () => show(i));
+            nums.appendChild(b);
         }
-        if (ctrls) ctrls.style.display = 'flex';
-        
-        const pageSize = 7;
-        let currentPage = 1;
-        const totalPages = Math.ceil(items.length / pageSize);
-        
-        const indicator = document.getElementById('team-page-indicator');
-        const numbersContainer = document.getElementById('team-page-numbers');
-        const prevBtn = document.getElementById('team-prev-page');
-        const nextBtn = document.getElementById('team-next-page');
-        
-        function renderPage(page) {
-            currentPage = Math.max(1, Math.min(page, totalPages));
-            const start = (currentPage - 1) * pageSize;
-            const end = start + pageSize;
-            
-            items.forEach((item, idx) => {
-                item.style.display = (idx >= start && idx < end) ? 'flex' : 'none';
-            });
-            
-            if (indicator) {
-                indicator.textContent = `Page ${currentPage} of ${totalPages} (${items.length})`;
-            }
-            
-            if (numbersContainer) {
-                numbersContainer.innerHTML = '';
-                for (let i = 1; i <= totalPages; i++) {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = `tg-btn ${i === currentPage ? 'tg-btn-primary' : 'tg-btn-ghost'}`;
-                    btn.style.cssText = `padding: 2px 7px; font-size: 0.72rem; min-width: 22px; justify-content: center; ${i === currentPage ? 'color:#fff!important;font-weight:800;' : ''}`;
-                    btn.textContent = i;
-                    btn.addEventListener('click', () => renderPage(i));
-                    numbersContainer.appendChild(btn);
-                }
-            }
-            
-            if (prevBtn) prevBtn.disabled = (currentPage === 1);
-            if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
-        }
-        
-        if (prevBtn) prevBtn.addEventListener('click', () => renderPage(currentPage - 1));
-        if (nextBtn) nextBtn.addEventListener('click', () => renderPage(currentPage + 1));
-        
-        renderPage(1);
-    })();
-});
+        prev.disabled = cur === 1; next.disabled = cur === pages;
+    }
+    prev.addEventListener('click', () => show(cur - 1));
+    next.addEventListener('click', () => show(cur + 1));
+    show(1);
+})();
+})();
 </script>
 {% endblock %}
