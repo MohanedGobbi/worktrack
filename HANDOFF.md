@@ -62,8 +62,10 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 
 After the base platform is finished, the owner will supply details for a **University of Ghardaia version**, and later versions for **other institutions**. So every page built from now on must be customizable by configuration, not by editing templates.
 
+**Exception: the ROWD Tech credit is permanent.** It must appear on every install, in every institution's version (University of Ghardaia included), on all public pages and in the app shell (sidebar and footer). It is never configurable, hideable, replaceable or themeable: no Site Settings field, no theme variable, no CSS that hides it. It lives in `templates/includes/rowd_credit.html`, is shielded from translation (`translate="no"`), and is guarded by `tests/test_credit.py`. Run `manage.py test tests.test_credit` before shipping any new version. Do not remove the test.
+
 Rules for every page and component:
-1. **No institution-specific text, logo, colour, font, image or URL hard-coded in templates, CSS or JS.** Name, logo, colours, language defaults, contact details, footer text and landing copy come from Site Settings / `SiteConfiguration` or a theme file.
+1. **No institution-specific text, logo, colour, font, image or URL hard-coded in templates, CSS or JS.** Name, logo, colours, language defaults, contact details, footer text and landing copy (everything except the ROWD credit) come from Site Settings / `SiteConfiguration` or a theme file.
 2. **Labels and vocabulary are swappable.** Institutions use different words (module / course / project, worker / employee / staff, manager / head of department). Route such terms through one glossary (to be created: a per-install terminology table read by templates) instead of writing them inline.
 3. **Roles, departments and sidebar items are data**, not code (already partly true: `SidebarVisibilityRule`, `SystemProfile`, `Department`). Keep it that way.
 4. **Landing and sign-in copy is editable** from Site Settings (headline, tagline, feature points), with Arabic and English fields.
