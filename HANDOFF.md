@@ -4,6 +4,48 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 
 ---
 
+## 0. Release plan (start here)
+
+Goal: an installable, sellable v1 as fast as possible, spending tokens only where they change the product. Agreed with the owner on 2026-11-07. Work one sprint per conversation: open a new session, say "Read HANDOFF.md, do Sprint N", and update this section when a sprint ends.
+
+### Working rules (to save tokens)
+- **One sprint per session.** Long conversations are the main cost; start fresh and rely on this file.
+- **No layout questions** except for pages people use all day. Everything else uses the established parts (`wt-home-head`, `wt-panel`, `wt-filters`, `wt-tl-*` list rows, `wt-td-*` detail layout, `wt-tf-*` forms; see DESIGN.md and §5).
+- **Verify in batches:** `manage.py check`, the smoke test (§4) and the tests after each page; one visual pass (EN + AR, 1440 + 390) at the end of the sprint, not per page. Screenshots only when something looks broken.
+- **One independent review per sprint**, not per page.
+- **Mechanical restyles may go to a cheaper model**; keep security, Site Settings and anything touching data with the strongest model.
+- Commit after each page; push only when the owner asks.
+
+### Sprint 1: sale blockers
+1. **Server-side cleaning of user text.** Message content is stored raw; the messenger now sanitizes on screen, but the server should too (messages, task comments, submission notes and feedback, todo text, correspondence). Then grep every template and script for user data inserted with `innerHTML` / `|safe` and fix what is found.
+2. **Production readiness:** fix the 2 failing tests (`tests.test_creation_fix`: static manifest during tests, and `task_create` crashing on a non-numeric `estimated_hours`); check `DEBUG`, `ALLOWED_HOSTS`, `collectstatic` with the manifest storage, secret key from `.env`.
+3. **Translation table:** owner decision pending. Proposal: delete the 3,185 machine rows (`TranslationItem` with key starting `auto.`); template pairs already carry both languages.
+4. **Site Settings rebuild** around the theme model: product name EN/AR, logo, brand / accent / on-brand colours (plus preview), contact and footer details, default language. Replace the old ~40-colour editor. This is what makes the product white-label.
+5. **"New institution" management command:** name, logo, colours, default language, roles, departments, first admin user.
+
+### Sprint 2: finish Phase 1
+`notifications`, `profile`, `worker_performance`, built from the existing parts, no layout questions.
+
+### Sprint 3: triage the ~37 remaining pages (owner picks the hide list first)
+- **Rebuild (about 8, daily manager use):** `manager_portal`, `kpi_dashboard` + `manager_analytics` (consider merging), correspondence list / detail / form, `attendance/*`, `admin_users` + `create_user`.
+- **Restyle with shared CSS only (about 15):** archives, `global_map`, template dashboard / form / builder, `translation_manager`, `host_management`, `audit_logs`, `offline_map_manager`, `version_data_archive`, groups, `todo_management`, `organizational_intelligence`, `roadmap`, `messaging/config`, `messaging/inspect_user`. Use one "legacy bridge" block in `app.css` that maps their old classes onto tokens, rather than rewriting their HTML.
+- **Hide for v1:** whatever the owner does not need yet. Hide through sidebar visibility (data, `SidebarVisibilityRule`), not by deleting code.
+- Also: the home dashboard's module toolbar row and table view (still legacy).
+
+### Sprint 4: release
+- One independent review over everything rebuilt since the worker home (tasks, submissions, module page, messenger, Sprint 2 and 3 pages); fix what it finds.
+- Install checklist for cPanel/Passenger (subpath, cookies, static, media, backups, first admin) and a demo-data seed so the product demos well.
+- Tag `v1.0`.
+
+### After launch (not before)
+Glossary / terminology table, editable landing and sign-in copy, the University of Ghardaia theme and content, a full messenger rebuild on `wt-*` parts (it still uses the local Tailwind file), brand-derived Signal Blue.
+
+### Decisions waiting on the owner
+- The list of pages / features to hide for v1.
+- Yes / no on deleting the machine-made translation rows.
+
+---
+
 ## 1. What this project is
 
 **WorkTrack Pro** is a Django 5/6 + DRF task and workforce platform: modules → tasks → versioned submissions → manager review → automatic KPI score, plus messenger, correspondence, attendance and notifications. It is bilingual: Arabic first, English, with full RTL.
