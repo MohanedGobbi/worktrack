@@ -714,6 +714,29 @@ def dashboard(request):
     return render(request, 'pages/dashboard.html', context)
 
 
+_AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+_AR_DAYS = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+
+
+def _ar_date(d, weekday=True):
+    """'الجمعة 7 نوفمبر' (or '7 نوفمبر' without the weekday)."""
+    if hasattr(d, 'tzinfo') and getattr(d, 'tzinfo', None) is not None:
+        d = timezone.localtime(d)
+    text = f'{d.day} {_AR_MONTHS[d.month - 1]}'
+    return f'{_AR_DAYS[d.weekday()]} {text}' if weekday else text
+
+
+def _ar_count(n, one, two, few, many):
+    """Arabic number agreement: 1 and 2 have their own forms, 3-10 take the plural, 11+ the singular accusative."""
+    if n == 1:
+        return one
+    if n == 2:
+        return two
+    if 3 <= n % 100 <= 10:
+        return f'{n} {few}'
+    return f'{n} {many}'
+
+
 def _wt_home_context(user, modules_list, module_stats, standard_tasks, todo_qs, base):
     """Read-only data for the redesigned home: roadmap rows, the 'Needs you' list and today's numbers."""
     import datetime as _dt
@@ -783,6 +806,8 @@ def _wt_home_context(user, modules_list, module_stats, standard_tasks, todo_qs, 
     return {
         'wt_greeting': 'morning' if hour < 12 else ('afternoon' if hour < 18 else 'evening'),
         'wt_today_date': today,
+        'wt_today_ar': _ar_date(today),
+        'wt_review_ar': (_ar_count(review_count, 'تسليم واحد ينتظر', 'تسليمان ينتظران', 'تسليمات تنتظر', 'تسليمًا ينتظر') + ' مراجعتك') if review_count else 'لا شيء بانتظار مراجعتك',
         'wt_roadmap': {
             'year': today.year,
             'today_pct': round(pct(today) + 50.0 / span, 2),
@@ -2862,11 +2887,21 @@ def system_profiles_management(request):
     return render(request, 'pages/system_profiles.html', context)
 
 
+def _can_use_todos(user, module_slug=None, todo=None):
+    """Managers and super admins manage module to-dos. Everyone else keeps personal notes:
+    only general (module-less) to-dos they created themselves."""
+    if user.role in ('manager', 'super_admin'):
+        return True
+    if todo is not None:
+        return todo.work_module_id is None and todo.created_by_id == user.id
+    return module_slug in ('general', 'all')
+
+
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def corr_todo_add(request, module_slug):
     """Add a new module-level TODO with support for files and due dates."""
-    if request.user.role not in ['manager', 'super_admin']:
+    if not _can_use_todos(request.user, module_slug) or (request.user.role not in ('manager', 'super_admin') and module_slug != 'general'):
         return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     
     module = None
@@ -2936,7 +2971,7 @@ def corr_todo_add(request, module_slug):
 @require_http_methods(["GET"])
 def corr_todo_list_ajax(request, module_slug):
     """Fetch the list of todos for a specific module as JSON."""
-    if request.user.role not in ['manager', 'super_admin']:
+    if not _can_use_todos(request.user, module_slug):
         return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     
     module_info = None
@@ -2967,8 +3002,11 @@ def corr_todo_list_ajax(request, module_slug):
             'color': '#dc2626',
             'is_module': False
         }
-        modules = WorkModule.get_visible_modules(request.user)
-        todos = Todo.objects.filter(created_by=request.user).filter(Q(work_module__in=modules) | Q(work_module__isnull=True)).order_by('-priority', '-created_at')
+        if request.user.role in ('manager', 'super_admin'):
+            modules = WorkModule.get_visible_modules(request.user)
+            todos = Todo.objects.filter(created_by=request.user).filter(Q(work_module__in=modules) | Q(work_module__isnull=True)).order_by('-priority', '-created_at')
+        else:
+            todos = Todo.objects.filter(created_by=request.user, work_module__isnull=True).order_by('-priority', '-created_at')
     
     todo_list = []
     for t in todos:
@@ -2994,10 +3032,9 @@ def corr_todo_list_ajax(request, module_slug):
 @require_http_methods(["POST"])
 def corr_todo_update(request, todo_id):
     """Update an existing module-level TODO."""
-    if request.user.role not in ['manager', 'super_admin']:
-        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
-    
     todo = get_object_or_404(Todo, id=todo_id)
+    if not _can_use_todos(request.user, todo=todo):
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     
     try:
         title = request.POST.get('title', '').strip()
@@ -3055,10 +3092,9 @@ def corr_todo_update(request, todo_id):
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def corr_todo_toggle(request, todo_id):
-    if request.user.role not in ['manager', 'super_admin']:
-        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
-        
     todo = get_object_or_404(Todo, id=todo_id)
+    if not _can_use_todos(request.user, todo=todo):
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     
     new_status = 'completed' if todo.status == 'pending' else 'pending'
     todo.status = new_status
@@ -3074,10 +3110,9 @@ def corr_todo_toggle(request, todo_id):
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def corr_todo_delete(request, todo_id):
-    if request.user.role not in ['manager', 'super_admin']:
-        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
-        
     todo = get_object_or_404(Todo, id=todo_id)
+    if not _can_use_todos(request.user, todo=todo):
+        return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     todo.delete()
     return JsonResponse({'status': 'success'})
 
@@ -5830,7 +5865,7 @@ def worker_portal(request):
     all_my_tasks = Task.objects.filter(
         assigned_to=request.user,
         work_module__is_archived=False
-    ).select_related('created_by')
+    ).select_related('created_by', 'work_module')
     my_tasks = all_my_tasks.filter(task_type='standard')
     # Correspondence from the new Correspondence model where worker is assigned
     my_corr_qs = Correspondence.objects.filter(
@@ -5852,7 +5887,7 @@ def worker_portal(request):
         worker=request.user, 
         task__task_type='standard',
         task__work_module__is_archived=False
-    ).select_related('task', 'reviewed_by')
+    ).select_related('task', 'task__work_module', 'reviewed_by')
     
     submissions_stats = {
         'total': my_submissions.count(),
@@ -5905,7 +5940,10 @@ def worker_portal(request):
         overall_completion = 0
 
     # Rejected submissions that need action
-    rejected_submissions = my_submissions.filter(status='rejected').order_by('-reviewed_at')
+    # Only tasks whose latest submission from this worker was sent back (one row per task)
+    from django.db.models import OuterRef, Subquery
+    latest_sub_id = Submission.objects.filter(worker=request.user, task=OuterRef('task')).order_by('-created_at', '-id').values('id')[:1]
+    rejected_submissions = my_submissions.filter(status='rejected').annotate(latest_id=Subquery(latest_sub_id)).filter(id=F('latest_id')).order_by('-reviewed_at')
 
     # Build correspondence list with acknowledgement info using new Correspondence model
     my_correspondence = []
@@ -6000,9 +6038,46 @@ def worker_portal(request):
     enrolled_worker_module_ids = Task.objects.filter(assigned_to=request.user).values_list('work_module_id', flat=True).distinct()
     enrolled_users_ids2 = request.user.enrolled_modules.values_list('id', flat=True)
     all_enrolled_ids = set(list(enrolled_worker_module_ids) + list(enrolled_users_ids2))
-    available_modules = WorkModule.objects.filter(allow_enrollment=True, is_archived=False).exclude(id__in=all_enrolled_ids).order_by('-created_at')
+    available_modules = WorkModule.objects.filter(allow_enrollment=True, is_archived=False).exclude(id__in=all_enrolled_ids).annotate(task_count=Count('tasks')).order_by('-created_at')
+
+    # Worker home (read-only): open tasks grouped by when they are due, unread circulars first
+    now = timezone.now()
+    week_end = now + datetime.timedelta(days=7)
+    up = {'overdue': [], 'week': [], 'later': [], 'waiting': []}
+    for t in pending_tasks.select_related('work_module'):
+        if t.status == 'submitted':
+            up['waiting'].append(t)
+        elif t.deadline and t.deadline < now:
+            up['overdue'].append(t)
+        elif t.deadline and t.deadline <= week_end:
+            up['week'].append(t)
+        else:
+            up['later'].append(t)
+    wt_up_groups = [
+        {'key': 'overdue', 'en': 'Overdue', 'ar': 'متأخرة', 'tasks': up['overdue']},
+        {'key': 'week', 'en': 'Next 7 days', 'ar': 'خلال الأيام السبعة القادمة', 'tasks': up['week']},
+        {'key': 'later', 'en': 'Later', 'ar': 'لاحقًا', 'tasks': up['later']},
+        {'key': 'waiting', 'en': 'Waiting for review', 'ar': 'بانتظار المراجعة', 'tasks': up['waiting']},
+    ]
+    hour = timezone.localtime(now).hour
+    for t in up['week']:
+        t.wt_due_ar = _ar_date(t.deadline)
+    n_week, n_late = len(up['week']), len(up['overdue'])
+    head_ar = (_ar_count(n_week, 'مهمة واحدة مستحقة', 'مهمتان مستحقتان', 'مهام مستحقة', 'مهمة مستحقة') + ' خلال الأيام السبعة القادمة') if n_week else 'لا مهام مستحقة خلال الأيام السبعة القادمة'
+    if n_late:
+        head_ar += '، و' + _ar_count(n_late, 'مهمة واحدة متأخرة', 'مهمتان متأخرتان', 'مهام متأخرة', 'مهمة متأخرة')
 
     context = {
+        'wt_today_ar': _ar_date(timezone.localdate()),
+        'wt_head_ar': head_ar,
+        'wt_up_groups': wt_up_groups,
+        'wt_up_open': len(up['overdue']) + len(up['week']) + len(up['later']),
+        'wt_up_overdue': len(up['overdue']),
+        'wt_up_week': len(up['week']),
+        'wt_greeting': 'morning' if hour < 12 else ('afternoon' if hour < 18 else 'evening'),
+        'wt_today_date': timezone.localdate(),
+        'wt_circulars': sorted(my_correspondence, key=lambda r: r['acknowledged'])[:5],
+        'wt_waiting_review': submissions_stats['submitted'] + submissions_stats['under_review'],
         'my_tasks': my_tasks,
         'tasks_stats': tasks_stats,
         'corr_stats': corr_stats,

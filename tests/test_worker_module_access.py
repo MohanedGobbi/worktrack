@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from users.models import CustomUser
@@ -12,6 +12,10 @@ def make_user(email, role='worker'):
         role=role, username=email,
     )
 
+@override_settings(STORAGES={
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+})
 class WorkerModuleAccessTest(TestCase):
     def setUp(self):
         self.worker_assigned = make_user('worker1@test.com', 'worker')
@@ -61,8 +65,8 @@ class WorkerModuleAccessTest(TestCase):
         url = reverse('worker-portal')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        # Check if the "Enter Dashboard" text is present
-        self.assertContains(response, "Enter Dashboard")
+        # The module card's open link is present
+        self.assertContains(response, "Open module")
         # Check if it links to the correct module
         module_url = reverse('module-dashboard', args=[self.module.slug])
         self.assertContains(response, module_url)

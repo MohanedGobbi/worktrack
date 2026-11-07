@@ -12,7 +12,7 @@
             </h1>
             <p>
                 <span class="lang-en">{{ wt_today_date|date:"l j F" }} · {% if c.review %}{{ c.review }} submission{{ c.review|pluralize }} wait{{ c.review|pluralize:"s," }} for your review{% else %}nothing is waiting for your review{% endif %}</span>
-                <span class="lang-ar">{{ wt_today_date|date:"j/n/Y" }} · {% if c.review %}بانتظار مراجعتك: {{ c.review }}{% else %}لا شيء بانتظار مراجعتك{% endif %}</span>
+                <span class="lang-ar">{{ wt_today_ar }} · {{ wt_review_ar }}</span>
             </p>
         </div>
         <div class="wt-home-actions">

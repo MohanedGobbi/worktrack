@@ -21,13 +21,14 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 | Landing page `/` (3D stack + scroll story, sign-in built in) | Done, reviewed |
 | Sign-in, register, 4 password-reset pages, CSRF page | Done |
 | Manager/admin home `/dashboard/` ("Roadmap first") | Done, reviewed: **ship** |
+| Worker home `/worker-portal/` ("Due list first") | Done, reviewed (see `.impeccable/surfaces/templates-pages-worker_portal-html.md`) |
 | Old green/crimson design, old banner images, old CSS files | Removed |
 | ~55 other pages | **Theme applied, but old layouts and inline styles remain** |
 
 ### Next, in priority order
-1. **Set up git** (`git init` and commit). There is no version control yet; the original zip `../منصة ادارة المهام.zip` is the only backup.
+1. ~~Set up git~~ Done (branch `main`).
 2. **Phase 1, daily work:**
-   - `worker_portal.html` (the worker home)
+   - ~~`worker_portal.html` (the worker home)~~ Done
    - tasks: `tasks_list`, `task_detail`, `task_form`, `task_kanban`, `task_calendar`
    - submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`
    - `module_dashboard`
@@ -55,7 +56,8 @@ Last updated: 2026-11-07. Read this first, then `PRODUCT.md` (product truth) and
 - **Signal Blue is not a brand input.** If a customer sets a non-blue brand colour, links, focus rings, the top 3D slab and the banner glow stay blue.
 - **Super Admin role badge is red** (on the admin pages).
 - **`templates/messaging/messenger.html`** is not referenced anywhere (probably dead).
-- **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you".
+- **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you". (Worker `tester@test.local`, pk 165, now has 8 dated demo tasks covering every worker-home group, one sent back and one waiting for review.)
+- **Notes for workers.** The todo endpoints (`corr_todo_*`) were manager-only, so the shell notes drawer never worked for workers. Now `_can_use_todos` lets anyone manage their own general (module-less) notes; module to-dos stay manager-only. Managers can still edit any todo by id (pre-existing, unchanged).
 - **Stale demo passwords.** The accounts in `docs/guides/USER_CREDENTIALS_REFERENCE.md` no longer match the database.
 
 ## 2b. Customization requirement (applies to ALL remaining work)
@@ -92,7 +94,7 @@ Planned work for this: (a) a terminology/glossary table and template tag; (b) ed
 .venv/Scripts/python manage.py check
 ```
 - **Python environment:** `.venv` uses Python 3.12 with `requirements.txt` installed (Django 6.0.10 resolved from `>=5.0`).
-- **Desktop app launcher:** `../.claude/launch.json` defines `worktrack` (auto-reload is on).
+- **Desktop app launcher:** `../.claude/launch.json` defines `worktrack` (port 8000) and `worktrack-8001` (use it when another session already holds 8000). Auto-reload is on; if a page renders with an empty context after many quick edits, restart the server.
 - **Database:** SQLite `db.sqlite3`. It holds demo data plus `SiteConfiguration.theme_preset='rowd'`.
 - **Signing in for local testing:** the demo passwords are stale (§2). Create a session for an existing user in the shell and set it as the `sessionid` cookie in the browser. **Delete the session afterwards**, because it works as a real login.
 
