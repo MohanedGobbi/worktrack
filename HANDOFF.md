@@ -34,14 +34,30 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 - **Independent review** (one for the sprint) found 10 issues; all fixed in the last Sprint 1 commit: `clean_rich` crashed on nested `<svg>/<template>` content; `clean_text` ate text like `x<y` (now only well-formed tags are removed, a stray `<` stays as text); `.env` values for `CSRF_TRUSTED_ORIGINS`/`SECURE_COOKIES` were ignored (read with `os.getenv`); `new_institution --dry-run` wrote the logo file and a given password was silently ignored for an existing admin (now warned; `WT_ADMIN_PASSWORD` env var supported); stored email templates had the first message frozen in (migration `notifications.0005`); global map popups and dashboard calendar titles were unescaped; conversation previews now strip tags; an invalid Site Settings POST showed unsaved values in the shell.
 - **Known gap found:** page banners always use white text, so a very light brand colour makes banner text hard to read (the preview shows it). Consider deriving banner text from `--wt-on-brand` when doing the Signal Blue work.
 
-### Sprint 2: finish Phase 1
+### Sprint 2: finish Phase 1 — DONE 2026-11-08
 `notifications`, `profile`, `worker_performance`, built from the existing parts, no layout questions.
+- **Notifications** (`/notifications/`): filter bar, day groups (Today / Yesterday / Earlier this week / Older), each row links to its task, submission or correspondence (`_notification_url`), mark read / delete in place. Types and their EN/AR labels and icons: `WT_NOTIF_TYPES` in `core/template_views.py`.
+- **Profile** (`/profile/`): identity card + details, password (Django validators, stays signed in), email switches, recent sign-ins. Field errors travel in the session (`pf_errors`) back to the section. Theme/language "preferences" removed (no dark theme; language comes from the switcher).
+- **My score** (`/performance/`): KPI engine score for the current month with the install's weights, six calendar months of CSS bars, facts, recent reviews. Managers may pick people from `get_teammates()` only. Linked as "My score" from the worker home and profile, and from manager analytics with `?user_id=`.
+- **Still English-only data:** notification titles and messages are written in English by the code that creates them (signals and views). Make them bilingual when the glossary work happens.
 
-### Sprint 3: remaining pages (follow the owner decisions below)
+
+### Sprint 3: remaining pages — DONE 2026-11-08 (see "Sprint 3 results" below; follow the owner decisions)
 - **Rebuild (about 8, daily manager use):** `manager_portal`, `kpi_dashboard` + `manager_analytics` (consider merging), correspondence list / detail / form, `attendance/*`, `admin_users` + `create_user`.
 - **Restyle with shared CSS only (about 15):** archives, `global_map`, template dashboard / form / builder, `translation_manager`, `host_management`, `audit_logs`, `offline_map_manager`, `version_data_archive`, groups, `todo_management`, `organizational_intelligence`, `roadmap`, `messaging/config`, `messaging/inspect_user`. Use one "legacy bridge" block in `app.css` that maps their old classes onto tokens, rather than rewriting their HTML.
 - **Hide for v1:** whatever the owner does not need yet. Hide through sidebar visibility (data, `SidebarVisibilityRule`), not by deleting code.
 - Also: the home dashboard's module toolbar row and table view (still legacy).
+
+### Sprint 3 results
+- **v1 hiding is real now.** `core/features.py`: `feature_required('<key>')` wraps the URLs of the hidden pages (they redirect to the dashboard), and links read `sb_rules.<key>`. Keys: `global_map`, `org_intelligence`, `offline_maps`, `roadmap`, `templates`, `todo_management`, `version_archive`, `host_management`, `messenger_admin` (config + inspect), `translations`. Defaults in `SidebarVisibilityRule.initialize_defaults()` and migration `users.0019`; switch back on in Admin console > sidebar visibility (nothing was deleted). `new_institution` has `hide_sidebar` / `show_sidebar`. The dev DB has triplicate rows for `global_map` and `org_intelligence` (older data); the update works on all of them, but `get_or_create` on those keys would raise MultipleObjectsReturned. Clean them before shipping.
+- **Uploads are served safely.** `safe_media_serve` (urls.py) sends nosniff and a CSP without scripts for everything under `/media/`, and makes html/svg/xml/js download. Photos go through `core/uploads.py::process_photo` (decode, re-encode, server-made name). Correspondence files are limited to document types and 25 MB (`core/forms.py::check_documents`). Task attachments and messenger files are still accepted without a type check; they are protected by the serve policy only.
+- **Users** (`/management/users/`): list + create/edit on `UserAdminForm`. Role decides `is_superuser`/`is_staff`. Guards: only admin cannot be demoted/deactivated/deleted, no self-deactivate. Sign in as is POST-only.
+- **Correspondence** (`/correspondence/...`): list, detail (document viewer, acknowledgements), form. Access via `_corr_visible` / `_can_manage_corr`. The legacy "task of type correspondence" records are still mirrored into `Correspondence` by `_sync_legacy_correspondence` on list load (matches by reference or title); retire that once no install has such tasks.
+- **Team** (`/analytics/`, name `manager-analytics`): replaces manager portal, team analytics and KPI dashboard (old URLs redirect; their templates are gone). Scores from `kpi.engine.month_scores` (tested equal to the engine). Team = people who report to the manager or share a work group; admin sees everyone.
+- **Audit log** (`/management/audit-logs/`): rebuilt; administrators only (managers lost access, it was never linked for them).
+- **Restyle-only pages:** archived modules got the standard page head. Groups, group form and attendance already follow the theme and had no overflow in a phone/Arabic sweep, so the planned "legacy bridge" CSS was not needed; the pages still use old classes inside. Their `<title>` is English only.
+- **Dashboard:** the module toolbar and list view work and follow the theme; only the search placeholder and the "Uncategorized" label were made bilingual. A full rebuild of that block (about 700 lines of toolbar and drag-and-drop group JS) was not done; do it with the next dashboard pass if the owner wants it.
+- Cache versions: `app.css?v=48`.
 
 ### Sprint 4: release
 - One independent review over everything rebuilt since the worker home (tasks, submissions, module page, messenger, Sprint 2 and 3 pages); fix what it finds.
@@ -83,13 +99,13 @@ Glossary / terminology table, editable landing and sign-in copy, the University 
 
 ### Next, in priority order
 1. ~~Set up git~~ Done (branch `main`).
-2. **Phase 1, daily work:**
+2. **Phase 1, daily work:** (all done after Sprint 2)
    - ~~`worker_portal.html` (the worker home)~~ Done
    - tasks: ~~`tasks_list`, `task_detail`, `task_kanban`, `task_calendar`, `task_form`~~ Done (independent review skipped at the owner's request; run one before calling them finished).
    - ~~submissions: `submissions_list`, `submission_detail`, `submission_form`, `submission_versions`~~ Done (no independent review yet). Review scores are now 0–100, matching `Submission.score` and the KPI engine.
    - ~~`module_dashboard`~~ Done ("Task timeline first"; no independent review yet)
    - ~~`messaging/messenger_page`~~ Hardened in place (not rebuilt): message HTML sanitized, Font Awesome icons, subpath-safe URLs, translation kept off user text. It still uses the local Tailwind file for layout.
-   - `notifications`, `profile`, `worker_performance`
+   - ~~`notifications`, `profile`, `worker_performance`~~ Done (Sprint 2)
 3. **Phase 2, manager tools:**
    - `manager_portal`, `manager_analytics`, `kpi_dashboard`
    - modules: `module_form`, `available_modules`, `archived_modules`
@@ -247,7 +263,7 @@ print('PROBLEMS', bad)
 - **Escaping in scripted edits.** Python string escapes inside shell heredocs turned `\f`, `\b` and `\1` into control bytes twice. That broke `app.css` parsing (everything after the bad rule was ignored) and a middleware regex. Write edit scripts to a file and use `chr(92)` for backslashes, or use a file-editing tool. After any scripted edit, scan for bytes below 0x20.
 - **Line endings in scripted edits.** Python's text mode on Windows writes CRLF, which turned whole LF files into one big diff (fixed in `48935ad`). Use `open(p, encoding='utf-8', newline='')` for reads and writes, or edit with a file-editing tool.
 - **Template cache.** With `runserver --noreload`, Django caches templates, so edits don't show until a restart. The launcher now runs with auto-reload.
-- **Asset caching.** Bump the `?v=` cache-busters when editing CSS/JS: `app.css?v=41` (in `base.html` and `public/_head.html`), `public.css?v=8`, `site-settings.js?v=3`, `i18n.js?v=3.2`, `stack-scene.js?v=2`.
+- **Asset caching.** Bump the `?v=` cache-busters when editing CSS/JS: `app.css?v=48` (in `base.html` and `public/_head.html`), `public.css?v=8`, `site-settings.js?v=3`, `i18n.js?v=3.2`, `stack-scene.js?v=2`.
 - **Old page scripts write inline styles.** For example, `dashboard.html` set margins on `.dashboard-main-area`. The shell's sidebar offset is therefore padding on `.wt-shell`, not a margin.
 - **Old page CSS uses `!important` widely.** Overrides need higher specificity (`.wt-app ...`) or a rebuilt block.
 - **`100vw` includes the scrollbar.** Use `%` widths, or RTL pages get sideways scroll.
