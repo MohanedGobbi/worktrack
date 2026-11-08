@@ -221,7 +221,7 @@ class UserAdminForm(forms.Form):
             user = self.instance or User()
             user.email = d['email']
             if not user.username:
-                user.username = d['email']
+                user.username = d['email'][:150]
             user.first_name, user.last_name = d['first_name'].strip(), d['last_name'].strip()
             user.role = d['role']
             is_admin = d['role'] == 'super_admin'

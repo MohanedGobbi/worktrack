@@ -6,7 +6,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['id', 'position', 'hire_date', 'phone', 'bio', 'avatar', 'manager']
-        read_only_fields = ['id']
+        # Who someone reports to and their photo are set in the admin pages / profile page, not through this API.
+        read_only_fields = ['id', 'hire_date', 'avatar', 'manager']
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -15,7 +16,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'first_name', 'last_name', 'role', 'department', 'is_active', 'profile', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'role', 'is_active', 'department']
 
 
 class CustomUserDetailSerializer(serializers.ModelSerializer):
@@ -24,7 +25,7 @@ class CustomUserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'first_name', 'last_name', 'role', 'department', 'is_active', 'profile', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'role', 'is_active', 'department']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -33,15 +34,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CustomUser
-        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm', 'role']
-    
+        fields = ['email', 'first_name', 'last_name', 'password', 'password_confirm']
+        
     def validate(self, data):
         if data['password'] != data.pop('password_confirm'):
             raise serializers.ValidationError({"password": "Passwords do not match"})
         return data
     
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(**validated_data)
+        # Never take a role from the request: new accounts are staff; administrators change roles in the admin pages.
+        user = CustomUser.objects.create_user(role='worker', **validated_data)
         return user
 
 

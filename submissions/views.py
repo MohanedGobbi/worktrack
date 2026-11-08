@@ -21,6 +21,13 @@ class SubmissionViewSet(viewsets.ModelViewSet):
     filterset_fields = ['task', 'worker', 'status']
     ordering_fields = ['created_at', 'submitted_at']
     
+    def get_permissions(self):
+        # Staff create their own submissions; changing or deleting one afterwards (status, score, feedback) is a
+        # reviewer's job, so a worker cannot approve or score their own work through the API.
+        if self.action in ('update', 'partial_update', 'destroy'):
+            return [permissions.IsAuthenticated(), IsManager()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return SubmissionDetailSerializer

@@ -18,6 +18,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'deadline', 'priority']
     filterset_fields = ['status', 'priority']
     
+    def get_permissions(self):
+        # Staff read what is assigned to them; creating, changing and deleting tasks is for managers and administrators.
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [permissions.IsAuthenticated(), IsManager()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return TaskDetailSerializer

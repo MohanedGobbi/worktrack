@@ -81,8 +81,10 @@ class KPIWeightViewSet(viewsets.ModelViewSet):
     def current(self, request):
         """Get or update current KPI weights."""
         weights = KPIWeight.get_weights()
-        
+
         if request.method == 'PUT':
+            if request.user.role != 'super_admin':
+                return Response({'detail': 'Only administrators can change the KPI weights.'}, status=status.HTTP_403_FORBIDDEN)
             serializer = KPIWeightSerializer(weights, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()

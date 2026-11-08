@@ -234,9 +234,9 @@ urlpatterns = [
     path('admin-dashboard/users/data/<int:user_id>/', get_user_data, name='get-user-data'),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
     path('translations/', feature_required('translations')(translation_manager), name='translation-manager'),
-    path('translations/api/update/', api_update_translation, name='api-update-translation'),
-    path('translations/api/bulk-update/', api_bulk_update_translations, name='api-bulk-update-translations'),
-    path('translations/api/manage/', api_manage_translations, name='api-manage-translations'),
+    path('translations/api/update/', feature_required('translations')(api_update_translation), name='api-update-translation'),
+    path('translations/api/bulk-update/', feature_required('translations')(api_bulk_update_translations), name='api-bulk-update-translations'),
+    path('translations/api/manage/', feature_required('translations')(api_manage_translations), name='api-manage-translations'),
     path('management/users/<int:user_id>/toggle-status/', user_toggle_status, name='user-toggle-status'),
     path('management/users/<int:user_id>/delete/', user_delete, name='user-delete'),
     path('management/kpi/', kpi_dashboard, name='kpi-dashboard'),
@@ -246,9 +246,9 @@ urlpatterns = [
     
     # Host Management UI
     path('admin-dashboard/host-management/', feature_required('host_management')(host_management_view), name='host-management'),
-    path('management/hosts/<int:host_id>/toggle/', toggle_host_status, name='toggle-host-status'),
-    path('management/hosts/<int:host_id>/delete/', delete_host_action, name='delete-host-action'),
-    path('management/hosts/whitelist/<int:attempt_id>/', whitelist_host_action, name='whitelist-host-action'),
+    path('management/hosts/<int:host_id>/toggle/', feature_required('host_management')(toggle_host_status), name='toggle-host-status'),
+    path('management/hosts/<int:host_id>/delete/', feature_required('host_management')(delete_host_action), name='delete-host-action'),
+    path('management/hosts/whitelist/<int:attempt_id>/', feature_required('host_management')(whitelist_host_action), name='whitelist-host-action'),
     
     # ========== API JWT Endpoints ==========
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

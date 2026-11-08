@@ -23,7 +23,7 @@ def feature_required(key):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
             if not feature_enabled(key):
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.path.startswith('/api/'):
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.path_info.startswith('/api/'):
                     from django.http import JsonResponse
                     return JsonResponse({'status': 'error', 'message': 'This feature is switched off.'}, status=404)
                 messages.info(request, 'This feature is not enabled for this install.')

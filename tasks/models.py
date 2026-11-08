@@ -539,6 +539,11 @@ class Correspondence(models.Model):
     status              = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     deadline            = models.DateTimeField(null=True, blank=True)
 
+    # Older installs created correspondence as a Task of type 'correspondence'; this links the mirror to it.
+    legacy_task = models.OneToOneField(
+        'Task', on_delete=models.SET_NULL, null=True, blank=True, related_name='mirrored_correspondence'
+    )
+
     # Relations
     work_module = models.ForeignKey(
         WorkModule, on_delete=models.CASCADE, null=True, blank=True,

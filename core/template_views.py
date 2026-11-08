@@ -2443,17 +2443,14 @@ def _sync_legacy_correspondence(user):
         tasks = tasks.filter(Q(work_module__in=WorkModule.get_visible_modules(user)) | Q(work_module__isnull=True, created_by=user) | Q(assigned_to=user)).distinct()
     elif user.role != 'super_admin':
         tasks = tasks.filter(assigned_to=user)
-    for ct in tasks.select_related('work_module', 'created_by'):
-        match = Correspondence.objects.filter(
-            Q(reference_number=ct.reference_number, reference_number__isnull=False) | Q(title=ct.title)).exists()
-        if match:
-            continue
-        corr = Correspondence.objects.create(
+    for ct in tasks.filter(mirrored_correspondence__isnull=True).select_related('work_module', 'created_by'):
+        corr, created = Correspondence.objects.get_or_create(legacy_task=ct, defaults=dict(
             title=ct.title, description=ct.description, correspondence_type=ct.correspondence_type or 'memo',
             reference_number=ct.reference_number, priority=ct.priority, deadline=ct.deadline,
             work_module=ct.work_module, created_by=ct.created_by, cover_image=ct.cover_image,
-            attachment=ct.attachment, status='active')
-        corr.assigned_to.set(ct.assigned_to.all())
+            attachment=ct.attachment, status='active'))
+        if created:
+            corr.assigned_to.set(ct.assigned_to.all())
 
 
 WT_CORR_TYPES = [
@@ -2477,8 +2474,15 @@ def administrative_correspondence(request):
     base = _corr_visible(user)
     mine_assigned = Exists(User.objects.filter(pk=user.pk, assigned_correspondences=OuterRef('pk')))
     mine_acked = Exists(CorrespondenceAcknowledgement.objects.filter(correspondence=OuterRef('pk'), user=user))
+    from django.db.models import IntegerField, Subquery
+    from django.db.models.functions import Coalesce
+    total_sq = (Correspondence.assigned_to.through.objects.filter(correspondence_id=OuterRef('pk'))
+                .values('correspondence_id').annotate(n=Count('id')).values('n'))
+    acks_sq = (CorrespondenceAcknowledgement.objects.filter(correspondence=OuterRef('pk'))
+               .values('correspondence').annotate(n=Count('id')).values('n'))
     qs = (base.filter(status='active').select_related('work_module', 'created_by')
-          .annotate(wt_total=Count('assigned_to', distinct=True), wt_acks=Count('acknowledgements', distinct=True),
+          .annotate(wt_total=Coalesce(Subquery(total_sq, output_field=IntegerField()), 0),
+                    wt_acks=Coalesce(Subquery(acks_sq, output_field=IntegerField()), 0),
                     wt_assigned=mine_assigned, wt_acked=mine_acked))
 
     search = request.GET.get('search', '').strip()
@@ -6424,6 +6428,7 @@ def manager_analytics(request):
 
     now = timezone.now()
     today = timezone.localdate()
+    live = Q(work_module__isnull=True) | Q(work_module__is_archived=False)  # tasks without a module count too
     people_qs = _team_people(viewer)
     sort = request.GET.get('sort', 'score')
     search = request.GET.get('search', '').strip()
@@ -6434,11 +6439,11 @@ def manager_analytics(request):
 
     weights = KPIWeight.get_weights()
     scores = month_scores(ids, today, weights) if ids else {}
-    open_tasks = dict(Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False).exclude(status__in=['approved', 'completed'])
+    open_tasks = dict(Task.objects.filter(live, assigned_to__in=ids).exclude(status__in=['approved', 'completed'])
                       .values_list('assigned_to').annotate(n=Count('id', distinct=True)))
-    overdue = dict(Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False, deadline__lt=now).exclude(status__in=['approved', 'completed'])
+    overdue = dict(Task.objects.filter(live, assigned_to__in=ids, deadline__lt=now).exclude(status__in=['approved', 'completed'])
                    .values_list('assigned_to').annotate(n=Count('id', distinct=True)))
-    waiting = dict(Submission.objects.filter(worker__in=ids, status__in=['submitted', 'under_review'], task__work_module__is_archived=False)
+    waiting = dict(Submission.objects.filter(Q(task__work_module__isnull=True) | Q(task__work_module__is_archived=False), worker__in=ids, status__in=['submitted', 'under_review'])
                    .values_list('worker').annotate(n=Count('id')))
     for u in everyone:
         sc = scores.get(u.id, {})
@@ -6458,11 +6463,11 @@ def manager_analytics(request):
     # Team numbers (the whole team, not just this page)
     team_total = len(ids)
     avg_score = round(sum(u.wt_score for u in everyone) / len(everyone), 1) if everyone else None
-    team_subs = Submission.objects.filter(worker__in=ids, task__work_module__is_archived=False)
+    team_subs = Submission.objects.filter(Q(task__work_module__isnull=True) | Q(task__work_module__is_archived=False), worker__in=ids)
     review_queue = (team_subs.filter(status__in=['submitted', 'under_review'])
                     .select_related('task', 'task__work_module', 'worker').order_by('submitted_at', 'created_at'))
     review_count = review_queue.count()
-    team_tasks = Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False).distinct()
+    team_tasks = Task.objects.filter(live, assigned_to__in=ids).distinct()
     task_total = team_tasks.count()
     task_done = team_tasks.filter(status__in=['approved', 'completed']).count()
 
@@ -7393,7 +7398,10 @@ def correspondence_delete(request, pk):
     if not _can_manage_corr(request.user, corr):
         messages.error(request, _say(request, 'You cannot delete this correspondence.', 'لا يمكنك حذف هذه المراسلة.'))
         return redirect('correspondence-detail', pk=pk)
+    legacy = corr.legacy_task
     corr.delete()
+    if legacy is not None and legacy.task_type == 'correspondence':
+        legacy.delete()
     messages.success(request, _say(request, 'Correspondence deleted.', 'تم حذف المراسلة.'))
     return redirect('admin-correspondence')
 
@@ -7423,6 +7431,7 @@ def offline_map_manager(request):
     return render(request, 'pages/offline_map_manager.html', context)
 
 
+@login_required(login_url='login')
 def map_tile_proxy(request, layer_type, z, x, y):
     """
     Proxies map tiles from external sources and saves them permanently 
@@ -7511,6 +7520,9 @@ def impersonate_user(request, user_id):
         return redirect('dashboard')
         
     target_user = get_object_or_404(User, id=user_id)
+    if not target_user.is_active:
+        messages.error(request, _say(request, 'That account is deactivated.', 'هذا الحساب معطّل.'))
+        return redirect('user-management')
     # Re-use existing impersonator ID if switching users mid-impersonation
     original_admin_id = request.session.get('impersonator_id', request.user.id)
     
@@ -7530,8 +7542,13 @@ def revert_impersonation(request):
         messages.error(request, 'No active impersonation session found.')
         return redirect('dashboard')
         
-    admin_user = get_object_or_404(User, id=impersonator_id)
-    
+    admin_user = User.objects.filter(id=impersonator_id, is_active=True, role='super_admin').first()
+    if admin_user is None:
+        # The original administrator was demoted or deactivated meanwhile: do not hand the role back.
+        logout(request)
+        messages.error(request, _say(request, 'Please sign in again.', 'يرجى تسجيل الدخول مجددًا.'))
+        return redirect('login')
+
     # Log back into the real admin user
     login(request, admin_user, backend='django.contrib.auth.backends.ModelBackend')
     

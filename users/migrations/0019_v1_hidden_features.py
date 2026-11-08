@@ -19,10 +19,13 @@ def forwards(apps, schema_editor):
     if not Rule.objects.exists():
         return  # fresh install: initialize_defaults() creates everything, already switched off
     for key, en, ar, icon, allowed, v_admin, v_mgr, v_wrk, order in NEW_ROWS:
-        Rule.objects.update_or_create(
-            feature_key=key,
-            defaults={'label_en': en, 'label_ar': ar, 'icon': icon, 'category': 'Hidden in v1', 'is_allowed': allowed,
-                      'visible_admin': v_admin, 'visible_manager': v_mgr, 'visible_worker': v_wrk, 'order': order})
+        values = {'label_en': en, 'label_ar': ar, 'icon': icon, 'category': 'Hidden in v1', 'is_allowed': allowed,
+                  'visible_admin': v_admin, 'visible_manager': v_mgr, 'visible_worker': v_wrk, 'order': order}
+        rows = Rule.objects.filter(feature_key=key)  # older installs can hold duplicates of a key
+        if rows.exists():
+            rows.update(**values)
+        else:
+            Rule.objects.create(feature_key=key, **values)
     Rule.objects.filter(feature_key__in=['global_map', 'org_intelligence']).update(is_allowed=False)
 
 

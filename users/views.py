@@ -16,7 +16,14 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        # Accounts are created and changed in the admin pages (core.forms.UserAdminForm). Through the API only
+        # administrators may write, so a worker cannot change a role or touch another account.
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsSuperAdmin()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return CustomUserDetailSerializer
@@ -27,25 +34,15 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_superuser:
             return CustomUser.objects.all()
+        if not self.request.user.department_id:
+            return CustomUser.objects.filter(pk=self.request.user.pk)
         return CustomUser.objects.filter(department=self.request.user.department)
-    
+        
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """Get current user profile."""
         serializer = CustomUserDetailSerializer(request.user)
         return Response(serializer.data)
-    
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def register(self, request):
-        """Register a new user."""
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response(
-                CustomUserSerializer(user).data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def team(self, request):
@@ -56,7 +53,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        team_members = CustomUser.objects.filter(department=request.user.department)
+        team_members = CustomUser.objects.filter(department=request.user.department) if request.user.department_id else CustomUser.objects.filter(pk=request.user.pk)
         serializer = CustomUserSerializer(team_members, many=True)
         return Response(serializer.data)
 
@@ -64,6 +61,8 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     def toggle_favorite(self, request, pk=None):
         """Toggle a user as favorite for the current user."""
         target_user = self.get_object()
+        if target_user.pk == request.user.pk:
+            return Response({'detail': 'You cannot favourite yourself.'}, status=status.HTTP_400_BAD_REQUEST)
         if request.user.favorite_users.filter(id=target_user.id).exists():
             request.user.favorite_users.remove(target_user)
             is_favorite = False
