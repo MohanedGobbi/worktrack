@@ -1,6 +1,6 @@
 # Handoff: WorkTrack Pro UI rework
 
-Last updated: 2026-11-07 (after Sprint 1). Read this first, then `PRODUCT.md` (product truth) and `DESIGN.md` (the design system).
+Last updated: 2026-11-08 (after Sprint 3, cleanup and first push). Read this first, then `PRODUCT.md` (product truth) and `DESIGN.md` (the design system).
 
 ---
 
@@ -61,11 +61,18 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
   Not fixed: the last-administrator guard is not atomic (two admins removing each other at the same instant could leave none); the submission and KPI-weight REST viewsets are not mounted but were tightened anyway. **Do a whole-API pass in Sprint 4** (list every `urls.py` include and every ViewSet) since the review found this class of problem late.
 - Cache versions: `app.css?v=48`.
 
+### Where things stand (2026-11-08)
+- Sprints 1, 2 and 3 are done, reviewed and fixed; 126 tests pass. Code is on GitHub: https://github.com/MohanedGobbi/worktrack (branch `main`, first push 2026-11-08). Next: Sprint 4.
+- **Cleanup done:** removed the unused 42 MB Tailwind CLI binary and the dead `messenger.html`; `*.zip` is git-ignored. The binary is still in git history (harmless, under GitHub's limit).
+- **Share the project:** `git archive --format=zip --prefix=worktrack/ -o worktrack.zip HEAD` gives a code-only zip (no database, uploads, `.env`, `.venv`). The first zip (10.7 MB) predates `run.bat`.
+- **Run fast (Windows):** double-click `run.bat` in the project, or the Desktop file `WorkTrack Pro.bat`, which calls it through the ASCII junction `C:\Users\gobbi\worktrack` (a Windows shortcut and cmd cannot take the Arabic folder name; if the project folder moves, recreate the junction: `New-Item -ItemType Junction -Path C:\Users\gobbi\worktrack -Target <project folder>`). It migrates, starts the server on 127.0.0.1:8000 and opens the browser. Needs `.venv` and a `.env` with `DEBUG=True`.
+- **Open before launch (carried over):** whole-API pass (every `urls.py` include and ViewSet), atomic last-admin guard, dashboard module toolbar / list view rebuild (works and is themed, not rebuilt), English-only `<title>` on the groups, attendance and archive pages, English-only notification text written by signals, retire the legacy-task correspondence mirror (`_sync_legacy_correspondence`), file type checks for task attachments and messenger files, banner text colour for very light brand colours.
+
 ### Sprint 4: release
 - One independent review over everything rebuilt since the worker home (tasks, submissions, module page, messenger, Sprint 2 and 3 pages); fix what it finds.
 - Install checklist for cPanel/Passenger (subpath, cookies, static, media, backups, first admin via `new_institution`, and `manage.py clean_user_text --apply` once on any install upgraded from before Sprint 1) and a demo-data seed so the product demos well.
 - Delete the machine-made translation rows (see owner decisions).
-- Tag `v1.0`.
+- Tag `v1.0`, then push the tag.
 
 ### After launch (not before)
 Glossary / terminology table, editable landing and sign-in copy, the University of Ghardaia theme and content, a full messenger rebuild on `wt-*` parts (it still uses the local Tailwind file), brand-derived Signal Blue.
