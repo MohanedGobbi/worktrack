@@ -2414,179 +2414,117 @@ def update_group_order(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 
+def _corr_visible(user):
+    """Correspondence this person may see: administrators everything, managers their modules plus what they wrote
+    or received, everyone else what is addressed to them. Items with no module are included."""
+    qs = Correspondence.objects.filter(Q(work_module__isnull=True) | Q(work_module__is_archived=False))
+    if user.role == 'super_admin':
+        return qs
+    if user.role == 'manager':
+        mods = WorkModule.get_visible_modules(user)
+        return qs.filter(Q(work_module__in=mods) | Q(created_by=user) | Q(assigned_to=user)).distinct()
+    return qs.filter(assigned_to=user).distinct()
+
+
+def _can_manage_corr(user, corr):
+    """Edit / delete: administrators; managers for items they wrote or that sit in a module they can see."""
+    if user.role == 'super_admin':
+        return True
+    if user.role != 'manager':
+        return False
+    return corr.created_by_id == user.pk or bool(corr.work_module_id and WorkModule.get_visible_modules(user).filter(pk=corr.work_module_id).exists())
+
+
+def _sync_legacy_correspondence(user):
+    """Older installs created correspondence as tasks of type 'correspondence'. Give each such task a matching
+    Correspondence record (matched by reference number or title) so one list shows both."""
+    tasks = Task.objects.filter(task_type='correspondence').filter(Q(work_module__isnull=True) | Q(work_module__is_archived=False))
+    if user.role == 'manager':
+        tasks = tasks.filter(Q(work_module__in=WorkModule.get_visible_modules(user)) | Q(work_module__isnull=True, created_by=user) | Q(assigned_to=user)).distinct()
+    elif user.role != 'super_admin':
+        tasks = tasks.filter(assigned_to=user)
+    for ct in tasks.select_related('work_module', 'created_by'):
+        match = Correspondence.objects.filter(
+            Q(reference_number=ct.reference_number, reference_number__isnull=False) | Q(title=ct.title)).exists()
+        if match:
+            continue
+        corr = Correspondence.objects.create(
+            title=ct.title, description=ct.description, correspondence_type=ct.correspondence_type or 'memo',
+            reference_number=ct.reference_number, priority=ct.priority, deadline=ct.deadline,
+            work_module=ct.work_module, created_by=ct.created_by, cover_image=ct.cover_image,
+            attachment=ct.attachment, status='active')
+        corr.assigned_to.set(ct.assigned_to.all())
+
+
+WT_CORR_TYPES = [
+    ('circular', 'Circular', 'تعميم', 'fa-bullhorn'),
+    ('directive', 'Directive', 'توجيه', 'fa-compass'),
+    ('memo', 'Memo', 'مذكرة', 'fa-file-lines'),
+    ('notice', 'Notice', 'إشعار', 'fa-bell'),
+    ('decision', 'Decision', 'قرار', 'fa-gavel'),
+]
+WT_PRIORITIES = [('low', 'Low', 'منخفضة'), ('medium', 'Medium', 'متوسطة'), ('high', 'High', 'عالية'), ('critical', 'Critical', 'حرجة')]
+
+
 @login_required(login_url='login')
 def administrative_correspondence(request):
-    """Standalone administrative correspondence page.
-    Shows both legacy Task-based items AND new Correspondence-model items.
-    """
+    """Correspondence list: filter bar, then one row per item with how many recipients have acknowledged it."""
+    from django.core.paginator import Paginator
+    from django.db.models import Exists, OuterRef
     user = request.user
+    _sync_legacy_correspondence(user)
 
-    # ── Legacy: Task-based correspondence ───────────────────────────────────
-    task_qs = Task.objects.filter(
-        task_type='correspondence',
-        work_module__is_archived=False
-    ).select_related('work_module', 'created_by')
-    
-    if user.role == 'super_admin':
-        pass
-    elif user.role == 'manager':
-        visible_modules = WorkModule.get_visible_modules(user)
-        task_qs = task_qs.filter(
-            Q(work_module__in=visible_modules) |
-            Q(work_module__isnull=True, created_by=user) |
-            Q(assigned_to=user)
-        ).distinct()
+    base = _corr_visible(user)
+    mine_assigned = Exists(User.objects.filter(pk=user.pk, assigned_correspondences=OuterRef('pk')))
+    mine_acked = Exists(CorrespondenceAcknowledgement.objects.filter(correspondence=OuterRef('pk'), user=user))
+    qs = (base.filter(status='active').select_related('work_module', 'created_by')
+          .annotate(wt_total=Count('assigned_to', distinct=True), wt_acks=Count('acknowledgements', distinct=True),
+                    wt_assigned=mine_assigned, wt_acked=mine_acked))
+
+    search = request.GET.get('search', '').strip()
+    ctype = request.GET.get('type', '')
+    scope = request.GET.get('scope', '')
+    module_slug = request.GET.get('module', '')
+    selected_module = WorkModule.objects.filter(slug=module_slug).first() if module_slug else None
+    if search:
+        qs = qs.filter(Q(title__icontains=search) | Q(reference_number__icontains=search) | Q(description__icontains=search))
+    if ctype in {t[0] for t in WT_CORR_TYPES}:
+        qs = qs.filter(correspondence_type=ctype)
     else:
-        task_qs = task_qs.filter(assigned_to=user)
-
-    module_slug = request.GET.get('module')
-    selected_module = None
-    if module_slug:
-        selected_module = WorkModule.objects.filter(slug=module_slug).first()
-        if selected_module:
-            task_qs = task_qs.filter(work_module=selected_module)
-
-    correspondence_items = []
-    for ct in task_qs.order_by('-created_at'):
-        total_assigned = ct.assigned_to.count()
-        acknowledged_count = Submission.objects.filter(task=ct, status='approved').count()
-        user_acked = Submission.objects.filter(task=ct, worker=user, status='approved').exists()
-
-        # Find or create corresponding Correspondence model entry
-        corr_match = Correspondence.objects.filter(
-            Q(reference_number=ct.reference_number, reference_number__isnull=False) |
-            Q(title=ct.title)
-        ).first()
-        if not corr_match:
-            corr_match = Correspondence.objects.create(
-                title=ct.title,
-                description=ct.description,
-                correspondence_type=ct.correspondence_type or 'memo',
-                reference_number=ct.reference_number,
-                priority=ct.priority,
-                deadline=ct.deadline,
-                work_module=ct.work_module,
-                created_by=ct.created_by,
-                cover_image=ct.cover_image,
-                attachment=ct.attachment,
-                status='active',
-            )
-            corr_match.assigned_to.set(ct.assigned_to.all())
-
-        correspondence_items.append({
-            'source': 'correspondence',
-            'task': ct,
-            'obj': corr_match,
-            # unified display fields
-            'title': ct.title,
-            'correspondence_type': ct.correspondence_type,
-            'work_module': ct.work_module,
-            'priority': ct.priority,
-            'deadline': ct.deadline,
-            'attachment': ct.attachment,
-            'cover_image': ct.cover_image,
-            'reference_number': ct.reference_number,
-            'created_at': ct.created_at,
-            'detail_url': f'/correspondence/{corr_match.pk}/',
-            'edit_url': f'/correspondence/{corr_match.pk}/edit/',
-            'delete_url': f'/correspondence/{corr_match.pk}/delete/',
-            # ack
-            'total_assigned': total_assigned,
-            'acknowledged_count': acknowledged_count,
-            'ack_pct': int((acknowledged_count / total_assigned * 100)) if total_assigned > 0 else 0,
-            'user_acked': user_acked,
-        })
-
-    # ── New model: Correspondence objects ────────────────────────────────────
-    corr_qs = Correspondence.objects.filter(
-        status='active',
-        work_module__is_archived=False
-    ).select_related('work_module', 'created_by')
-    
-    if user.role == 'super_admin':
-        pass
-    elif user.role == 'manager':
-        visible_modules = WorkModule.get_visible_modules(user)
-        corr_qs = corr_qs.filter(
-            Q(work_module__in=visible_modules) |
-            Q(work_module__isnull=True, created_by=user) |
-            Q(assigned_to=user)
-        ).distinct()
+        ctype = ''
+    if scope == 'waiting':
+        qs = qs.filter(wt_assigned=True, wt_acked=False)
+    elif scope == 'done':
+        qs = qs.filter(wt_acked=True)
     else:
-        corr_qs = corr_qs.filter(assigned_to=user)
+        scope = ''
     if selected_module:
-        corr_qs = corr_qs.filter(work_module=selected_module)
+        qs = qs.filter(work_module=selected_module)
 
-    for c in corr_qs.order_by('-created_at'):
-        total_assigned = c.assigned_to.count()
-        ack_count = c.acknowledgements.count()
-        user_acked = c.acknowledgements.filter(user=user).exists()
-        correspondence_items.append({
-            'source': 'correspondence',  # new model
-            'task': None,
-            'obj': c,
-            'title': c.title,
-            'correspondence_type': c.correspondence_type,
-            'work_module': c.work_module,
-            'priority': c.priority,
-            'deadline': c.deadline,
-            'attachment': c.attachment,
-            'cover_image': c.cover_image,
-            'reference_number': c.reference_number,
-            'created_at': c.created_at,
-            'detail_url': f'/correspondence/{c.pk}/',
-            'edit_url': f'/correspondence/{c.pk}/edit/',
-            'delete_url': f'/correspondence/{c.pk}/delete/',
-            # ack
-            'total_assigned': total_assigned,
-            'acknowledged_count': ack_count,
-            'ack_pct': int((ack_count / total_assigned * 100)) if total_assigned > 0 else 0,
-            'user_acked': user_acked,
-        })
+    page = Paginator(qs.order_by('-created_at'), 15).get_page(request.GET.get('page'))
+    meta = {t[0]: t for t in WT_CORR_TYPES}
+    now = timezone.now()
+    for c in page.object_list:
+        t = meta.get(c.correspondence_type, ('', c.get_correspondence_type_display(), c.get_correspondence_type_display(), 'fa-file-lines'))
+        c.wt_type_en, c.wt_type_ar, c.wt_icon = t[1], t[2], t[3]
+        c.wt_pct = int(c.wt_acks / c.wt_total * 100) if c.wt_total else 0
+        c.wt_late = bool(c.deadline and c.deadline < now and c.wt_total and c.wt_acks < c.wt_total)
 
-    # Sort combined list by created_at desc
-    correspondence_items.sort(key=lambda x: x['created_at'], reverse=True)
-
-    # Stats
-    total = len(correspondence_items)
-    fully_acknowledged = sum(1 for i in correspondence_items if i['ack_pct'] == 100)
-    pending_ack = sum(1 for i in correspondence_items if not i['user_acked'])
-    modules_count = (
-        Task.objects.filter(task_type='correspondence').values('work_module').distinct().count() +
-        Correspondence.objects.values('work_module').distinct().count()
-    )
-
-    stats = {
-        'total': total,
-        'pending_ack': pending_ack,
-        'fully_acknowledged': fully_acknowledged,
-        'modules_count': modules_count,
-    }
-
-    # ── Module TODOs ────────────────────────────────────────────────────────────
-    corr_todos = []
-    pending_corr_todo_count = 0
-    corr_todo_count = 0
-    if selected_module:
-        corr_todos = Todo.objects.filter(work_module=selected_module, created_by=request.user)
-        # For the dashboard, only managers and super_admins should see module-level TODOs
-        # assuming the template checks permissions anyway, but let's pass them
-        corr_todo_count = corr_todos.count()
-        pending_corr_todo_count = corr_todos.filter(status='pending').count()
-        # Only show max 3 pending on the mini-panel
-        corr_todos_preview = corr_todos.filter(status='pending').order_by('-priority', '-created_at')[:3]
-    else:
-        corr_todos_preview = []
-
-    context = {
-        'correspondence_items': correspondence_items,
-        'stats': stats,
-        'selected_module': selected_module,
-        'corr_todos_preview': corr_todos_preview,
-        'pending_corr_todo_count': pending_corr_todo_count,
-        'corr_todo_count': corr_todo_count,
-    }
-    return render(request, 'pages/administrative_correspondence.html', context)
+    params = request.GET.copy()
+    params.pop('page', None)
+    visible = base.filter(status='active')
+    return render(request, 'pages/administrative_correspondence.html', {
+        'page': page,
+        'result_count': page.paginator.count,
+        'total_count': visible.count(),
+        'waiting_count': visible.filter(assigned_to=user).exclude(acknowledgements__user=user).distinct().count(),
+        'search': search, 'ctype': ctype, 'scope': scope, 'selected_module': selected_module,
+        'wt_filtered': bool(search or ctype or scope or selected_module),
+        'wt_qs': params.urlencode(),
+        'wt_corr_types': WT_CORR_TYPES,
+        'can_create': user.role in ('manager', 'super_admin'),
+        'can_manage_all': user.role in ('manager', 'super_admin'),
+    })
 
 
 # ── Module TODO Views (Administrative Correspondence) ─────────────────────────
@@ -7374,266 +7312,177 @@ def submission_summary_export_pdf(request, task_id):
 
 @login_required(login_url='login')
 def correspondence_list(request):
-    """Reuse the existing administrative_correspondence view for the new model.
-    Shows both legacy Task-based items AND new Correspondence model items."""
+    """Alias of the list view."""
     return administrative_correspondence(request)
+
+
+def _corr_or_redirect(request, pk):
+    """(corr, None) when this user may see the item, else (None, redirect)."""
+    corr = Correspondence.objects.filter(pk=pk).select_related('work_module', 'created_by').first()
+    if corr is None or not _corr_visible(request.user).filter(pk=pk).exists():
+        messages.error(request, _say(request, 'This correspondence is not available to you.', 'هذه المراسلة غير متاحة لك.'))
+        return None, redirect('admin-correspondence')
+    return corr, None
 
 
 @login_required(login_url='login')
 def correspondence_detail(request, pk):
-    """Detail view for a single Correspondence item with live document panel."""
-    corr = get_object_or_404(Correspondence, pk=pk)
+    """One correspondence: the document, who it went to and who has acknowledged it."""
+    corr, bounce = _corr_or_redirect(request, pk)
+    if bounce:
+        return bounce
     user = request.user
-
-    # Access control
-    if corr.work_module and corr.work_module.is_archived and request.user.role != 'super_admin':
-        messages.error(request, "This correspondence belongs to an archived module and is no longer accessible.")
-        return redirect('dashboard')
-
-    # workers only see their assigned items
-    if user.role == 'worker' and not corr.assigned_to.filter(pk=user.pk).exists():
-        messages.error(request, "You do not have access to this correspondence.")
-        return redirect('admin-correspondence')
-
-    # Acknowledgement data
-    ack_qs = corr.acknowledgements.select_related('user').order_by('acknowledged_at')
-    total_assigned = corr.assigned_to.count()
-    ack_count = ack_qs.count()
-    ack_pct = int((ack_count / total_assigned * 100)) if total_assigned > 0 else 0
-    user_acknowledged = corr.acknowledgements.filter(user=user).exists()
-    # Pre-compute acked user PKs for template use (avoids invalid method-call syntax)
-    acked_user_ids = set(corr.acknowledgements.values_list('user_id', flat=True))
-
-    context = {
+    acks = {a.user_id: a for a in corr.acknowledgements.select_related('user')}
+    recipients = list(corr.assigned_to.all().order_by('first_name', 'last_name', 'email'))
+    people = [{'user': u, 'ack': acks.get(u.id)} for u in recipients]
+    recipient_ids = {u.id for u in recipients}
+    others = [a for uid, a in acks.items() if uid not in recipient_ids]
+    total, done = len(recipients), sum(1 for p in people if p['ack'])
+    mine = acks.get(user.id)
+    is_recipient = user.id in recipient_ids
+    meta = {t[0]: t for t in WT_CORR_TYPES}
+    t = meta.get(corr.correspondence_type, ('', corr.get_correspondence_type_display(), corr.get_correspondence_type_display(), 'fa-file-lines'))
+    docs = []
+    if corr.attachment:
+        docs.append({'name': os.path.basename(corr.attachment.name), 'url': corr.attachment.url, 'view': corr.pdf_version.url if corr.pdf_version else corr.attachment.url})
+    for a in corr.attachments.all():
+        docs.append({'name': os.path.basename(a.file.name), 'url': a.file.url, 'view': a.pdf_version.url if a.pdf_version else a.file.url})
+    for d in docs:
+        low = d['view'].lower()
+        d['kind'] = 'pdf' if low.endswith('.pdf') else 'image' if low.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')) else 'file'
+    return render(request, 'pages/correspondence_detail.html', {
         'corr': corr,
-        'ack_list': ack_qs,
-        'total_assigned': total_assigned,
-        'ack_count': ack_count,
-        'ack_pct': ack_pct,
-        'user_acknowledged': user_acknowledged,
-        'acked_user_ids': acked_user_ids,
-        'attachments': corr.attachments.all(),
-        'can_acknowledge': (
-            not user_acknowledged and
-            (user.role == 'worker' or corr.assigned_to.filter(pk=user.pk).exists())
-        ),
-        'can_manage': user.role in ('manager', 'super_admin'),
-    }
-    return render(request, 'pages/correspondence_detail.html', context)
+        'wt_type_en': t[1], 'wt_type_ar': t[2], 'wt_icon': t[3],
+        'docs': docs,
+        'people': people, 'other_acks': others,
+        'total_assigned': total, 'ack_count': done, 'ack_pct': int(done / total * 100) if total else 0,
+        'my_ack': mine,
+        'can_acknowledge': mine is None and (is_recipient or user.role in ('manager', 'super_admin')),
+        'can_manage': _can_manage_corr(user, corr),
+        'is_late': bool(corr.deadline and corr.deadline < timezone.now() and total and done < total),
+    })
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def correspondence_acknowledge(request, pk):
-    """Mark the current user as having acknowledged this correspondence."""
-    corr = get_object_or_404(Correspondence, pk=pk)
+    """Record that the signed-in person has read this correspondence."""
+    corr, bounce = _corr_or_redirect(request, pk)
+    if bounce:
+        return bounce
     user = request.user
-
-    # Only allow if user is assigned
-    if not corr.assigned_to.filter(pk=user.pk).exists() and user.role == 'worker':
-        messages.error(request, "You are not assigned to this correspondence.")
+    if user.role == 'worker' and not corr.assigned_to.filter(pk=user.pk).exists():
+        messages.error(request, _say(request, 'You are not a recipient of this correspondence.', 'لست من مستلمي هذه المراسلة.'))
         return redirect('correspondence-detail', pk=pk)
-
-    note = request.POST.get('note', '')
-    obj, created = CorrespondenceAcknowledgement.objects.get_or_create(
-        correspondence=corr,
-        user=user,
-        defaults={'note': note}
-    )
-    if created:
-        messages.success(request, "You have acknowledged this correspondence.")
-    else:
-        messages.info(request, "You have already acknowledged this correspondence.")
+    _, created = CorrespondenceAcknowledgement.objects.get_or_create(
+        correspondence=corr, user=user, defaults={'note': (request.POST.get('note') or '').strip()[:1000]})
+    messages.success(request, _say(request, 'Marked as acknowledged.', 'تم تسجيل الاطلاع.') if created
+                     else _say(request, 'You had already acknowledged this.', 'سبق أن سجّلت اطلاعك.'))
     return redirect('correspondence-detail', pk=pk)
+
+
+def _corr_form(request, corr=None):
+    """Shared create / edit handler for the correspondence form page."""
+    from core.forms import CorrespondenceForm, check_documents
+    from django.db import transaction
+    user = request.user
+    if user.role not in ('manager', 'super_admin'):
+        messages.error(request, _say(request, 'Only managers can write correspondence.', 'إصدار المراسلات للمديرين فقط.'))
+        return redirect('admin-correspondence')
+    if corr is not None and not _can_manage_corr(user, corr):
+        messages.error(request, _say(request, 'You cannot change this correspondence.', 'لا يمكنك تعديل هذه المراسلة.'))
+        return redirect('correspondence-detail', pk=corr.pk)
+
+    form = CorrespondenceForm(request.POST or None, request.FILES or None, user=user, instance=corr)
+    doc_error = ''
+    if request.method == 'POST':
+        files = request.FILES.getlist('attachment')
+        doc_error = check_documents(files)
+        if form.is_valid() and not doc_error:
+            d = form.cleaned_data
+            with transaction.atomic():
+                obj = corr or Correspondence(created_by=user)
+                obj.title, obj.description = d['title'], d['description']
+                obj.correspondence_type, obj.priority = d['correspondence_type'], d['priority']
+                obj.reference_number = d['reference_number'].strip() or None
+                obj.deadline = form.deadline_value()
+                obj.work_module = d['work_module']
+                if corr is not None and d.get('status'):
+                    obj.status = d['status']
+                if d.get('cover_image'):
+                    obj.cover_image.save(d['cover_image'].name, d['cover_image'], save=False)
+                elif corr is not None and request.POST.get('clear_cover_image') == '1':
+                    obj.cover_image = None
+                if corr is not None:
+                    if request.POST.get('clear_attachment') == '1':
+                        obj.attachment = None
+                    drop = [int(i) for i in request.POST.getlist('delete_attachment') if i.isdigit()]
+                    if drop:
+                        CorrespondenceAttachment.objects.filter(id__in=drop, correspondence=obj).delete()
+                if files and not obj.attachment:
+                    obj.attachment, files = files[0], files[1:]
+                obj.save()
+                for f in files:
+                    CorrespondenceAttachment.objects.create(correspondence=obj, file=f)
+                before = set(obj.assigned_to.values_list('id', flat=True)) if corr is not None else set()
+                chosen = list(d['assigned_to'])
+                obj.assigned_to.set(chosen)
+            for person in chosen:
+                if person.id not in before:
+                    notify_correspondence_assigned(obj, person)
+            messages.success(request, _say(request, 'Correspondence saved.', 'تم حفظ المراسلة.'))
+            return redirect('correspondence-detail', pk=obj.pk)
+        messages.error(request, _say(request, 'Please check the highlighted fields.', 'يرجى مراجعة الحقول المحددة.'))
+
+    if form.is_bound:
+        vals = {k: form.data.get(k, '') for k in ('title', 'description', 'correspondence_type', 'reference_number', 'priority', 'deadline', 'work_module', 'status')}
+        picked = {int(i) for i in form.data.getlist('assigned_to') if str(i).isdigit()}
+    elif corr is not None:
+        vals = {'title': corr.title, 'description': corr.description, 'correspondence_type': corr.correspondence_type,
+                'reference_number': corr.reference_number or '', 'priority': corr.priority,
+                'deadline': corr.deadline.strftime('%Y-%m-%d') if corr.deadline else '',
+                'work_module': str(corr.work_module_id or ''), 'status': corr.status}
+        picked = set(corr.assigned_to.values_list('id', flat=True))
+    else:
+        initial_module = WorkModule.objects.filter(slug=request.GET.get('module', '')).first()
+        vals = {'title': '', 'description': '', 'correspondence_type': 'memo', 'reference_number': '', 'priority': 'medium',
+                'deadline': '', 'work_module': str(initial_module.pk) if initial_module else '', 'status': 'active'}
+        picked = set()
+    return render(request, 'pages/correspondence_form.html', {
+        'form': form, 'corr': corr, 'action': 'edit' if corr else 'create', 'vals': vals, 'picked': picked,
+        'modules': form.fields['work_module'].queryset,
+        'people': form.fields['assigned_to'].queryset,
+        'attachments': corr.attachments.all() if corr else [],
+        'doc_error': doc_error,
+        'wt_corr_types': WT_CORR_TYPES, 'wt_priorities': WT_PRIORITIES,
+    })
 
 
 @login_required(login_url='login')
 def correspondence_create(request):
-    """Create a new Correspondence item."""
-    user = request.user
-    if user.role not in ('manager', 'super_admin'):
-        messages.error(request, "Only managers can create correspondence.")
-        return redirect('admin-correspondence')
-
-    if request.method == 'POST':
-        title               = request.POST.get('title', '').strip()
-        description         = request.POST.get('description', '')
-        correspondence_type = request.POST.get('correspondence_type', 'memo')
-        reference_number    = request.POST.get('reference_number', '').strip() or None
-        priority            = request.POST.get('priority', 'medium')
-        deadline_str        = request.POST.get('deadline', '')
-        module_id           = request.POST.get('work_module')
-        assigned_ids        = request.POST.getlist('assigned_to')
-        attachments_list = request.FILES.getlist('attachment')
-        cover_image      = request.FILES.get('cover_image')
-
-        if not title:
-            messages.error(request, "Title is required.")
-        else:
-            deadline = None
-            if deadline_str:
-                try:
-                    deadline = datetime.datetime.strptime(deadline_str, '%Y-%m-%d')
-                    deadline = timezone.make_aware(deadline)
-                except Exception:
-                    pass
-
-            work_module = None
-            if module_id:
-                work_module = WorkModule.objects.filter(pk=module_id).first()
-
-            corr = Correspondence.objects.create(
-                title=title,
-                description=description,
-                correspondence_type=correspondence_type,
-                reference_number=reference_number,
-                priority=priority,
-                deadline=deadline,
-                work_module=work_module,
-                created_by=user,
-                status='active',
-            )
-            
-            if attachments_list:
-                corr.attachment = attachments_list[0]
-                
-            if cover_image:
-                corr.cover_image = cover_image
-            corr.save()
-
-            if len(attachments_list) > 1:
-                for file in attachments_list[1:]:
-                    CorrespondenceAttachment.objects.create(correspondence=corr, file=file)
-
-            if assigned_ids:
-                assigned_users = User.objects.filter(pk__in=assigned_ids, is_active=True)
-                corr.assigned_to.set(assigned_users)
-                for worker in assigned_users:
-                    notify_correspondence_assigned(corr, worker)
-
-            messages.success(request, f"Correspondence '{corr.title}' created successfully.")
-            return redirect('correspondence-detail', pk=corr.pk)
-
-    # GET — render form, optionally pre-filling from a CorrespondenceTemplate
-    modules = WorkModule.objects.filter(is_archived=False).order_by('name')
-    assignable_users = user.get_teammates().order_by('first_name', 'last_name')
-
-
-    # Pre-select module if coming from a module context
-    initial_module = None
-    module_slug = request.GET.get('module')
-    if module_slug:
-        initial_module = WorkModule.objects.filter(slug=module_slug).first()
-
-    context = {
-        'modules': modules,
-        'assignable_users': assignable_users,
-        'action': 'create',
-        'initial_module': initial_module,
-    }
-    return render(request, 'pages/correspondence_form.html', context)
+    return _corr_form(request)
 
 
 @login_required(login_url='login')
 def correspondence_edit(request, pk):
-    """Edit an existing Correspondence item."""
-    user = request.user
-    if user.role not in ('manager', 'super_admin'):
-        messages.error(request, "Only managers can edit correspondence.")
-        return redirect('correspondence-detail', pk=pk)
-
-    corr = get_object_or_404(Correspondence, pk=pk)
-
-    if request.method == 'POST':
-        corr.title               = request.POST.get('title', corr.title).strip()
-        corr.description         = request.POST.get('description', corr.description)
-        corr.correspondence_type = request.POST.get('correspondence_type', corr.correspondence_type)
-        corr.reference_number    = request.POST.get('reference_number', '').strip() or None
-        corr.priority            = request.POST.get('priority', corr.priority)
-        corr.status              = request.POST.get('status', corr.status)
-        deadline_str             = request.POST.get('deadline', '')
-        module_id                = request.POST.get('work_module')
-        assigned_ids             = request.POST.getlist('assigned_to')
-
-        if deadline_str:
-            try:
-                dl = datetime.datetime.strptime(deadline_str, '%Y-%m-%d')
-                corr.deadline = timezone.make_aware(dl)
-            except Exception:
-                pass
-
-        if module_id:
-            corr.work_module = WorkModule.objects.filter(pk=module_id).first()
-        else:
-            corr.work_module = None
-
-        if 'attachment' in request.FILES:
-            attachments_list = request.FILES.getlist('attachment')
-            if not corr.attachment and attachments_list:
-                corr.attachment = attachments_list[0]
-                attachments_list = attachments_list[1:]
-                
-            for file in attachments_list:
-                CorrespondenceAttachment.objects.create(correspondence=corr, file=file)
-                
-        if 'cover_image' in request.FILES:
-            corr.cover_image = request.FILES['cover_image']
-        elif request.POST.get('clear_cover_image') == '1':
-            corr.cover_image = None
-            
-        if request.POST.get('clear_attachment') == '1':
-            corr.attachment = None
-            
-        delete_att_ids = request.POST.getlist('delete_attachment')
-        if delete_att_ids:
-            CorrespondenceAttachment.objects.filter(id__in=delete_att_ids, correspondence=corr).delete()
-
-        corr.save()
-
-        if assigned_ids:
-            assigned_users = User.objects.filter(pk__in=assigned_ids, is_active=True)
-            # Find newly assigned workers to notify only them (optional, following task_create pattern)
-            # Actually task_create pattern notifies all assigned upon creation. 
-            # For edit, let's notify only the newly added ones for better UX.
-            old_assigned_ids = set(corr.assigned_to.values_list('id', flat=True))
-            new_assigned_ids = set(int(aid) for aid in assigned_ids)
-            added_ids = new_assigned_ids - old_assigned_ids
-            
-            corr.assigned_to.set(assigned_users)
-            
-            if added_ids:
-                added_users = User.objects.filter(id__in=added_ids)
-                for worker in added_users:
-                    notify_correspondence_assigned(corr, worker)
-
-        messages.success(request, "Correspondence updated.")
-        return redirect('correspondence-detail', pk=corr.pk)
-
-    # GET
-    modules = WorkModule.objects.filter(is_archived=False).order_by('name')
-    assignable_users = user.get_teammates().order_by('first_name', 'last_name')
-    attachments = CorrespondenceAttachment.objects.filter(correspondence=corr)
-    context = {
-        'corr': corr,
-        'modules': modules,
-        'assignable_users': assignable_users,
-        'action': 'edit',
-        'attachments': attachments,
-    }
-    return render(request, 'pages/correspondence_form.html', context)
+    corr, bounce = _corr_or_redirect(request, pk)
+    if bounce:
+        return bounce
+    return _corr_form(request, corr)
 
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def correspondence_delete(request, pk):
-    """Delete a Correspondence item."""
-    user = request.user
-    if user.role not in ('manager', 'super_admin'):
-        messages.error(request, "Only managers can delete correspondence.")
+    """Delete a correspondence (administrators, or managers who may manage it)."""
+    corr, bounce = _corr_or_redirect(request, pk)
+    if bounce:
+        return bounce
+    if not _can_manage_corr(request.user, corr):
+        messages.error(request, _say(request, 'You cannot delete this correspondence.', 'لا يمكنك حذف هذه المراسلة.'))
         return redirect('correspondence-detail', pk=pk)
-    corr = get_object_or_404(Correspondence, pk=pk)
     corr.delete()
-    messages.success(request, "Correspondence deleted.")
+    messages.success(request, _say(request, 'Correspondence deleted.', 'تم حذف المراسلة.'))
     return redirect('admin-correspondence')
 
 

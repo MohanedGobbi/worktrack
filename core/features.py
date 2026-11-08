@@ -44,7 +44,11 @@ def safe_media_serve(request, path, document_root=None):
     from django.views.static import serve
     response = serve(request, path, document_root=document_root)
     response['X-Content-Type-Options'] = 'nosniff'
-    response['Content-Security-Policy'] = "script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    # object-src 'none' would stop the browser's built-in PDF viewer, so PDFs get the lighter policy.
+    if path.lower().endswith('.pdf'):
+        response['Content-Security-Policy'] = "script-src 'none'; base-uri 'none'; form-action 'none'"
+    else:
+        response['Content-Security-Policy'] = "script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
     if path.lower().endswith(_DOWNLOAD_ONLY):
         response['Content-Disposition'] = 'attachment'
         response['Content-Type'] = 'application/octet-stream'

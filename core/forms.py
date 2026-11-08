@@ -254,3 +254,75 @@ class UserAdminForm(forms.Form):
             profile.save()
             user.work_groups.set(d['groups'])
         return user
+
+
+# ── Correspondence ─────────────────────────────────────────────────────────
+
+DOCUMENT_EXTENSIONS = ('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods', '.odp', '.rtf',
+                       '.txt', '.csv', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.zip')
+MAX_DOCUMENT_BYTES = 25 * 1024 * 1024
+
+
+def check_documents(files):
+    """Error message for the first unacceptable uploaded document, or ''."""
+    for f in files:
+        name = (f.name or '').lower()
+        if not name.endswith(DOCUMENT_EXTENSIONS):
+            return f'"{f.name}" is not an allowed file type.'
+        if f.size > MAX_DOCUMENT_BYTES:
+            return f'"{f.name}" is larger than 25 MB.'
+    return ''
+
+
+class CorrespondenceForm(forms.Form):
+    """Create / edit an administrative correspondence (circular, directive, memo, notice, decision)."""
+
+    title = forms.CharField(max_length=255)
+    description = forms.CharField(max_length=20000, required=False)
+    correspondence_type = forms.ChoiceField()
+    reference_number = forms.CharField(max_length=120, required=False)
+    priority = forms.ChoiceField()
+    deadline = forms.DateField(required=False, input_formats=['%Y-%m-%d'])
+    work_module = forms.ModelChoiceField(queryset=None, required=False)
+    assigned_to = forms.ModelMultipleChoiceField(queryset=None, required=False)
+    status = forms.ChoiceField(required=False)
+    cover_image = forms.FileField(required=False)
+
+    def __init__(self, *args, user, instance=None, **kwargs):
+        from tasks.models import Correspondence
+        from work_modules.models import WorkModule
+        super().__init__(*args, **kwargs)
+        self.user, self.instance = user, instance
+        self.fields['correspondence_type'].choices = Correspondence.CORRESPONDENCE_TYPE_CHOICES
+        self.fields['priority'].choices = Correspondence.PRIORITY_CHOICES
+        self.fields['status'].choices = Correspondence.STATUS_CHOICES
+        if user.role == 'super_admin':
+            modules = WorkModule.objects.filter(is_archived=False)
+        else:
+            modules = WorkModule.get_visible_modules(user).filter(is_archived=False)
+        self.fields['work_module'].queryset = modules.order_by('name')
+        # Recipients: the people this user works with (everyone, for a super admin).
+        self.fields['assigned_to'].queryset = user.get_teammates().filter(is_active=True).order_by('first_name', 'last_name', 'email')
+
+    def clean_title(self):
+        title = self.cleaned_data['title'].strip()
+        if not title:
+            raise forms.ValidationError('Enter a title.')
+        return title
+
+    def clean_cover_image(self):
+        upload = self.cleaned_data.get('cover_image')
+        if not upload:
+            return None
+        from core.uploads import BadImage, process_photo
+        try:
+            return process_photo(upload, max_side=1200)
+        except BadImage:
+            raise forms.ValidationError('Use a JPEG, PNG, GIF or WebP image under 5 MB.')
+
+    def deadline_value(self):
+        """The deadline as an aware datetime at the end of the chosen day."""
+        import datetime as dt
+        from django.utils import timezone
+        d = self.cleaned_data.get('deadline')
+        return timezone.make_aware(dt.datetime.combine(d, dt.time(23, 59))) if d else None

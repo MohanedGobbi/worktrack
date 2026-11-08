@@ -20,7 +20,12 @@ class CorrespondenceNotificationTest(TestCase):
         self.manager = make_user('manager_corr@test.com', 'manager')
         self.worker1 = make_user('worker_corr1@test.com', 'worker')
         self.worker2 = make_user('worker_corr2@test.com', 'worker')
-        self.module  = WorkModule.objects.create(name='Corr Module', slug='corr-module')
+        self.module  = WorkModule.objects.create(name='Corr Module', slug='corr-module', creator=self.manager)
+        # Recipients must be people the manager works with (a shared group), as the form's picker offers.
+        from work_modules.models import WorkGroup
+        group = WorkGroup.objects.create(name='Corr Team', slug='corr-team')
+        for person in (self.manager, self.worker1, self.worker2):
+            group.members.add(person)
         self.client.force_login(self.manager)
 
     def test_notification_on_correspondence_create(self):
