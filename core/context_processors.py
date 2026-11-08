@@ -198,6 +198,19 @@ def _clean_hex(value, fallback):
     return fallback
 
 
+def _mix_hex(a, b, weight):
+    """weight*a + (1-weight)*b in sRGB, as #rrggbb (used where CSS color-mix cannot be read, e.g. the 3D scene)."""
+    def rgb(h):
+        h = h.lstrip('#')
+        h = ''.join(c * 2 for c in h) if len(h) == 3 else h
+        return [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+    try:
+        x, y = rgb(a), rgb(b)
+    except ValueError:
+        return a
+    return '#' + ''.join(f'{round(weight * p + (1 - weight) * q):02x}' for p, q in zip(x, y))
+
+
 def _wt_theme(config, preset_key, theme_colors):
     """The two brand inputs the WorkTrack design reads. Everything else is derived in CSS.
 
@@ -211,7 +224,7 @@ def _wt_theme(config, preset_key, theme_colors):
         accent = _clean_hex(theme_colors.get('accent'), '#19bedc')
     on_brand = _clean_hex(getattr(config, 'on_brand_color', ''), '#ffffff') if preset_key == 'custom' else '#ffffff'
     return {'brand': brand, 'accent': accent, 'on_brand': on_brand, 'brand_rgb': hex_to_rgb(brand, '0, 51, 160'),
-            'logo_tone': _logo_tone(config)}
+            'logo_tone': _logo_tone(config), 'custom': preset_key == 'custom', 'signal': _mix_hex(brand, accent, 0.75)}
 
 
 _LOGO_TONE_CACHE = {}

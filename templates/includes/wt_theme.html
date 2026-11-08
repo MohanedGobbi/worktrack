@@ -8,6 +8,9 @@
     --wt-accent: {{ wt_theme.accent|default:'#19bedc' }};
     --wt-on-brand: {{ wt_theme.on_brand|default:'#ffffff' }};
     --wt-brand-rgb: {{ wt_theme.brand_rgb|default:'0, 51, 160' }};
+{% if wt_theme.custom %}    /* Custom colours: Signal (links, focus, the top 3D slab, banner glow) follows the brand instead of ROWD blue. */
+    --wt-signal: {{ wt_theme.signal }};
+{% endif %}
 
     /* legacy aliases */
     --color-primary: var(--wt-brand);

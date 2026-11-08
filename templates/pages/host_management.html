@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Host Security Manager - Worktrack Pro{% endblock %}
+{% block title %}Host Security Manager · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>

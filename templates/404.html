@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}404 - Page Not Found · WorkTrack Pro{% endblock %}
+{% block title %}404 - Page Not Found · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">

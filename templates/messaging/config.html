@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load core_tags %}
 
-{% block title %}Messenger Config - WorkTrack Pro{% endblock %}
+{% block title %}Messenger Config · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 {% load static %}
