@@ -23,6 +23,8 @@ set MEDIA_ROOT=%~dp0media_ghardaia
 if not exist "ghardaia_setup.log" (
     echo Setting up the University of Ghardaia for the first time...
     "%PYTHON_EXE%" manage.py new_institution --config institutions\ghardaia\institution.json > ghardaia_setup.log 2>&1
+    rem Demo accounts for testing (DEBUG only); remove this line for a real install.
+    "%PYTHON_EXE%" manage.py load_demo --config institutions\ghardaia\demo.json >> ghardaia_setup.log 2>&1
     type ghardaia_setup.log
     echo.
     echo The administrator password above is also saved in ghardaia_setup.log

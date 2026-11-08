@@ -10,6 +10,7 @@ this folder holds everything specific to the university, applied as data (Site S
 | `faculty-building.jpg` | Banner image behind page heads (under a green overlay). |
 | `partner-afak.jpg` | Partner logo, shown as "In partnership with" next to the ROWD credit. |
 | `campus-poster.jpg` | Spare: campus photo with the logo, for a future sign-in background. |
+| `demo.json` | Demo accounts and sample work for testing (`manage.py load_demo --config institutions/ghardaia/demo.json`, DEBUG only). All use the password `Ghardaia2026!`: `it.admin@` (administrator), `dean@`, `sg@`, `head.registrations@` (managers), `amina@`, `karim@` (staff), all `@ghardaia.local`. Never load it on a real install. |
 
 ## Run it on this computer
 

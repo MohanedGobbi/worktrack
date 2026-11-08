@@ -1,0 +1,55 @@
+{
+  "password": "Ghardaia2026!",
+
+  "people": [
+    {"email": "it.admin@ghardaia.local", "first_name": "يوسف", "last_name": "بن عمر", "role": "super_admin",
+     "department": "مصلحة الإعلام الآلي والراديوي والإحصاء", "profile": "IT administrator", "position": "مسؤول الإعلام الآلي"},
+    {"email": "dean@ghardaia.local", "first_name": "عبد القادر", "last_name": "حاج أحمد", "role": "manager",
+     "department": "عمادة الكلية", "profile": "Dean", "position": "عميد الكلية"},
+    {"email": "sg@ghardaia.local", "first_name": "فاطمة", "last_name": "بوعلام", "role": "manager",
+     "department": "الأمانة العامة للكلية", "profile": "Secretary general", "position": "الأمينة العامة", "reports_to": "dean@ghardaia.local"},
+    {"email": "head.registrations@ghardaia.local", "first_name": "محمد", "last_name": "قاسمي", "role": "manager",
+     "department": "مصلحة التسجيلات والتوجيه", "profile": "Head of service", "position": "رئيس مصلحة التسجيلات والتوجيه", "reports_to": "dean@ghardaia.local"},
+    {"email": "amina@ghardaia.local", "first_name": "أمينة", "last_name": "بن سالم", "role": "worker",
+     "department": "مصلحة التسجيلات والتوجيه", "profile": "Staff", "position": "موظفة التسجيلات", "reports_to": "head.registrations@ghardaia.local"},
+    {"email": "karim@ghardaia.local", "first_name": "كريم", "last_name": "زيتوني", "role": "worker",
+     "department": "مصلحة التعليم والتقييم", "profile": "Staff", "position": "موظف التعليم والتقييم", "reports_to": "head.registrations@ghardaia.local"}
+  ],
+
+  "groups": [
+    {"slug": "faculty-leadership", "name": "قيادة الكلية",
+     "members": ["dean@ghardaia.local", "sg@ghardaia.local", "head.registrations@ghardaia.local", "it.admin@ghardaia.local"]},
+    {"slug": "student-affairs", "name": "الشؤون البيداغوجية",
+     "members": ["dean@ghardaia.local", "head.registrations@ghardaia.local", "amina@ghardaia.local", "karim@ghardaia.local"]}
+  ],
+
+  "modules": [
+    {"slug": "registrations", "name": "التسجيلات والتوجيه", "description": "ملفات التسجيل والتوجيه للسنة الجامعية 2026-2027",
+     "color": "#116333", "owner": "head.registrations@ghardaia.local", "members": ["amina@ghardaia.local", "karim@ghardaia.local"]},
+    {"slug": "assessment", "name": "التعليم والتقييم", "description": "الامتحانات والمداولات والجداول الزمنية",
+     "color": "#d51f37", "owner": "head.registrations@ghardaia.local", "members": ["karim@ghardaia.local"]}
+  ],
+
+  "tasks": [
+    {"title": "مراجعة ملفات التسجيل لطلبة السنة الأولى", "description": "التحقق من اكتمال الملفات وتسجيل النواقص.",
+     "module": "registrations", "created_by": "head.registrations@ghardaia.local", "assigned_to": ["amina@ghardaia.local"],
+     "priority": "high", "status": "in_progress", "progress": 40, "due_in_days": 3},
+    {"title": "إعداد قوائم التوجيه حسب التخصص", "description": "توزيع الطلبة على تخصصي القانون العام والقانون الخاص.",
+     "module": "registrations", "created_by": "head.registrations@ghardaia.local", "assigned_to": ["amina@ghardaia.local"],
+     "priority": "medium", "status": "pending", "due_in_days": 7},
+    {"title": "تحضير جداول الامتحانات الاستدراكية", "description": "جداول قسم الحقوق وقسم العلوم السياسية.",
+     "module": "assessment", "created_by": "head.registrations@ghardaia.local", "assigned_to": ["karim@ghardaia.local"],
+     "priority": "critical", "status": "pending", "due_in_days": -1},
+    {"title": "إحصاء الطلبة المسجلين في الماستر", "description": "عدد المسجلين حسب التخصص والسنة.",
+     "module": "registrations", "created_by": "head.registrations@ghardaia.local", "assigned_to": ["karim@ghardaia.local"],
+     "priority": "medium", "status": "submitted", "progress": 100, "due_in_days": 2,
+     "submitted_by": "karim@ghardaia.local", "submission_notes": "الإحصاء مرفق حسب التخصص، في انتظار المراجعة."}
+  ],
+
+  "correspondence": [
+    {"title": "تعميم: آجال إيداع ملفات التسجيل في الدكتوراه", "type": "circular", "reference": "ك.ح.ع.س/2026/014", "priority": "high",
+     "description": "يُعلَم كافة الموظفين المعنيين بأن آخر أجل لإيداع ملفات التسجيل في طور الدكتوراه هو نهاية الشهر الجاري.",
+     "created_by": "dean@ghardaia.local", "recipients": ["sg@ghardaia.local", "head.registrations@ghardaia.local", "amina@ghardaia.local", "karim@ghardaia.local"],
+     "due_in_days": 10}
+  ]
+}
