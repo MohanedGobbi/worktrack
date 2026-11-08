@@ -34,3 +34,7 @@ media/
 docs/guides/USER_CREDENTIALS_REFERENCE.md
 docs/guides/USERS_CREATED_SUMMARY.txt
 logs/
+
+# Build tools and archives (not part of the app)
+static/vendor/tailwind/tailwindcss
+*.zip

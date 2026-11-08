@@ -129,7 +129,7 @@ Glossary / terminology table, editable landing and sign-in copy, the University 
 - **Translation table quality.** 3,185 of 3,198 `TranslationItem` rows are machine-generated (`key` starts with `auto.`), and many are wrong (for example "My Performance" → "لي", "Overdue Tasks" → "مهام"). Template-authored bilingual pairs are now protected (see §5), but single-language text still gets these rows. This needs a cleanup or regeneration decision from the owner.
 - **Signal Blue is not a brand input.** If a customer sets a non-blue brand colour, links, focus rings, the top 3D slab and the banner glow stay blue.
 - **Super Admin role badge is red** (on the admin pages).
-- **`templates/messaging/messenger.html`** is not referenced anywhere (probably dead).
+- ~~`templates/messaging/messenger.html`~~ removed (dead); the unused 42 MB Tailwind CLI binary was removed from `static/vendor/tailwind/` too.
 - **Demo data is thin.** 5 modules, only 1 with dates, no submissions awaiting review. Seed richer data to test the roadmap and "Needs you". (Worker `tester@test.local`, pk 165, now has 8 dated demo tasks covering every worker-home group, one sent back and one waiting for review.)
 - **Notes for workers.** The todo endpoints (`corr_todo_*`) were manager-only, so the shell notes drawer never worked for workers. Now `_can_use_todos` lets anyone manage their own general (module-less) notes; module to-dos stay manager-only. Managers can still edit any todo by id (pre-existing, unchanged).
 - ~~Server-side cleaning, production settings, Site Settings, new-institution command~~ Done in Sprint 1.
