@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Archive Vault · Worktrack Pro{% endblock %}
+{% block title %}Archive Vault · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>

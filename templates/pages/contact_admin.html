@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Contact Administration · WorkTrack Pro{% endblock %}
+{% block title %}Contact Administration · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
 
 {% block content %}
 <style>

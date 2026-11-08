@@ -145,7 +145,7 @@ html[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
   color: var(--wt-brand);
 }
 .wt-side-name { min-width: 0; line-height: 1.2; }
-.wt-side-name strong { display: block; font-family: var(--wt-font-display); font-weight: 700; font-size: 0.98rem; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wt-side-name strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-family: var(--wt-font-display); font-weight: 700; font-size: 0.98rem; letter-spacing: -0.01em; overflow: hidden; overflow-wrap: anywhere; }  /* long institution names wrap to two lines */
 html[dir="rtl"] .wt-side-name strong { font-family: var(--wt-font-ar); letter-spacing: 0; }
 .wt-side-name small { display: block; font-size: 0.72rem; color: var(--wt-on-brand-muted); }
 
