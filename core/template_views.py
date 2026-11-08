@@ -5397,214 +5397,93 @@ def admin_dashboard(request):
     return render(request, 'pages/admin_dashboard.html', context)
 
 
-@login_required(login_url='login')
-@require_http_methods(["GET", "POST"])
+def _admin_count(exclude_id=None):
+    qs = User.objects.filter(role='super_admin', is_active=True)
+    return qs.exclude(pk=exclude_id).count() if exclude_id else qs.count()
+
+
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def user_management(request, user_id=None):
-    """User management view - handles list, create, and edit."""
+    """Admin console > Users: one URL family for the list, the create form and the edit form."""
+    from core.forms import UserAdminForm
     if request.user.role != 'super_admin':
-        messages.error(request, 'Permission denied.')
+        messages.error(request, _say(request, 'Permission denied.', 'ليست لديك صلاحية.'))
         return redirect('dashboard')
-    
-    # Check if we are in create or edit mode (dedicated page)
-    is_create = request.resolver_match.url_name == 'user-create'
-    is_edit = request.resolver_match.url_name == 'user-edit' or user_id is not None
-    
-    if is_create or is_edit:
-        target_user = None
-        if user_id:
-            target_user = get_object_or_404(User, id=user_id)
-        
+
+    mode = request.resolver_match.url_name
+    if mode in ('user-create', 'user-edit') or user_id is not None:
+        target = get_object_or_404(User, id=user_id) if user_id else None
+        form = UserAdminForm(request.POST or None, request.FILES or None, instance=target, actor=request.user)
+        if request.method == 'POST' and form.is_valid():
+            user = form.save()
+            name = user.get_full_name() or user.email
+            messages.success(request, _say(request, f'{name} saved.', f'تم حفظ {name}.'))
+            return redirect('user-management')
         if request.method == 'POST':
-            email = request.POST.get('email')
-            first_name = request.POST.get('first_name')
-            last_name = request.POST.get('last_name')
-            password = request.POST.get('password')
-            role = request.POST.get('role')
-            department_id = request.POST.get('department')
-            new_department_name = request.POST.get('new_department_name')
-            is_superuser = request.POST.get('is_superuser') == 'on'
-            manager_id = request.POST.get('manager')
-            
-            if target_user:
-                # Editing existing user
-                try:
-                    target_user.email = email
-                    target_user.first_name = first_name
-                    target_user.last_name = last_name
-                    if role:
-                        target_user.role = role
-                    
-                    if password:
-                        target_user.set_password(password)
-                    
-                    if new_department_name:
-                        dept, _ = Department.objects.get_or_create(name=new_department_name)
-                        target_user.department = dept
-                    elif department_id:
-                        target_user.department = Department.objects.get(id=department_id)
-                    else:
-                        target_user.department = None
-                    
-                    # Update preferences
-                    target_user.email_notifications = request.POST.get('email_notifications') == 'on'
-                    target_user.task_notifications = request.POST.get('task_notifications') == 'on'
-                    target_user.submission_notifications = request.POST.get('submission_notifications') == 'on'
-                    
-                    if 'theme' in request.POST:
-                        target_user.theme = request.POST.get('theme')
-                    if 'language' in request.POST:
-                        target_user.language = request.POST.get('language')
-                        
-                    target_user.save()
-                    
-                    profile, _ = UserProfile.objects.get_or_create(user=target_user)
-                    
-                    # Update profile details
-                    if 'position' in request.POST:
-                        profile.position = request.POST.get('position')
-                    if 'phone' in request.POST:
-                        profile.phone = request.POST.get('phone')
-                    if 'bio' in request.POST:
-                        profile.bio = request.POST.get('bio')
-                    if manager_id:
-                        profile.manager = User.objects.get(id=manager_id)
-                    else:
-                        profile.manager = None
-                    if 'avatar' in request.FILES:
-                        if profile.avatar:
-                            try: profile.avatar.delete(save=False)
-                            except Exception: pass
-                        profile.avatar = request.FILES['avatar']
-                    profile.save()
-                    
-                    # Update groups
-                    group_ids = [gid for gid in request.POST.getlist('groups') if str(gid).isdigit()]
-                    target_user.work_groups.set(WorkGroup.objects.filter(id__in=group_ids))
-
-                    messages.success(request, f'User "{target_user.get_full_name()}" updated successfully.')
-                    return redirect('user-management')
-                except Exception as e:
-                    messages.error(request, f'Error updating user: {str(e)}')
-            else:
-                # Creating new user
-                if not email or not password:
-                    messages.error(request, 'Email and password are required.')
-                elif User.objects.filter(email=email).exists():
-                    messages.error(request, 'User with this email already exists.')
-                else:
-                    try:
-                        new_user = User.objects.create_user(
-                            email=email,
-                            password=password,
-                            first_name=first_name,
-                            last_name=last_name,
-                            role=role or 'worker',
-                            is_superuser=is_superuser,
-                            is_staff=is_superuser,
-                            admin_owner=request.user.admin_owner
-                        )
-                        
-                        if new_department_name:
-                            dept, _ = Department.objects.get_or_create(name=new_department_name)
-                            new_user.department = dept
-                        elif department_id:
-                            new_user.department = Department.objects.get(id=department_id)
-                        
-                        # Set preferences
-                        new_user.email_notifications = request.POST.get('email_notifications') == 'on'
-                        new_user.task_notifications = request.POST.get('task_notifications') == 'on'
-                        new_user.submission_notifications = request.POST.get('submission_notifications') == 'on'
-                        
-                        if 'theme' in request.POST:
-                            new_user.theme = request.POST.get('theme')
-                        if 'language' in request.POST:
-                            new_user.language = request.POST.get('language')
-                            
-                        new_user.save()
-                        
-                        # Assign groups
-                        group_ids = [gid for gid in request.POST.getlist('groups') if str(gid).isdigit()]
-                        if group_ids:
-                            new_user.work_groups.set(WorkGroup.objects.filter(id__in=group_ids))
-
-                        profile, _ = UserProfile.objects.get_or_create(user=new_user)
-                        
-                        # Set profile details
-                        if 'position' in request.POST:
-                            profile.position = request.POST.get('position')
-                        if 'phone' in request.POST:
-                            profile.phone = request.POST.get('phone')
-                        if 'bio' in request.POST:
-                            profile.bio = request.POST.get('bio')
-                        if manager_id:
-                            profile.manager = User.objects.get(id=manager_id)
-                        if 'avatar' in request.FILES:
-                            profile.avatar = request.FILES['avatar']
-                        profile.save()
-                        
-                        messages.success(request, f'User "{first_name} {last_name}" created successfully.')
-                        return redirect('user-management')
-                    except Exception as e:
-                        messages.error(request, f'Error creating user: {str(e)}')
-
-        # GET request or validation error
-        user_group_ids = list(target_user.work_groups.values_list('id', flat=True)) if target_user else []
-        context = {
-            'target_user': target_user,
-            'is_edit': is_edit,
+            messages.error(request, _say(request, 'Please check the highlighted fields.', 'يرجى مراجعة الحقول المحددة.'))
+        # Values the page shows: what was typed after an error, else what is stored.
+        plain = ['email', 'first_name', 'last_name', 'role', 'department', 'new_department', 'manager', 'position', 'phone', 'bio']
+        flags = ['email_notifications', 'task_notifications', 'submission_notifications']
+        if form.is_bound:
+            vals = {k: form.data.get(k, '') for k in plain}
+            vals.update({k: k in form.data for k in flags})
+            chosen = form.data.getlist('groups')
+        else:
+            vals = {k: ('' if form.initial.get(k) is None else form.initial.get(k)) for k in plain}
+            vals.update({k: bool(form.initial.get(k)) for k in flags})
+            chosen = form.initial.get('groups', [])
+        vals['department'], vals['manager'] = str(vals['department']), str(vals['manager'])
+        return render(request, 'pages/create_user.html', {
+            'form': form,
+            'target_user': target,
+            'is_edit': target is not None,
             'role_choices': User.ROLE_CHOICES,
             'departments': Department.objects.all(),
-            'potential_managers': User.objects.filter(role__in=['manager', 'super_admin']),
-            'all_groups': WorkGroup.objects.all().order_by('order', 'name'),
-            'user_group_ids': user_group_ids,
-        }
-        return render(request, 'pages/create_user.html', context)
+            'potential_managers': form.fields['manager'].queryset,
+            'all_groups': form.fields['groups'].queryset,
+            'selected_groups': [int(g) for g in chosen if str(g).isdigit()],
+            'vals': vals,
+            'is_me': bool(target and target.pk == request.user.pk),
+        })
 
-    # Otherwise, it's the list view (admin_users.html)
-    users = User.objects.all().select_related('department').prefetch_related('profile__manager').order_by('-created_at')
-    
-    # Filters
+    users = User.objects.all().select_related('department', 'profile').order_by('-is_active', 'first_name', 'last_name', 'email')
+    search = request.GET.get('search', '').strip()
     role_filter = request.GET.get('role', '')
     status_filter = request.GET.get('status', '')
-    search = request.GET.get('search', '')
-    
-    if role_filter:
+    if role_filter in dict(User.ROLE_CHOICES):
         users = users.filter(role=role_filter)
-    
+    else:
+        role_filter = ''
     if status_filter == 'active':
         users = users.filter(is_active=True)
     elif status_filter == 'inactive':
         users = users.filter(is_active=False)
-    
+    else:
+        status_filter = ''
     if search:
-        users = users.filter(
-            Q(email__icontains=search) | 
-            Q(first_name__icontains=search) | 
-            Q(last_name__icontains=search)
-        )
-    
+        users = users.filter(Q(email__icontains=search) | Q(first_name__icontains=search) | Q(last_name__icontains=search)
+                             | Q(department__name__icontains=search))
     from django.core.paginator import Paginator
-    paginator = Paginator(users, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'users': page_obj,
-        'page_obj': page_obj,
-        'users_count': users.count(),
-        'role_filter': role_filter,
-        'status_filter': status_filter,
-        'search': search,
+    page = Paginator(users, 20).get_page(request.GET.get('page'))
+    params = request.GET.copy()
+    params.pop('page', None)
+    counts = dict(User.objects.values_list('role').annotate(n=Count('id')))
+    return render(request, 'pages/admin_users.html', {
+        'page': page,
+        'result_count': page.paginator.count,
+        'search': search, 'role_filter': role_filter, 'status_filter': status_filter,
+        'wt_filtered': bool(search or role_filter or status_filter),
+        'wt_qs': params.urlencode(),
         'role_choices': User.ROLE_CHOICES,
-        'departments': Department.objects.all(),
-        'potential_managers': User.objects.filter(role__in=['manager', 'super_admin']),
-        'admins_count': User.objects.filter(role='super_admin').count(),
-        'managers_count': User.objects.filter(role='manager').count(),
-    }
-    
-    return render(request, 'pages/admin_users.html', context)
+        'total_users': sum(counts.values()),
+        'admins_count': counts.get('super_admin', 0),
+        'managers_count': counts.get('manager', 0),
+        'workers_count': counts.get('worker', 0),
+        'inactive_count': User.objects.filter(is_active=False).count(),
+        'my_id': request.user.id,
+        'only_admin_id': User.objects.filter(role='super_admin', is_active=True).values_list('id', flat=True).first() if _admin_count() == 1 else None,
+    })
 
 
 @require_http_methods(["GET", "POST"])
@@ -5622,10 +5501,16 @@ def user_toggle_status(request, user_id):
         return redirect('dashboard')
     
     user = get_object_or_404(User, id=user_id)
-    
+
     if request.method == 'POST':
+        if user.is_active and user.pk == request.user.pk:
+            msg = _say(request, 'You cannot deactivate your own account.', 'لا يمكنك تعطيل حسابك.')
+            return JsonResponse({'status': 'error', 'message': msg}, status=400) if request.headers.get('X-Requested-With') == 'XMLHttpRequest' else (messages.error(request, msg) or redirect('user-management'))
+        if user.is_active and user.role == 'super_admin' and _admin_count(user.pk) == 0:
+            msg = _say(request, 'This is the only administrator.', 'هذا هو المشرف الوحيد.')
+            return JsonResponse({'status': 'error', 'message': msg}, status=400) if request.headers.get('X-Requested-With') == 'XMLHttpRequest' else (messages.error(request, msg) or redirect('user-management'))
         user.is_active = not user.is_active
-        user.save()
+        user.save(update_fields=['is_active', 'updated_at'])
         status_text = "activated" if user.is_active else "deactivated"
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -5636,7 +5521,7 @@ def user_toggle_status(request, user_id):
             })
             
         messages.success(request, f'User {user.email} has been {status_text}.')
-        return redirect('admin_dashboard')
+        return redirect('user-management')
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
 from django.http import JsonResponse
@@ -5680,6 +5565,8 @@ def user_delete(request, user_id):
     # Prevent self-deletion
     if user == request.user:
         return JsonResponse({'status': 'error', 'message': 'You cannot delete your own account.'}, status=400)
+    if user.role == 'super_admin' and user.is_active and _admin_count(user.pk) == 0:
+        return JsonResponse({'status': 'error', 'message': 'This is the only administrator.'}, status=400)
 
     name = user.get_full_name() or user.email
 
@@ -6800,33 +6687,16 @@ def profile_avatar_upload(request):
     if avatar_file.size > 5 * 1024 * 1024:
         messages.error(request, _say(request, 'The photo must be under 5 MB.', 'يجب أن يكون حجم الصورة أقل من 5 ميغابايت.'))
         return redirect('profile')
-    # Decode and re-encode: the stored file is a clean image under a server-made name, so nothing the
-    # uploader appended (HTML, scripts) survives and the extension cannot choose the served content type.
-    import uuid
-    from io import BytesIO
-    from django.core.files.base import ContentFile
+    from core.uploads import BadImage, process_photo
     try:
-        from PIL import Image, ImageOps
-        with Image.open(avatar_file) as im:
-            if (im.format or '').upper() not in ('JPEG', 'PNG', 'GIF', 'WEBP'):
-                raise ValueError('format')
-            im = ImageOps.exif_transpose(im)
-            im.thumbnail((512, 512))
-            has_alpha = im.mode in ('RGBA', 'LA', 'P')
-            out = BytesIO()
-            if has_alpha:
-                im.convert('RGBA').save(out, 'PNG')
-                ext = 'png'
-            else:
-                im.convert('RGB').save(out, 'JPEG', quality=88)
-                ext = 'jpg'
-    except Exception:
+        clean = process_photo(avatar_file)
+    except BadImage:
         messages.error(request, _say(request, 'Use a JPEG, PNG, GIF or WebP image.', 'استخدم صورة بصيغة JPEG أو PNG أو GIF أو WebP.'))
         return redirect('profile')
     if profile_obj.avatar:
         try: profile_obj.avatar.delete(save=False)
         except Exception: pass
-    profile_obj.avatar.save(f'{uuid.uuid4().hex}.{ext}', ContentFile(out.getvalue()), save=False)
+    profile_obj.avatar.save(clean.name, clean, save=False)
     profile_obj.save()
     messages.success(request, _say(request, 'Photo updated.', 'تم تحديث الصورة.'))
     return redirect('profile')
@@ -7871,6 +7741,7 @@ def login_as_page(request):
     })
 
 @login_required(login_url='login')
+@require_http_methods(["POST"])
 def impersonate_user(request, user_id):
     """Enable a super_admin to seamlessly login as another user."""
     is_impersonating = 'impersonator_id' in request.session

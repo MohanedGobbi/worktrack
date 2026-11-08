@@ -117,3 +117,140 @@ class SiteThemeForm(forms.ModelForm):
 
     def clean_app_name(self):
         return (self.cleaned_data.get('app_name') or '').strip()
+
+
+# ── Users (Admin console > Users) ──────────────────────────────────────────
+
+class UserAdminForm(forms.Form):
+    """Create or edit a user. Roles decide privileges: a super admin gets the Django staff/superuser flags,
+    everyone else has them cleared. Passwords go through the project's validators."""
+
+    email = forms.EmailField(max_length=254)
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150, required=False)
+    role = forms.ChoiceField()
+    password = forms.CharField(required=False, strip=False, max_length=128)
+    department = forms.ModelChoiceField(queryset=None, required=False)
+    new_department = forms.CharField(max_length=255, required=False)
+    manager = forms.ModelChoiceField(queryset=None, required=False)
+    groups = forms.ModelMultipleChoiceField(queryset=None, required=False)
+    position = forms.CharField(max_length=255, required=False)
+    phone = forms.CharField(max_length=20, required=False)
+    bio = forms.CharField(max_length=2000, required=False)
+    email_notifications = forms.BooleanField(required=False)
+    task_notifications = forms.BooleanField(required=False)
+    submission_notifications = forms.BooleanField(required=False)
+    avatar = forms.FileField(required=False)
+
+    def __init__(self, *args, instance=None, actor=None, **kwargs):
+        from django.contrib.auth import get_user_model
+        from users.models import Department
+        from work_modules.models import WorkGroup
+        User = get_user_model()
+        super().__init__(*args, **kwargs)
+        self.instance, self.actor = instance, actor
+        self.fields['role'].choices = User.ROLE_CHOICES
+        self.fields['department'].queryset = Department.objects.all()
+        managers = User.objects.filter(role__in=['manager', 'super_admin'], is_active=True)
+        self.fields['manager'].queryset = managers.exclude(pk=instance.pk) if instance else managers
+        self.fields['groups'].queryset = WorkGroup.objects.all().order_by('order', 'name')
+        if instance is None:
+            self.fields['password'].required = True
+            self.initial.update({'role': 'worker', 'email_notifications': True, 'task_notifications': True,
+                                 'submission_notifications': True})
+        else:
+            profile = getattr(instance, 'profile', None)
+            self.initial.update({
+                'email': instance.email, 'first_name': instance.first_name, 'last_name': instance.last_name,
+                'role': instance.role, 'department': instance.department_id,
+                'manager': getattr(profile, 'manager_id', None), 'position': getattr(profile, 'position', ''),
+                'phone': getattr(profile, 'phone', ''), 'bio': getattr(profile, 'bio', ''),
+                'groups': list(instance.work_groups.values_list('pk', flat=True)),
+                'email_notifications': instance.email_notifications, 'task_notifications': instance.task_notifications,
+                'submission_notifications': instance.submission_notifications})
+
+    def clean_email(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        email = User.objects.normalize_email(self.cleaned_data['email'].strip())
+        taken = User.objects.filter(email__iexact=email)
+        if self.instance:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise forms.ValidationError('Another account already uses this email.')
+        return email
+
+    def clean_avatar(self):
+        upload = self.cleaned_data.get('avatar')
+        if not upload:
+            return None
+        from core.uploads import BadImage, process_photo
+        try:
+            return process_photo(upload)
+        except BadImage:
+            raise forms.ValidationError('Use a JPEG, PNG, GIF or WebP image under 5 MB.')
+
+    def clean(self):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.password_validation import validate_password
+        data = super().clean()
+        User = get_user_model()
+        password = data.get('password')
+        if password:
+            probe = self.instance or User(email=data.get('email') or '', first_name=data.get('first_name') or '',
+                                          last_name=data.get('last_name') or '')
+            try:
+                validate_password(password, probe)
+            except forms.ValidationError as e:
+                self.add_error('password', e)
+        role = data.get('role')
+        if self.instance and self.instance.role == 'super_admin' and role and role != 'super_admin':
+            if User.objects.filter(role='super_admin', is_active=True).exclude(pk=self.instance.pk).count() == 0:
+                self.add_error('role', 'This is the only administrator. Make someone else an administrator first.')
+            elif self.actor and self.instance.pk == self.actor.pk:
+                self.add_error('role', 'You cannot remove your own administrator role.')
+        return data
+
+    def save(self):
+        from django.contrib.auth import get_user_model
+        from django.db import transaction
+        from users.models import Department, UserProfile
+        User = get_user_model()
+        d = self.cleaned_data
+        with transaction.atomic():
+            user = self.instance or User()
+            user.email = d['email']
+            if not user.username:
+                user.username = d['email']
+            user.first_name, user.last_name = d['first_name'].strip(), d['last_name'].strip()
+            user.role = d['role']
+            is_admin = d['role'] == 'super_admin'
+            user.is_superuser = user.is_staff = is_admin
+            dept = d.get('department')
+            if d.get('new_department', '').strip():
+                dept, _ = Department.objects.get_or_create(name=d['new_department'].strip())
+            user.department = dept
+            for f in ('email_notifications', 'task_notifications', 'submission_notifications'):
+                setattr(user, f, d[f])
+            if d.get('password'):
+                user.set_password(d['password'])
+            elif not user.pk:
+                user.set_unusable_password()
+            if not user.pk and self.actor is not None:
+                user.admin_owner = getattr(self.actor, 'admin_owner', None)
+            user.save()
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.position = d['position'].strip()
+            profile.phone = d['phone'].strip()
+            profile.bio = d['bio'].strip()
+            profile.manager = d.get('manager')
+            if d.get('avatar'):
+                if profile.avatar:
+                    try:
+                        profile.avatar.delete(save=False)
+                    except Exception:
+                        pass
+                profile.avatar.save(d['avatar'].name, d['avatar'], save=False)
+            profile.save()
+            user.work_groups.set(d['groups'])
+        return user

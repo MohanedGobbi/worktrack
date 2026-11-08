@@ -1,615 +1,163 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}User Management - Worktrack Pro{% endblock %}
+{% block title %}{% if wt_lang == 'ar' %}المستخدمون · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}Users · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .user-card {
-        transition: all 0.3s ease;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .user-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    .avatar-circle {
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        color: white;
-        text-transform: uppercase;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .role-badge {
-        padding: 0.5em 1em;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.75rem;
-    }
-    .badge-super_admin { background: #fee2e2; color: var(--color-primary, #10b981); }
-    .badge-manager { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
-    .badge-worker { background: #e0f2fe; color: #0284c7; }
-    
-    .status-indicator {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 5px;
-    }
-    .status-active { background: #22c55e; }
-    .status-inactive { background: var(--wt-bad); }
-    
-    .table thead th {
-        background-color: #f8fafc;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        border-top: none;
-    }
-    
-    .search-box {
-        position: relative;
-    }
-    .search-box i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-    .search-box input {
-        padding-left: 40px;
-        border-radius: 50px;
-    }
-    
-    .modal-content {
-        border-radius: 24px;
-        border: none;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-    }
-    .modal-header {
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        padding: 2rem;
-    }
-    .modal-body {
-        padding: 2rem;
-    }
-    .form-label {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
-    }
-    .form-control, .form-select {
-        border-radius: 12px;
-        padding: 0.8rem 1.2rem;
-        border: 2px solid #f1f5f9;
-        transition: all 0.2s ease;
-    }
-    .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        border-color: #6366f1;
-        background: white;
-    }
-    .btn-save-user {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-        border: none;
-        padding: 0.8rem 2rem;
-        border-radius: 12px;
-        font-weight: 700;
-        transition: all 0.3s ease;
-    }
-    .btn-save-user:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-    }
-</style>
+{% block breadcrumb_trail %}
+<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}"><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></a></li>
+<li class="breadcrumb-item active" aria-current="page"><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></li>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Header Section -->
-    <div class="admin-users-hero mb-5" style="border-radius: 24px; padding: 3rem 2.5rem; position: relative; overflow: hidden; min-height: 200px; box-shadow: 0 20px 60px color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent); color: white;">
-        <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; opacity: 0.5;"></div>
-        <div class="row align-items-center position-relative" style="z-index: 2;">
-            <div class="col">
-                <h1 class="fw-bold mb-1" style="font-size: 2.4rem; letter-spacing: -0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">User Command Center</h1>
-                <p class="mb-0 opacity-75" style="font-size: 0.95rem;">Manage system access, roles, and personnel hierarchy.</p>
-            </div>
-            <div class="col-auto">
-                <a href="{% url 'user-create' %}" class="btn d-flex align-items-center gap-2 px-4 py-2.5 rounded-pill shadow-lg fw-bold text-white" style="background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, var(--color-secondary, color-mix(in oklab, var(--wt-brand) 62%, #000)) 100%); border: 1px solid rgba(255,255,255,0.3); text-decoration: none; transition: all 0.25s ease;">
-                    <i class="fas fa-user-plus"></i>
-                    <span class="lang-en">Add New Member</span>
-                    <span class="lang-ar">إضافة عضو جديد</span>
-                </a>
-            </div>
+{% comment %}
+  Users (super admin): page head with the counts, one filter bar, one list with server-side pages.
+  Row actions: edit, activate / deactivate, delete (both ask first), sign in as.
+  Data: core.template_views.user_management. Forms: core.forms.UserAdminForm (create_user.html).
+{% endcomment %}
+<div class="wt-home wt-um">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></h1>
+            <p>
+                <span class="lang-en"><span class="wt-num">{{ total_users }}</span> accounts: <span class="wt-num">{{ admins_count }}</span> administrators, <span class="wt-num">{{ managers_count }}</span> managers, <span class="wt-num">{{ workers_count }}</span> staff{% if inactive_count %}, <span class="wt-num">{{ inactive_count }}</span> deactivated{% endif %}.</span>
+                <span class="lang-ar"><span class="wt-num">{{ total_users }}</span> حسابًا: <span class="wt-num">{{ admins_count }}</span> مشرفون، <span class="wt-num">{{ managers_count }}</span> مديرون، <span class="wt-num">{{ workers_count }}</span> موظفون{% if inactive_count %}، <span class="wt-num">{{ inactive_count }}</span> معطّلة{% endif %}.</span>
+            </p>
         </div>
-    </div>
+        <div class="wt-home-actions">
+            <a class="btn btn-light" href="{% url 'login-as-page' %}"><i class="fas fa-user-secret" aria-hidden="true"></i><span class="lang-en">Sign in as…</span><span class="lang-ar">الدخول كمستخدم…</span></a>
+            <a class="btn btn-primary" href="{% url 'user-create' %}"><i class="fas fa-user-plus" aria-hidden="true"></i><span class="lang-en">New user</span><span class="lang-ar">مستخدم جديد</span></a>
+        </div>
+    </header>
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
-                <div class="card-body">
-                    <div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">
-                        <i class="fas fa-users-cog fa-lg"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ users_count }}</h2>
-                    <p class="text-muted small text-uppercase fw-bold mb-0">Total Accounts</p>
-                </div>
-            </div>
+    <form class="wt-panel wt-filters" method="get" action="{% url 'user-management' %}" role="search">
+        <label class="wt-filter wt-filter-search">
+            <span class="visually-hidden"><span class="lang-en">Search users</span><span class="lang-ar">ابحث في المستخدمين</span></span>
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" name="search" class="form-control" value="{{ search }}" autocomplete="off" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد أو القسم{% else %}Search name, email or department{% endif %}">
+        </label>
+        <label class="wt-filter">
+            <span class="wt-filter-label"><span class="lang-en">Role</span><span class="lang-ar">الدور</span></span>
+            <select class="form-select" name="role" data-autosubmit>
+                <option value="">{% if wt_lang == 'ar' %}كل الأدوار{% else %}All roles{% endif %}</option>
+                {% for v, label in role_choices %}<option value="{{ v }}"{% if role_filter == v %} selected{% endif %}>{% if v == 'super_admin' %}{% if wt_lang == 'ar' %}مشرف عام{% else %}Administrator{% endif %}{% elif v == 'manager' %}{% if wt_lang == 'ar' %}مدير{% else %}Manager{% endif %}{% else %}{% if wt_lang == 'ar' %}موظف{% else %}Staff{% endif %}{% endif %}</option>{% endfor %}
+            </select>
+        </label>
+        <label class="wt-filter">
+            <span class="wt-filter-label"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></span>
+            <select class="form-select" name="status" data-autosubmit>
+                <option value="">{% if wt_lang == 'ar' %}الكل{% else %}All{% endif %}</option>
+                <option value="active"{% if status_filter == 'active' %} selected{% endif %}>{% if wt_lang == 'ar' %}نشط{% else %}Active{% endif %}</option>
+                <option value="inactive"{% if status_filter == 'inactive' %} selected{% endif %}>{% if wt_lang == 'ar' %}معطّل{% else %}Deactivated{% endif %}</option>
+            </select>
+        </label>
+        <div class="wt-filter-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" aria-hidden="true"></i><span class="lang-en">Apply</span><span class="lang-ar">تطبيق</span></button>
+            {% if wt_filtered %}<a class="btn btn-light" href="{% url 'user-management' %}"><span class="lang-en">Clear all</span><span class="lang-ar">مسح الكل</span></a>{% endif %}
         </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
-                <div class="card-body">
-                    <div class="avatar-sm bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">
-                        <i class="fas fa-user-shield fa-lg"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ admins_count }}</h2>
-                    <p class="text-muted small text-uppercase fw-bold mb-0">System Administrators</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
-                <div class="card-body">
-                    <div class="avatar-sm bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">
-                        <i class="fas fa-user-tie fa-lg"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ managers_count }}</h2>
-                    <p class="text-muted small text-uppercase fw-bold mb-0">Managers</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100">
-                <div class="card-body">
-                    <div class="avatar-sm bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 50px; height: 50px;">
-                        <i class="fas fa-sitemap fa-lg"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">{{ departments|length }}</h2>
-                    <p class="text-muted small text-uppercase fw-bold mb-0">Departments</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    </form>
 
-    <!-- Filters & Search -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4">
-            <form method="get" class="row g-3">
-                <div class="col-lg-4">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" name="search" class="form-control" placeholder="Search by name or email..." value="{{ search }}">
-                    </div>
-                </div>
-                <div class="col-lg-3">
-                    <select name="role" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Roles</option>
-                        {% for code, name in role_choices %}
-                            <option value="{{ code }}" {% if role_filter == code %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-lg-3">
-                    <select name="status" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Statuses</option>
-                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
-                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
-                    </select>
-                </div>
-                <div class="col-lg-2">
-                    <a href="{% url 'user-management' %}" class="btn btn-outline-secondary w-100 rounded-pill"><span class="lang-en">Reset</span><span class="lang-ar">إعادة تعيين</span></a>
-                </div>
-            </form>
+    <section class="wt-panel wt-um-panel" aria-labelledby="um-title">
+        <h2 id="um-title" class="visually-hidden"><span class="lang-en">User list</span><span class="lang-ar">قائمة المستخدمين</span></h2>
+        {% if page %}
+        <div class="wt-um-headrow" aria-hidden="true">
+            <span></span>
+            <span><span class="lang-en">Person</span><span class="lang-ar">الشخص</span></span>
+            <span><span class="lang-en">Role</span><span class="lang-ar">الدور</span></span>
+            <span><span class="lang-en">Department</span><span class="lang-ar">القسم</span></span>
+            <span><span class="lang-en">Last seen</span><span class="lang-ar">آخر ظهور</span></span>
+            <span></span>
         </div>
-    </div>
-
-    <!-- Users Table -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4 py-3">User Information</th>
-                        <th class="py-3"><span class="lang-en">Role</span><span class="lang-ar">الدور</span></th>
-                        <th class="py-3"><span class="lang-en">Department</span><span class="lang-ar">القسم</span></th>
-                        <th class="py-3">Hierarchy / Manager</th>
-                        <th class="py-3"><span class="lang-en">Status</span><span class="lang-ar">الحالة</span></th>
-                        <th class="pe-4 py-3 text-end"><span class="lang-en">Actions</span><span class="lang-ar">الإجراءات</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center">
-                                {% if user.profile.avatar %}
-                                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="avatar-circle me-3" style="object-fit: cover; border: 2px solid #e2e8f0; width: 44px; height: 44px;">
-                                {% else %}
-                                    <div class="avatar-circle me-3" style="background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, color-mix(in oklab, var(--wt-brand) 62%, #000) 100%); width: 44px; height: 44px;">
-                                        {{ user.first_name|first }}{{ user.last_name|first }}
-                                    </div>
-                                {% endif %}
-                                <div>
-                                    <div class="fw-bold text-dark">{{ user.first_name }} {{ user.last_name }}</div>
-                                    <div class="text-muted small">{{ user.email }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge badge-{{ user.role }}">
-                                {{ user.get_role_display }}
-                            </span>
-                            {% if user.is_superuser %}
-                            <span class="badge bg-dark rounded-pill ms-1" style="font-size: 0.6rem;">ROOT</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.department %}
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-building text-muted me-2 small"></i>
-                                    <span class="text-dark fw-medium small">{{ user.department.name }}</span>
-                                </div>
-                            {% else %}
-                                <span class="text-muted small italic">Not Assigned</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if user.profile.manager %}
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-light text-dark rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.6rem; font-weight: bold;">
-                                        {{ user.profile.manager.first_name|first }}{{ user.profile.manager.last_name|first }}
-                                    </div>
-                                    <span class="small text-dark">{{ user.profile.manager.get_full_name }}</span>
-                                </div>
-                            {% else %}
-                                <span class="text-muted small italic">Direct Report</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="form-check form-switch d-inline-flex align-items-center gap-2 m-0 p-0">
-                                <input class="form-check-input status-toggle-switch" type="checkbox" role="switch" id="status-switch-{{ user.id }}" 
-                                       {% if user.is_active %}checked{% endif %} 
-                                       onchange="toggleUserStatus('{{ user.id }}', this)"
-                                       style="cursor: pointer; width: 2.6rem; height: 1.35rem; margin-left: 0;">
-                                <span class="fw-bold small {% if user.is_active %}text-success{% else %}text-muted{% endif %}" id="status-text-{{ user.id }}">
-                                    {% if user.is_active %}<span class="lang-en">Active</span><span class="lang-ar">نشط</span>{% else %}<span class="lang-en">Inactive</span><span class="lang-ar">معطل</span>{% endif %}
-                                </span>
-                            </div>
-                        </td>
-                        <td class="pe-4 text-end">
-                            <div class="d-flex justify-content-end gap-2 align-items-center">
-                                <a href="{% url 'user-edit' user.id %}" class="btn btn-outline-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" title="Edit Profile (Full Page)" style="width: 32px; height: 32px; padding: 0;">
-                                    <i class="fas fa-pencil-alt" style="font-size: 0.8rem;"></i>
-                                </a>
-                                <button class="btn btn-danger btn-sm rounded-circle d-flex align-items-center justify-content-center" type="button" onclick="deleteUser('{{ user.id }}', '{{ user.get_full_name|escapejs }}')" title="Delete Completely" style="width: 32px; height: 32px; padding: 0; min-width: 32px;">
-                                    <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
-                                </button>
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; padding: 0;">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                        <li><a class="dropdown-item" href="{% url 'user-edit' user.id %}"><i class="fas fa-user-edit me-2 text-danger"></i> <span class="lang-en">Edit Full Profile</span><span class="lang-ar">تعديل الملف بالكامل</span></a></li>
-                                        <li>
-                                            <a class="dropdown-item" href="javascript:void(0)" onclick="toggleUserStatus('{{ user.id }}', null)">
-                                                {% if user.is_active %}
-                                                    <i class="fas fa-user-slash me-2 text-warning"></i> <span class="toggle-action-text-{{ user.id }}"><span class="lang-en">Deactivate</span><span class="lang-ar">تعطيل</span></span>
-                                                {% else %}
-                                                    <i class="fas fa-user-check me-2 text-success"></i> <span class="toggle-action-text-{{ user.id }}"><span class="lang-en">Activate</span><span class="lang-ar">تفعيل</span></span>
-                                                {% endif %}
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="fas fa-user-slash fa-3x text-muted mb-3 opacity-25"></i>
-                            <p class="text-muted">No users found matching your criteria.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        
-        <!-- Pagination -->
-        {% if users.has_other_pages %}
-        <div class="d-flex justify-content-center mt-4 mb-3">
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm">
-                    {% if users.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ users.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&laquo;</a></li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        <ul class="wt-um-list">
+            {% for u in page %}
+            <li class="wt-um-row{% if not u.is_active %} is-off{% endif %}" data-user-id="{{ u.id }}" data-name="{{ u.get_full_name|default:u.email }}">
+                {% if u.profile.avatar %}<img class="wt-um-avatar" src="{{ u.profile.avatar.url }}" alt="">{% else %}<span class="wt-um-avatar wt-um-initials" aria-hidden="true">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>{% endif %}
+                <span class="wt-um-main">
+                    <a class="wt-cell-link" href="{% url 'user-edit' u.id %}" dir="auto" translate="no">{{ u.get_full_name|default:u.email }}</a>
+                    <small class="wt-tf-ltr" translate="no">{{ u.email }}</small>
+                </span>
+                <span class="wt-um-role">
+                    <span class="wt-chip {% if u.role == 'super_admin' %}is-review{% else %}is-muted{% endif %}">{% if u.role == 'super_admin' %}<span class="lang-en">Administrator</span><span class="lang-ar">مشرف عام</span>{% elif u.role == 'manager' %}<span class="lang-en">Manager</span><span class="lang-ar">مدير</span>{% else %}<span class="lang-en">Staff</span><span class="lang-ar">موظف</span>{% endif %}</span>
+                    {% if not u.is_active %}<span class="wt-chip is-alert" data-off-chip><span class="lang-en">Deactivated</span><span class="lang-ar">معطّل</span></span>{% endif %}
+                </span>
+                <span class="wt-um-dept" dir="auto" translate="no">{{ u.department.name|default:"–" }}</span>
+                <span class="wt-um-seen wt-num">{% if u.last_activity %}{{ u.last_activity|date:"j/n/Y" }}{% else %}–{% endif %}</span>
+                <span class="wt-um-actions">
+                    <a class="wt-icon-btn" href="{% url 'user-edit' u.id %}" title="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}" aria-label="{% if wt_lang == 'ar' %}تعديل{% else %}Edit{% endif %}"><i class="fas fa-pen" aria-hidden="true"></i></a>
+                    {% if u.id != my_id %}
+                    <form method="post" action="{% url 'impersonate-user' u.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="wt-icon-btn" title="{% if wt_lang == 'ar' %}الدخول كهذا المستخدم{% else %}Sign in as this user{% endif %}" aria-label="{% if wt_lang == 'ar' %}الدخول كهذا المستخدم{% else %}Sign in as this user{% endif %}"><i class="fas fa-user-secret" aria-hidden="true"></i></button></form>
                     {% endif %}
-                    
-                    {% for i in users.paginator.page_range %}
-                        {% if users.number == i %}
-                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                        {% else %}
-                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ i }}</a></li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if users.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ users.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">&raquo;</a></li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% if u.id != my_id and u.id != only_admin_id %}
+                    <button type="button" class="wt-icon-btn" data-um-toggle data-url="{% url 'user-toggle-status' u.id %}" data-active="{% if u.is_active %}1{% else %}0{% endif %}" title="{% if wt_lang == 'ar' %}تفعيل / تعطيل{% else %}Activate / deactivate{% endif %}" aria-label="{% if wt_lang == 'ar' %}تفعيل / تعطيل{% else %}Activate / deactivate{% endif %}"><i class="fas {% if u.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}" aria-hidden="true"></i></button>
+                    <button type="button" class="wt-icon-btn is-danger" data-um-delete data-url="{% url 'user-delete' u.id %}" title="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}" aria-label="{% if wt_lang == 'ar' %}حذف{% else %}Delete{% endif %}"><i class="fas fa-trash" aria-hidden="true"></i></button>
                     {% endif %}
-                </ul>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if page.has_other_pages %}
+        <div class="wt-panel-foot wt-join-foot">
+            <span class="wt-num">{{ page.start_index }}–{{ page.end_index }} / {{ result_count }}</span>
+            <nav class="wt-pager" aria-label="{% if wt_lang == 'ar' %}صفحات المستخدمين{% else %}User pages{% endif %}">
+                {% if page.has_previous %}<a class="wt-page" href="?page={{ page.previous_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}السابق{% else %}Previous{% endif %}"><i class="fas fa-chevron-left rtl-flip"></i></a>{% endif %}
+                {% for i in page.paginator.page_range %}
+                {% if page.number == i %}<span class="wt-page is-on" aria-current="page">{{ i }}</span>
+                {% elif i == 1 or i == page.paginator.num_pages or i > page.number|add:'-3' and i < page.number|add:'3' %}<a class="wt-page" href="?page={{ i }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}">{{ i }}</a>
+                {% elif i == page.number|add:'-3' or i == page.number|add:'3' %}<span class="wt-page-gap" aria-hidden="true">…</span>{% endif %}
+                {% endfor %}
+                {% if page.has_next %}<a class="wt-page" href="?page={{ page.next_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}التالي{% else %}Next{% endif %}"><i class="fas fa-chevron-right rtl-flip"></i></a>{% endif %}
             </nav>
         </div>
         {% endif %}
-
-    </div>
-</div>
-
-<!-- ======= EDIT USER MODAL ======= -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0">
-            <div class="modal-header bg-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-user-edit text-primary me-2"></i> Edit Member Profile</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editUserForm" method="POST">
-                {% csrf_token %}
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">First Name</label>
-                            <input type="text" name="first_name" id="edit_first_name" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Last Name</label>
-                            <input type="text" name="last_name" id="edit_last_name" class="form-control" required>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" name="email" id="edit_email" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><span class="lang-en">Role</span><span class="lang-ar">الدور</span></label>
-                            <select name="role" id="edit_role" class="form-select">
-                                {% for code, name in role_choices %}
-                                    <option value="{{ code }}">{{ name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label d-flex justify-content-between align-items-center">
-                                <span><span class="lang-en">Department</span><span class="lang-ar">القسم</span></span>
-                                <a href="javascript:void(0)" class="text-primary small text-decoration-none fw-bold" onclick="toggleEditNewDept()">
-                                    <i class="fas fa-plus-circle me-1"></i>Create New
-                                </a>
-                            </label>
-                            <div id="edit-dept-select-container">
-                                <select name="department" id="edit_department" class="form-select">
-                                    <option value="">--- No Department ---</option>
-                                    {% for dept in departments %}
-                                        <option value="{{ dept.id }}">{{ dept.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div id="edit-new-dept-container" class="d-none">
-                                <div class="input-group">
-                                    <input type="text" class="form-control border-primary" id="edit_new_department_name" name="new_department_name" placeholder="Enter department name...">
-                                    <button class="btn btn-primary" type="button" onclick="cancelEditNewDept()"><i class="fas fa-times"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Manager / Reports To</label>
-                            <select name="manager" id="edit_manager" class="form-select">
-                                <option value="">--- Direct Report (No Manager) ---</option>
-                                {% for m in potential_managers %}
-                                    <option value="{{ m.id }}">{{ m.get_full_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Reset Password <small class="text-muted">(Leave blank to keep current)</small></label>
-                            <input type="password" name="password" class="form-control" placeholder="New password...">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
-                    <button type="submit" class="btn btn-primary btn-save-user text-white"><span class="lang-en">Save Changes</span><span class="lang-ar">حفظ التغييرات</span></button>
-                </div>
-            </form>
+        {% else %}
+        <div class="wt-empty"><i class="fas fa-users-slash" aria-hidden="true"></i>
+            <p><span class="lang-en">No users match these filters.</span><span class="lang-ar">لا مستخدمين يطابقون عوامل التصفية.</span></p>
+            <a class="btn btn-light" href="{% url 'user-management' %}"><span class="lang-en">Clear filters</span><span class="lang-ar">مسح التصفية</span></a>
         </div>
-    </div>
+        {% endif %}
+    </section>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-async function toggleUserStatus(userId, element) {
-    try {
-        const toggleUrl = "{% url 'user-toggle-status' 0 %}".replace('0', userId);
-        const response = await fetch(toggleUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'X-CSRFToken': getActiveCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            const sw = document.getElementById(`status-switch-${userId}`);
-            const text = document.getElementById(`status-text-${userId}`);
-            const actionTexts = document.querySelectorAll(`.toggle-action-text-${userId}`);
-            
-            if (sw) sw.checked = data.is_active;
-            
-            if (data.is_active) {
-                if (text) {
-                    text.className = 'fw-bold small text-success';
-                    text.innerHTML = '<span class="lang-en">Active</span><span class="lang-ar">نشط</span>';
-                }
-                actionTexts.forEach(el => el.innerHTML = '<span class="lang-en">Deactivate</span><span class="lang-ar">تعطيل</span>');
-                window.amazingNotify && window.amazingNotify('User Activated', `${data.email} is now active.`, 'success');
-            } else {
-                if (text) {
-                    text.className = 'fw-bold small text-muted';
-                    text.innerHTML = '<span class="lang-en">Inactive</span><span class="lang-ar">معطل</span>';
-                }
-                actionTexts.forEach(el => el.innerHTML = '<span class="lang-en">Activate</span><span class="lang-ar">تفعيل</span>');
-                window.amazingNotify && window.amazingNotify('User Deactivated', `${data.email} is now inactive.`, 'warning');
-            }
-        } else if (data.message) {
-            Swal.fire('Error', data.message, 'error');
-            const sw = document.getElementById(`status-switch-${userId}`);
-            if (sw) sw.checked = !sw.checked;
-        }
-    } catch (error) {
-        console.error('Error toggling status:', error);
-        const sw = document.getElementById(`status-switch-${userId}`);
-        if (sw) sw.checked = !sw.checked;
+(function () {
+    'use strict';
+    document.querySelectorAll('.wt-filters [data-autosubmit]').forEach(el => el.addEventListener('change', () => el.form.submit()));
+    const isAr = () => document.documentElement.lang === 'ar' || document.documentElement.dir === 'rtl';
+    const T = (en, ar) => (isAr() ? ar : en);
+    const csrf = () => (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+    const toast = (m, t) => (window.showToast ? window.showToast(m, t) : alert(m));
+
+    function post(url) {
+        return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRFToken': csrf(), 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json().then(j => (r.ok ? j : Promise.reject(j))));
     }
-}
-
-function getActiveCsrfToken() {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.startsWith('cnrst_csrftoken=')) {
-                cookieValue = decodeURIComponent(cookie.substring(16));
-                break;
-            } else if (cookie.startsWith('csrftoken=')) {
-                cookieValue = decodeURIComponent(cookie.substring(10));
-                break;
-            }
-        }
+    function ask(title, text, danger) {
+        return window.amazingConfirm({ title, text, icon: danger ? 'warning' : 'question',
+            confirmButtonText: danger ? T('Delete', 'حذف') : T('Confirm', 'تأكيد'),
+            confirmButtonColor: danger ? 'var(--wt-bad)' : 'var(--wt-brand)' });
     }
-    const domToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-    return cookieValue || domToken || '{{ csrf_token }}';
-}
 
-async function deleteUser(userId, userName) {
-    const isConfirmed = await amazingConfirm(
-        `This will <strong class="text-danger">permanently delete</strong> <em>${userName}</em> and all associated data.<br><br>This action <strong>cannot be undone.</strong>`, 
-        "Delete User Account?"
-    );
-
-    if (!isConfirmed) return;
-
-    try {
-        const deleteUrl = "{% url 'user-delete' 0 %}".replace('0', userId);
-        const response = await fetch(deleteUrl, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'X-CSRFToken': getActiveCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        const text = await response.text();
-        let data = {};
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            if (response.redirected || text.includes('login') || text.includes('Login')) {
-                Swal.fire({
-                    title: 'Session Required',
-                    text: 'Please log in to perform user operations.',
-                    icon: 'warning',
-                    confirmButtonText: 'Log In'
-                }).then(() => {
-                    window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
-                });
-                return;
-            }
-            throw new Error(`Unexpected server response (${response.status}). Please refresh the page.`);
-        }
-
-        if (response.ok && data.status === 'success') {
-            const title = data.deactivated ? 'User Account Deactivated' : 'User Deleted';
-            const iconType = data.deactivated ? 'warning' : 'success';
-            window.amazingNotify && window.amazingNotify(title, data.message, iconType);
-            setTimeout(() => {
-                window.location.reload();
-            }, 800);
+    document.addEventListener('click', async e => {
+        const t = e.target.closest('[data-um-toggle], [data-um-delete]');
+        if (!t) return;
+        const row = t.closest('.wt-um-row');
+        const name = row.dataset.name;
+        if (t.hasAttribute('data-um-toggle')) {
+            const on = t.dataset.active === '1';
+            if (!await ask(on ? T('Deactivate this account?', 'تعطيل هذا الحساب؟') : T('Activate this account?', 'تفعيل هذا الحساب؟'),
+                           on ? T(`${name} will not be able to sign in. Their work and history stay.`, `لن يتمكن ${name} من تسجيل الدخول، ويبقى عمله وسجله.`)
+                              : T(`${name} will be able to sign in again.`, `سيتمكن ${name} من تسجيل الدخول مجددًا.`), false)) return;
+            try { await post(t.dataset.url); location.reload(); }
+            catch (err) { toast((err && err.message) || T('Could not change the account.', 'تعذّر تغيير الحساب.'), 'error'); }
         } else {
-            const errorMsg = data.message || `Could not delete user (HTTP ${response.status}).`;
-            Swal.fire('Error', errorMsg, 'error');
+            if (!await ask(T('Delete this account?', 'حذف هذا الحساب؟'),
+                           T(`${name} will be deleted for good. If they have tasks, submissions or history, the account is deactivated instead.`,
+                             `سيُحذف ${name} نهائيًا. إن كانت له مهام أو تسليمات أو سجل فسيُعطَّل الحساب بدلًا من حذفه.`), true)) return;
+            try { const j = await post(t.dataset.url); toast(j.message || T('Done.', 'تم.'), 'success'); setTimeout(() => location.reload(), 900); }
+            catch (err) { toast((err && err.message) || T('Could not delete the account.', 'تعذّر حذف الحساب.'), 'error'); }
         }
-    } catch (err) {
-        console.error('User Deletion Error:', err);
-        Swal.fire('Error', err.message || 'Error communicating with server. Please try again.', 'error');
-    }
-}
-
-async function editUser(userId) {
-    try {
-        const dataUrl = "{% url 'get-user-data' 0 %}".replace('0', userId);
-        const response = await fetch(dataUrl, {
-            credentials: 'same-origin',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        const data = await response.json();
-        
-        document.getElementById('edit_first_name').value = data.first_name || "";
-        document.getElementById('edit_last_name').value = data.last_name || "";
-        document.getElementById('edit_email').value = data.email || "";
-        document.getElementById('edit_role').value = data.role || "";
-        document.getElementById('edit_department').value = data.department_id || "";
-        document.getElementById('edit_manager').value = data.manager_id || "";
-        
-        // Reset manual department entry
-        cancelEditNewDept();
-        
-        const form = document.getElementById('editUserForm');
-        form.action = "{% url 'user-edit' 0 %}".replace('0', userId);
-        
-        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
-        modal.show();
-    } catch (error) {
-        console.error('Error fetching user data:', error);
-    }
-}
-
-function toggleEditNewDept() {
-    document.getElementById('edit-dept-select-container').classList.add('d-none');
-    document.getElementById('edit-new-dept-container').classList.remove('d-none');
-    document.getElementById('edit_department').value = "";
-    document.getElementById('edit_new_department_name').focus();
-}
-
-function cancelEditNewDept() {
-    const newDeptContainer = document.getElementById('edit-new-dept-container');
-    const selectContainer = document.getElementById('edit-dept-select-container');
-    if (newDeptContainer && selectContainer) {
-        newDeptContainer.classList.add('d-none');
-        selectContainer.classList.remove('d-none');
-        document.getElementById('edit_new_department_name').value = "";
-    }
-}
+    });
+})();
 </script>
 {% endblock %}

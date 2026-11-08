@@ -47,9 +47,12 @@
                     </div>
 
                     <div class="d-grid mt-auto">
-                        <a href="{% url 'impersonate-user' u.id %}" class="btn btn-outline-primary rounded-pill fw-bold" style="border-width: 2px;">
-                            <i class="fas fa-sign-in-alt me-1"></i> Login As 
-                        </a>
+                        <form method="post" action="{% url 'impersonate-user' u.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-primary rounded-pill fw-bold w-100" style="border-width: 2px;">
+                                <i class="fas fa-sign-in-alt me-1"></i> Login As
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
