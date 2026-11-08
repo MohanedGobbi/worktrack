@@ -66,6 +66,7 @@ Goal: an installable, sellable v1 as fast as possible, spending tokens only wher
 - **Cleanup done:** removed the unused 42 MB Tailwind CLI binary and the dead `messenger.html`; `*.zip` is git-ignored. The binary is still in git history (harmless, under GitHub's limit).
 - **Share the project:** `git archive --format=zip --prefix=worktrack/ -o worktrack.zip HEAD` gives a code-only zip (no database, uploads, `.env`, `.venv`). The first zip (10.7 MB) predates `run.bat`.
 - **Run fast (Windows):** double-click `run.bat` in the project, or the Desktop file `WorkTrack Pro.bat`, which calls it through the ASCII junction `C:\Users\gobbi\worktrack` (a Windows shortcut and cmd cannot take the Arabic folder name; if the project folder moves, recreate the junction: `New-Item -ItemType Junction -Path C:\Users\gobbi\worktrack -Target <project folder>`). It migrates, starts the server on 127.0.0.1:8000 and opens the browser. Needs `.venv` and a `.env` with `DEBUG=True`.
+- **Next customer work:** see section 2c (University of Ghardaia plan); waiting for logos, partner details and staff list.
 - **Open before launch (carried over):** whole-API pass (every `urls.py` include and ViewSet), atomic last-admin guard, dashboard module toolbar / list view rebuild (works and is themed, not rebuilt), English-only `<title>` on the groups, attendance and archive pages, English-only notification text written by signals, retire the legacy-task correspondence mirror (`_sync_legacy_correspondence`), file type checks for task attachments and messenger files, banner text colour for very light brand colours.
 
 ### Sprint 4: release
@@ -158,6 +159,35 @@ Rules for every page and component:
 7. **Check each finished page** with a second test theme (different brand colour, logo and name) before calling it done.
 
 Planned work for this: (a) a terminology/glossary table and template tag; (b) editable landing/sign-in copy and contact/footer fields in Site Settings; (c) rebuilt Site Settings around the new theme model; (d) derive Signal Blue from the brand colour; (e) an install checklist and a "new institution" seed command (name, logo, colours, default language, roles, departments); (f) a University of Ghardaia theme and content pass once the owner provides the details.
+
+## 2c. Plan: the University of Ghardaia version (Faculty of Law and Political Science)
+
+Customer 1. Same codebase, configured by data (see 2b). The faculty structure the owner supplied has 5 groups; it is kept in `docs/institution.ghardaia.json` (22 units as `Department` rows, 7 roles, Arabic default, registration off; validated with `manage.py new_institution --config docs/institution.ghardaia.json --dry-run`).
+
+### What the owner still sends (nothing below can be finished without it)
+1. **University logo** (PNG with transparent background if possible) and a **photo of the university**.
+2. **Partner company logo** plus its name and website (it will appear as "our partner").
+3. The **official English names** of the units (only Arabic names exist so far) and the **faculty / university colours** if they differ from the logo.
+4. Who is the first administrator (name, email), contact details (email, phone, address, website) and the **domain / hosting** the install will use.
+5. The **staff list** (name, email, unit, role) so accounts can be loaded in one go (see step 5).
+
+### Steps, in order
+1. **Identity (Site Settings, no code).** Name: `جامعة غرداية - كلية الحقوق والعلوم السياسية` / `University of Ghardaia - Faculty of Law and Political Science`; upload the logo (the shell picks a readable backdrop for light or dark logos); default language Arabic. Colours: pick "Your colours", take brand and accent from the logo, let the contrast check choose the text colour; check the banner and sidebar in the live preview. The university photo goes in as the **banner image** (it sits under a brand overlay) and can also feed the landing page hero later. Set footer and contact details there too.
+2. **Partner logo (small new feature, do it before the logo arrives).** Site Settings has no slot for a partner yet. Add `partner_name`, `partner_url`, `partner_logo` (migration, form fields, preview) and show it as "In partnership with" in the footer, on the landing page and on sign-in, **next to** the ROWD credit and never replacing or restyling it. `templates/includes/rowd_credit.html` and `tests/test_credit.py` must stay untouched; add a test that the credit is still present when a partner logo is set. Keep it theme-level data, not hard-coded.
+3. **Structure and roles (data).** Run `new_institution` with the config: it creates the units, the 7 privilege profiles (Dean, Vice-dean, Secretary general, Head of department, Head of service, Staff, IT administrator) and the first admin (replace the placeholder email first). Base roles map as: IT administrator and Secretary general (if they manage users) = `super_admin`; Dean, Vice-deans, department heads, service heads = `manager`; everyone else = `worker`. Privilege profiles refine this; check each profile with the owner.
+   - `Department` has no parent, so the group each unit belongs to is written in its description. **Recommended small addition:** an optional `parent` on `Department` (migration, grouping in the user form, the Team page and filters) so the 5 groups hold their units. Do it if the owner wants reports by group.
+4. **Work groups (who can see whom).** The platform shows people the teammates they share a **work group** with. Create one group per service or department (members = its staff and head) plus a "Faculty leadership" group (dean, vice-deans, secretary general, heads). A manager's Team page is built from reports (profile manager) and shared groups, so set each person's "Reports to" as well.
+5. **Accounts.** Create the first admin, then load staff. There is no bulk import yet: add `manage.py import_users file.csv` (email, first and last name, unit, role, manager email, groups; dry-run, report of rejected rows, one-time passwords printed or mailed, validators on). Until then use Admin console > Users.
+6. **Modules (the faculty's workstreams).** Create modules directly (module templates are hidden in v1). Suggested start, one per service or recurring process: registrations and orientation; teaching and assessment (exams, timetables, deliberations); certificates and career path; postgraduate / doctoral follow-up; scientific research and laboratories; cooperation and external relations; scientific council; human resources; budget and finance; maintenance and general means; IT and statistics; library; virtual courtroom; student clubs and associations. Give each a colour and an owner; tasks, submissions and review then follow the normal flow.
+7. **Vocabulary.** The product words (module, worker, manager, submission) do not match faculty language. The glossary table is a post-launch item (section "After launch"); for this customer decide with the owner whether it comes first. Interim choices that need no code: use the role names above in the privilege profiles, name modules after services, and review the Arabic strings on the visible pages (the machine translations are removed in Sprint 4; fix labels such as "الوحدة" vs "الملف" in the templates' Arabic side).
+8. **Sidebar and features.** Keep the v1 switches. Likely candidates to switch on for them, with the owner: Attendance (human resources service) and Offline Maps / Global Map are not needed. Correspondence is central (circulars, directives, decisions go through it): create the reference-number convention with the secretary general.
+9. **Landing and sign-in copy.** Still fixed text. If the owner wants faculty wording, editable landing copy (post-launch item) comes first; otherwise review the Arabic text once.
+10. **Install.** Follow the Sprint 4 cPanel/Passenger checklist: `.env` (SECRET_KEY, DEBUG=False, domain, HTTPS cookies), `collectstatic`, migrate, `new_institution`, then a smoke test with one account per role, EN and AR, desktop and phone. Back up `db.sqlite3` and `media/` before every update.
+
+### Acceptance (done when)
+- The shell, landing and sign-in show the university name and logo, the university colours and the partner logo; the ROWD credit is intact (`manage.py test tests.test_credit`).
+- A dean, a service head and a staff member each sign in and see only what their role and groups allow; correspondence issued by the secretary general reaches the right people and is acknowledged.
+- Everything above is in the config and Site Settings, with no template edited for this customer.
 
 ## 3. Decisions already made (do not reopen without the owner)
 - The old CNDP crimson design, the green "editorial" spec and the old agent system prompt were deliberately deleted.

@@ -1,0 +1,59 @@
+{
+  "name": "University of Ghardaia - Faculty of Law and Political Science",
+  "name_ar": "جامعة غرداية - كلية الحقوق والعلوم السياسية",
+  "language": "ar",
+  "allow_registration": false,
+
+  "contact": {
+    "footer": "Faculty of Law and Political Science",
+    "footer_ar": "كلية الحقوق والعلوم السياسية - جامعة غرداية"
+  },
+
+  "departments": [
+    {"name": "عمادة الكلية", "description": "الإدارة العليا والقيادة"},
+    {"name": "الأمانة العامة للكلية", "description": "الإدارة العليا والقيادة / الدعم الإداري والتقني"},
+    {"name": "مكتب السكرتارية والخلية التنفيذية", "description": "الإدارة العليا والقيادة"},
+
+    {"name": "نيابة العمادة للدراسات والمسائل المرتبطة بالطلبة", "description": "الشؤون البيداغوجية والتعليمية"},
+    {"name": "مصلحة التسجيلات والتوجيه", "description": "الشؤون البيداغوجية والتعليمية"},
+    {"name": "مصلحة التعليم والتقييم", "description": "الشؤون البيداغوجية والتعليمية"},
+    {"name": "مصلحة الشهادات والمسار المهني", "description": "الشؤون البيداغوجية والتعليمية"},
+    {"name": "قسم الحقوق", "description": "الشؤون البيداغوجية والتعليمية - القانون العام والقانون الخاص"},
+    {"name": "قسم العلوم السياسية", "description": "الشؤون البيداغوجية والتعليمية - التنظيمات والعلاقات الدولية"},
+
+    {"name": "نيابة العمادة لما بعد التدرج والبحث العلمي والعلاقات الخارجية", "description": "البحث العلمي والتعاون الخارجي"},
+    {"name": "مصلحة ما بعد التدرج", "description": "البحث العلمي والتعاون الخارجي - متابعة طور الدكتوراه"},
+    {"name": "مصلحة البحث العلمي وتطوير التكنولوجيات", "description": "البحث العلمي والتعاون الخارجي"},
+    {"name": "مصلحة التعاون والاتصال والعلاقات الخارجية", "description": "البحث العلمي والتعاون الخارجي"},
+    {"name": "المجلس العلمي للكلية", "description": "البحث العلمي والتعاون الخارجي"},
+    {"name": "المخابر ووحدات البحث العلمي", "description": "البحث العلمي والتعاون الخارجي"},
+
+    {"name": "مصلحة الموظفين والموارد البشرية", "description": "الدعم الإداري والتقني"},
+    {"name": "مصلحة الميزانية والمالية", "description": "الدعم الإداري والتقني"},
+    {"name": "مصلحة الصيانة والوسائل العامة", "description": "الدعم الإداري والتقني"},
+    {"name": "مصلحة الإعلام الآلي والراديوي والإحصاء", "description": "الدعم الإداري والتقني"},
+
+    {"name": "مكتبة الكلية", "description": "المرافق والخدمات العلمية المساعدة - قاعات المطالعة والأرشيف"},
+    {"name": "قاعة المحاكمات الافتراضية", "description": "المرافق والخدمات العلمية المساعدة"},
+    {"name": "النوادي والجمعيات العلمية الطلابية", "description": "المرافق والخدمات العلمية المساعدة"}
+  ],
+
+  "roles": [
+    {"name": "Dean", "name_ar": "عميد الكلية", "description": "Leads the faculty; sees everything, no system settings",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_modules", "manage_correspondence", "access_messenger", "manage_attendance", "view_analytics", "export_data"]},
+    {"name": "Vice-dean", "name_ar": "نائب العميد", "description": "Runs a deanship area",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_modules", "manage_correspondence", "access_messenger", "view_analytics", "export_data"]},
+    {"name": "Secretary general", "name_ar": "الأمين العام", "description": "Administrative and technical support",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_modules", "manage_correspondence", "access_messenger", "manage_attendance", "view_analytics", "manage_users", "export_data"]},
+    {"name": "Head of department", "name_ar": "رئيس قسم", "description": "Law or Political Science department",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_modules", "manage_correspondence", "access_messenger", "view_analytics"]},
+    {"name": "Head of service", "name_ar": "رئيس مصلحة", "description": "Runs a service and its staff",
+     "privileges": ["view_dashboard", "manage_tasks", "manage_correspondence", "access_messenger", "view_analytics"]},
+    {"name": "Staff", "name_ar": "موظف", "description": "Does assigned work and submits it",
+     "privileges": ["view_dashboard", "complete_tasks", "access_messenger"]},
+    {"name": "IT administrator", "name_ar": "مسؤول الإعلام الآلي", "description": "System settings, users and data",
+     "privileges": ["view_dashboard", "manage_users", "system_settings", "export_data", "access_messenger"]}
+  ],
+
+  "admin": {"email": "admin@example.edu", "name": "IT Administrator"}
+}
