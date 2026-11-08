@@ -124,6 +124,12 @@ class SiteConfiguration(models.Model):
     footer_text = models.CharField(max_length=200, blank=True, default="", help_text="Footer line (English). Empty = product name")
     footer_text_ar = models.CharField(max_length=200, blank=True, default="", help_text="Footer line (Arabic). Empty = product name")
 
+    # ── Partner (optional; shown next to the ROWD credit, never instead of it) ──
+    partner_name = models.CharField(max_length=150, blank=True, default="", help_text="Partner organisation (English)")
+    partner_name_ar = models.CharField(max_length=200, blank=True, default="", help_text="Partner organisation (Arabic)")
+    partner_url = models.URLField(blank=True, default="", help_text="Partner website")
+    partner_logo = models.ImageField(upload_to='site/partners/', blank=True, null=True, help_text="Partner logo")
+
     class Meta:
         verbose_name = "Site Configuration"
         verbose_name_plural = "Site Configuration"

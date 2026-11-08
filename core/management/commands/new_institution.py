@@ -68,8 +68,12 @@ class Command(BaseCommand):
             except json.JSONDecodeError as e:
                 raise CommandError(f'{path}: invalid JSON ({e}).')
             base = path.parent
-            if cfg.get('logo') and not Path(cfg['logo']).is_absolute():
-                cfg['logo'] = str(base / cfg['logo'])
+            for key in ('logo', 'banner'):
+                if cfg.get(key) and not Path(cfg[key]).is_absolute():
+                    cfg[key] = str(base / cfg[key])
+            partner = cfg.get('partner') or {}
+            if partner.get('logo') and not Path(partner['logo']).is_absolute():
+                partner['logo'] = str(base / partner['logo'])
         flag_map = {'name': 'name', 'name_ar': 'name_ar', 'logo': 'logo', 'brand': 'brand', 'accent': 'accent',
                     'on_brand': 'on_brand', 'language': 'language'}
         for opt, key in flag_map.items():
@@ -102,16 +106,19 @@ class Command(BaseCommand):
             raise CommandError('Give both brand and accent, or neither (to keep the ROWD palette).')
         if cfg.get('language', 'ar') not in ('ar', 'en'):
             raise CommandError('language must be "ar" or "en".')
-        if cfg.get('logo'):
-            p = Path(cfg['logo'])
+        for label, value in (('Logo', cfg.get('logo')), ('Banner', cfg.get('banner')),
+                             ('Partner logo', (cfg.get('partner') or {}).get('logo'))):
+            if not value:
+                continue
+            p = Path(value)
             if not p.is_file():
-                raise CommandError(f'Logo not found: {p}')
+                raise CommandError(f'{label} not found: {p}')
             try:
                 from PIL import Image
                 with Image.open(p) as im:
                     im.verify()
             except Exception:
-                raise CommandError(f'Logo is not a readable image: {p}')
+                raise CommandError(f'{label} is not a readable image: {p}')
         valid = {k for k, _ in SystemProfile.AVAILABLE_PRIVILEGES}
         for role in cfg.get('roles') or []:
             if not (role.get('name') or '').strip():
@@ -201,7 +208,32 @@ class Command(BaseCommand):
                     c.logo.save(p.name, File(fh), save=False)
                 self._saved_files.append(c.logo.name)
                 lines.append(f'Logo: {p.name}')
-        c.full_clean(exclude=['logo', 'gateway_image', 'background_image', 'banner_image'])
+        if cfg.get('banner'):
+            p = Path(cfg['banner'])
+            if cfg.get('_dry_run'):
+                lines.append(f'Banner: {p.name} (not copied in a dry run)')
+            else:
+                with p.open('rb') as fh:
+                    c.banner_image.save(p.name, File(fh), save=False)
+                self._saved_files.append(c.banner_image.name)
+                lines.append(f'Banner: {p.name}')
+        partner = cfg.get('partner') or {}
+        if partner:
+            c.partner_name = (partner.get('name') or '').strip()
+            c.partner_name_ar = (partner.get('name_ar') or '').strip()
+            c.partner_url = (partner.get('url') or '').strip()
+            if partner.get('logo'):
+                p = Path(partner['logo'])
+                if cfg.get('_dry_run'):
+                    lines.append(f'Partner: {c.partner_name or c.partner_name_ar} ({p.name}, not copied in a dry run)')
+                else:
+                    with p.open('rb') as fh:
+                        c.partner_logo.save(p.name, File(fh), save=False)
+                    self._saved_files.append(c.partner_logo.name)
+                    lines.append(f'Partner: {c.partner_name or c.partner_name_ar} ({p.name})')
+            else:
+                lines.append(f'Partner: {c.partner_name or c.partner_name_ar}')
+        c.full_clean(exclude=['logo', 'gateway_image', 'background_image', 'banner_image', 'partner_logo'])
         c.save()
 
         s = SiteSettings.get_settings()

@@ -85,12 +85,13 @@ class SiteThemeForm(forms.ModelForm):
             'theme_preset', 'primary_color', 'accent_color', 'on_brand_color',
             'contact_email', 'contact_phone', 'website_url', 'address', 'address_ar',
             'footer_text', 'footer_text_ar',
+            'partner_name', 'partner_name_ar', 'partner_url', 'partner_logo',
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['app_name'].required = True
-        for name in ('logo', 'banner_image'):
+        for name in ('logo', 'banner_image', 'partner_logo'):
             self.fields[name].required = False
         # A legacy preset (crimson, emerald, ...) is shown as custom colours.
         if self.instance and self.instance.theme_preset not in ('rowd', 'custom'):
@@ -114,6 +115,16 @@ class SiteThemeForm(forms.ModelForm):
 
     def clean_on_brand_color(self):
         return self._hex('on_brand_color', '#ffffff')
+
+    def clean_partner_logo(self):
+        upload = self.cleaned_data.get('partner_logo')
+        if not upload or not hasattr(upload, 'content_type'):
+            return upload  # unchanged existing file
+        from core.uploads import BadImage, process_photo
+        try:
+            return process_photo(upload, max_side=600)
+        except BadImage:
+            raise forms.ValidationError('Use a PNG, JPEG, GIF or WebP image under 5 MB.')
 
     def clean_app_name(self):
         return (self.cleaned_data.get('app_name') or '').strip()

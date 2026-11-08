@@ -69,6 +69,8 @@ def site_settings_view(request):
                 obj.logo = None
             if request.POST.get('banner_image-clear') and not request.FILES.get('banner_image'):
                 obj.banner_image = None
+            if request.POST.get('partner_logo-clear') and not request.FILES.get('partner_logo'):
+                obj.partner_logo = None
             obj.save()
             site.default_language = lang
             site.allow_registration = request.POST.get('allow_registration') == 'on'

@@ -137,6 +137,37 @@
                 </div>
             </section>
 
+            {# ── Partner ── #}
+            <section class="wt-panel wt-tf-sec" aria-labelledby="ss-partner">
+                <div class="wt-panel-head"><h2 id="ss-partner"><i class="fas fa-handshake" aria-hidden="true"></i><span class="lang-en">Partner</span><span class="lang-ar">الشريك</span> <small class="wt-ss-opt"><span class="lang-en">optional</span><span class="lang-ar">اختياري</span></small></h2></div>
+                <div class="wt-tf-body">
+                    <div class="wt-tf-grid">
+                        <div class="wt-tf-field">
+                            <label for="id_partner_name" class="form-label"><span class="lang-en">Partner name (English)</span><span class="lang-ar">اسم الشريك (بالإنجليزية)</span></label>
+                            <input type="text" class="form-control" name="partner_name" id="id_partner_name" value="{{ form.partner_name.value|default:'' }}" maxlength="150" dir="ltr">
+                        </div>
+                        <div class="wt-tf-field">
+                            <label for="id_partner_name_ar" class="form-label"><span class="lang-en">Partner name (Arabic)</span><span class="lang-ar">اسم الشريك (بالعربية)</span></label>
+                            <input type="text" class="form-control" name="partner_name_ar" id="id_partner_name_ar" value="{{ form.partner_name_ar.value|default:'' }}" maxlength="200" dir="rtl" lang="ar">
+                        </div>
+                        <div class="wt-tf-field">
+                            <label for="id_partner_url" class="form-label"><span class="lang-en">Website</span><span class="lang-ar">الموقع الإلكتروني</span></label>
+                            <input type="url" class="form-control wt-tf-ltr{% if form.partner_url.errors %} is-invalid{% endif %}" name="partner_url" id="id_partner_url" value="{{ form.partner_url.value|default:'' }}" maxlength="200" placeholder="https://">
+                        </div>
+                    </div>
+                    <div class="wt-ss-file">
+                        <div class="wt-ss-file-thumb wt-ss-file-thumb--logo" aria-hidden="true">{% if site_config.partner_logo %}<img src="{{ site_config.partner_logo.url }}" alt="">{% else %}<i class="fas fa-handshake"></i>{% endif %}</div>
+                        <div class="wt-ss-file-main">
+                            <label for="id_partner_logo" class="form-label"><span class="lang-en">Partner logo</span><span class="lang-ar">شعار الشريك</span></label>
+                            <input type="file" class="form-control{% if form.partner_logo.errors %} is-invalid{% endif %}" name="partner_logo" id="id_partner_logo" accept="image/png,image/jpeg,image/webp">
+                            {% if form.partner_logo.errors %}<div class="invalid-feedback">{{ form.partner_logo.errors.0 }}</div>{% endif %}
+                            <p class="wt-tf-help"><span class="lang-en">Shown as "In partnership with" on the sign-in and landing pages and in the footer, next to the ROWD credit.</span><span class="lang-ar">يظهر بعبارة «بالشراكة مع» في صفحتي الدخول والاستقبال وفي التذييل، بجانب عبارة تطوير رود.</span></p>
+                            {% if site_config.partner_logo %}<label class="form-check wt-ss-clear"><input class="form-check-input" type="checkbox" name="partner_logo-clear"> <span class="lang-en">Remove the partner logo</span><span class="lang-ar">إزالة شعار الشريك</span></label>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {# ── Contact & footer ── #}
             <section class="wt-panel wt-tf-sec" aria-labelledby="ss-contact">
                 <div class="wt-panel-head"><h2 id="ss-contact"><i class="fas fa-address-card" aria-hidden="true"></i><span class="lang-en">Contact &amp; footer</span><span class="lang-ar">التواصل والتذييل</span></h2></div>

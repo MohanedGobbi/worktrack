@@ -2089,3 +2089,12 @@ html[dir="rtl"] .wt-au-headrow { font-family: var(--wt-font-body); font-size: 0.
   .wt-au-who { grid-area: who; color: var(--wt-muted); } .wt-au-when { grid-area: when; justify-self: end; text-align: end; }
   .wt-au-ip { grid-area: ip; }
 }
+
+/* Partner of the install (includes/wt_partner.html), shown beside the ROWD credit */
+.wt-partner { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.wt-partner-label { font-size: 0.72rem; font-weight: 600; color: var(--wt-muted); white-space: nowrap; }
+.wt-partner--dark .wt-partner-label { color: color-mix(in oklab, var(--wt-on-brand) 75%, transparent); }
+.wt-partner-chip { display: inline-grid; place-items: center; height: 34px; padding: 3px 8px; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px color-mix(in oklab, var(--wt-ink) 8%, transparent); }
+.wt-partner-chip img { max-height: 28px; max-width: 150px; object-fit: contain; display: block; }
+.wt-partner-name { font-size: 0.82rem; font-weight: 700; }
+.wt-footer-credits { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }

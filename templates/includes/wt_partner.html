@@ -1,0 +1,7 @@
+{% comment %}
+  Optional partner of this install (Site Settings > Partner). Theme-layer data shown NEXT TO the ROWD credit
+  (includes/rowd_credit.html), never instead of it. variant: 'dark' on the brand field, 'light' on light surfaces.
+{% endcomment %}{% if site_config.partner_logo or site_config.partner_name %}<{% if site_config.partner_url %}a href="{{ site_config.partner_url }}" target="_blank" rel="noopener"{% else %}span{% endif %} class="wt-partner{% if variant == 'dark' %} wt-partner--dark{% endif %}" translate="no">
+    <b class="wt-partner-label"><span class="lang-en">In partnership with</span><span class="lang-ar">بالشراكة مع</span></b>
+    {% if site_config.partner_logo %}<span class="wt-partner-chip"><img src="{{ site_config.partner_logo.url }}" alt="{{ site_config.partner_name|default:site_config.partner_name_ar }}"></span>{% else %}<span class="wt-partner-name"><span class="lang-en" dir="auto">{{ site_config.partner_name|default:site_config.partner_name_ar }}</span><span class="lang-ar" dir="auto">{{ site_config.partner_name_ar|default:site_config.partner_name }}</span></span>{% endif %}
+</{% if site_config.partner_url %}a{% else %}span{% endif %}>{% endif %}
