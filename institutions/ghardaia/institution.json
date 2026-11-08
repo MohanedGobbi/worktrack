@@ -1,8 +1,19 @@
 {
   "name": "University of Ghardaia - Faculty of Law and Political Science",
   "name_ar": "جامعة غرداية - كلية الحقوق والعلوم السياسية",
+  "logo": "university-logo.png",
+  "banner": "faculty-building.jpg",
+  "brand": "#116333",
+  "accent": "#7dc35b",
   "language": "ar",
   "allow_registration": false,
+
+  "partner": {
+    "name": "AFAK Foundation for Consulting, Specialized Training and Strategic Studies",
+    "name_ar": "مؤسسة آفاق للاستشارة والتكوين المتخصص والدراسات الاستراتيجية",
+    "url": "",
+    "logo": "partner-afak.jpg"
+  },
 
   "contact": {
     "footer": "Faculty of Law and Political Science",
@@ -55,5 +66,5 @@
      "privileges": ["view_dashboard", "manage_users", "system_settings", "export_data", "access_messenger"]}
   ],
 
-  "admin": {"email": "admin@example.edu", "name": "IT Administrator"}
+  "admin": {"email": "admin@ghardaia.local", "name": "مسؤول المنصة"}
 }

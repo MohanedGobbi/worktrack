@@ -38,3 +38,7 @@ logs/
 # Build tools and archives (not part of the app)
 static/vendor/tailwind/tailwindcss
 *.zip
+
+# University of Ghardaia local install (run_ghardaia.bat)
+media_ghardaia/
+ghardaia_setup.log
