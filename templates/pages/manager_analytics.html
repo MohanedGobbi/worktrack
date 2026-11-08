@@ -1,194 +1,170 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Manager Analytics — Worktrack Pro{% endblock %}
-{% block extra_css %}
-<style>
-  .hero { 
-    background: var(--wt-hero-bg) !important; 
-    border-radius: 24px; 
-    padding: 2.5rem 2.5rem; 
-    position: relative; 
-    overflow: hidden; 
-    min-height: 180px;
-    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent) !important;
-    box-shadow: none !important; 
-    color: white; 
-    margin-bottom: 2rem; 
-  }
-  .hero h1 {
-    color: #ffffff !important;
-    text-shadow: none !important;
-  }
-  .kpi-card { background:white; border-radius:16px; padding:1.5rem; box-shadow:0 4px 20px rgba(0,0,0,.06); text-align:center; border-top:4px solid; }
-  .kpi-value { font-size:2.2rem; font-weight:800; }
-  .kpi-label { color:#64748b; font-size:.85rem; }
-  .health-bar { height:8px; border-radius:4px; background:#e2e8f0; overflow:hidden; }
-  .health-fill { height:100%; border-radius:4px; transition:width .4s; width: calc(var(--hf, 0) * 1%); }
-  .hf-green { background:var(--color-primary, #10b981); }
-  .hf-amber { background:#f59e0b; }
-  .hf-red   { background:var(--wt-bad); }
-  .worker-row:hover { background:#f8fafc; }
-</style>
+
+{% block title %}{% if wt_lang == 'ar' %}الفريق · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}Team · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
+
+{% block breadcrumb_trail %}
+<li class="breadcrumb-item active" aria-current="page"><span class="lang-en">Team</span><span class="lang-ar">الفريق</span></li>
 {% endblock %}
+
 {% block content %}
-<div class="hero">
-  <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none; opacity: 0.5;"></div>
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 position-relative" style="z-index: 2;">
-    <div>
-      <h1 class="fw-bold mb-1" style="font-size: 2.4rem; letter-spacing: -0.5px; color: #ffffff !important; text-shadow: none !important;"><i class="fas fa-chart-pie me-2 opacity-75"></i>Manager Analytics Panel</h1>
-      <p class="mb-0 opacity-75" style="font-size: 0.95rem;">Real-time overview of team performance and module health</p>
-    </div>
-    <div class="d-flex gap-2">
-      <a href="{% url 'export-tasks-csv' %}" class="btn rounded-pill fw-bold" style="padding: 0.55rem 1.4rem; background: rgba(255,255,255,0.95); color: color-mix(in oklab, var(--wt-brand) 62%, #000); text-decoration: none;"><i class="fas fa-download me-1"></i>Export Tasks</a>
-      <a href="{% url 'export-submissions-csv' %}" class="btn btn-outline-light rounded-pill fw-bold" style="padding: 0.55rem 1.4rem; border: 1px solid rgba(255,255,255,0.5);"><i class="fas fa-download me-1"></i>Export Submissions</a>
-    </div>
-  </div>
-</div>
-
-<!-- Global KPIs -->
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
-    <div class="kpi-card" style="border-top-color:var(--wt-bad);">
-      <div class="kpi-value" style="color:var(--wt-bad);">{{ total_overdue }}</div>
-      <div class="kpi-label">Overdue Tasks</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="kpi-card" style="border-top-color:#f59e0b;">
-      <div class="kpi-value" style="color:#f59e0b;">{{ total_pending }}</div>
-      <div class="kpi-label">Pending Tasks</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="kpi-card" style="border-top-color:var(--color-primary, #10b981);">
-      <div class="kpi-value" style="color:var(--color-primary, #10b981);">{{ total_completed }}</div>
-      <div class="kpi-label">Completed</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="kpi-card" style="border-top-color:#6366f1;">
-      <div class="kpi-value" style="color:#6366f1;">{% if global_avg_score %}{{ global_avg_score }}{% else %}N/A{% endif %}</div>
-      <div class="kpi-label">Avg Score / 100</div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4">
-  <!-- Monthly Trend Chart -->
-  <div class="col-lg-7">
-    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-      <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2 text-primary"></i>Monthly Submission Trend (6 months)</h6>
-      <canvas id="trendChart" style="max-height:260px;"></canvas>
-    </div>
-  </div>
-  <!-- Module Health -->
-  <div class="col-lg-5">
-    <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-      <h6 class="fw-bold mb-3"><i class="fas fa-cubes me-2 text-indigo"></i>Module Health Scores</h6>
-      {% for mh in module_health %}
-      <div class="mb-3">
-        <div class="d-flex justify-content-between mb-1">
-          <span class="small fw-semibold">{{ mh.module.name }}</span>
-          <span class="small text-muted">{{ mh.health }}% · {{ mh.done }}/{{ mh.total }}
-            {% if mh.overdue %}<span class="text-danger ms-1">⚠ {{ mh.overdue }} overdue</span>{% endif %}
-          </span>
+{% comment %}
+  Team ("who needs me first"): the review queue and the month's numbers on the end side, the people ranked by this
+  month's KPI score on the start side, then module health and six months of output. One page for managers; it replaces
+  the manager portal, team analytics and KPI dashboard. Scores: kpi.engine.month_scores with the install's weights.
+  Data: core.template_views.manager_analytics. No chart library: bars are CSS.
+{% endcomment %}
+<div class="wt-home wt-tm">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1><span class="lang-en">Team</span><span class="lang-ar">الفريق</span></h1>
+            <p><span class="lang-en"><span class="wt-num">{{ team_total }}</span> {% if team_total == 1 %}person{% else %}people{% endif %} · {{ month_en }} so far.</span><span class="lang-ar"><span class="wt-num">{{ team_total }}</span> شخصًا · {{ month_ar }} حتى الآن.</span></p>
         </div>
-        <div class="health-bar">
-          <div class="health-fill {% if mh.health >= 80 %}hf-green{% elif mh.health >= 50 %}hf-amber{% else %}hf-red{% endif %}" data-width-pct="{{ mh.health|default:0 }}"></div>
+        <div class="wt-home-actions">
+            <a class="btn btn-light" href="{% url 'task-list' %}"><i class="fas fa-list-check" aria-hidden="true"></i><span class="lang-en">All tasks</span><span class="lang-ar">كل المهام</span></a>
+            <a class="btn btn-primary" href="{% url 'task-create' %}"><i class="fas fa-plus" aria-hidden="true"></i><span class="lang-en">New task</span><span class="lang-ar">مهمة جديدة</span></a>
         </div>
-      </div>
-      {% empty %}
-      <p class="text-muted">No modules yet.</p>
-      {% endfor %}
+    </header>
+
+    <div class="wt-tm-top">
+        {# ── Review queue ── #}
+        <section class="wt-panel wt-tm-queue" aria-labelledby="tm-queue-title">
+            <div class="wt-panel-head">
+                <h2 id="tm-queue-title"><span class="lang-en">Needs your review</span><span class="lang-ar">بانتظار مراجعتك</span> {% if review_count %}<span class="wt-count-pill wt-num">{{ review_count }}</span>{% endif %}</h2>
+                <span class="wt-panel-meta"><a href="{% url 'submission-list' %}"><span class="lang-en">All submissions</span><span class="lang-ar">كل التسليمات</span></a></span>
+            </div>
+            {% if review_queue %}
+            <ul class="wt-tm-reviews">
+                {% for s in review_queue %}
+                <li>
+                    <span class="wt-avatar" aria-hidden="true">{{ s.worker.first_name|default:s.worker.email|first|upper }}{{ s.worker.last_name|first|upper }}</span>
+                    <span class="wt-tm-rv-main">
+                        <a class="wt-cell-link" href="{% url 'submission-detail' s.id %}" dir="auto" translate="no">{{ s.task.title }}</a>
+                        <small><span dir="auto" translate="no">{{ s.worker.get_full_name|default:s.worker.email }}</span> · <span class="wt-num">{{ s.submitted_at|default:s.created_at|date:"j/n H:i" }}</span></small>
+                    </span>
+                    <a class="btn btn-light btn-sm" href="{% url 'submission-detail' s.id %}"><span class="lang-en">Review</span><span class="lang-ar">مراجعة</span></a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="wt-empty is-good"><i class="fas fa-circle-check" aria-hidden="true"></i><p><span class="lang-en">Nothing is waiting for review.</span><span class="lang-ar">لا شيء بانتظار المراجعة.</span></p></div>
+            {% endif %}
+        </section>
+
+        {# ── Month numbers ── #}
+        <section class="wt-panel wt-today" aria-labelledby="tm-month-title">
+            <div class="wt-panel-head"><h2 id="tm-month-title"><span class="lang-en">This month</span><span class="lang-ar">هذا الشهر</span></h2></div>
+            <dl class="wt-today-list">
+                <div><dt><span class="lang-en">Average score</span><span class="lang-ar">متوسط النتيجة</span></dt><dd class="wt-num">{% if avg_score is not None %}{{ avg_score|floatformat:"-1" }}{% else %}–{% endif %}</dd></div>
+                <div><dt><span class="lang-en">Tasks completed</span><span class="lang-ar">المهام المنجزة</span></dt><dd class="wt-num">{% if completion_pct is not None %}{{ completion_pct }}%{% else %}–{% endif %}</dd></div>
+                <div><dt><span class="lang-en">Overdue tasks</span><span class="lang-ar">مهام متأخرة</span></dt><dd class="wt-num{% if overdue_total %} is-alert{% endif %}">{{ overdue_total }}</dd></div>
+            </dl>
+            <p class="wt-tm-formula" dir="ltr" translate="no">score = {% for w, en, ar in weights %}{{ w }}%&#8239;{{ en|lower|cut:" " }}{% if not forloop.last %} + {% endif %}{% endfor %}</p>
+        </section>
     </div>
-  </div>
-</div>
 
-<!-- Per-Worker Performance Table -->
-<div class="card border-0 shadow-sm rounded-4 mt-4">
-  <div class="card-body">
-    <h6 class="fw-bold mb-3"><i class="fas fa-users me-2 text-muted"></i>Team Performance</h6>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Worker</th>
-            <th>Total Subs</th>
-            <th>Approved</th>
-            <th>Approval Rate</th>
-            <th>Avg Score</th>
-            <th>Overdue Tasks</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ws in worker_stats %}
-          <tr class="worker-row">
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#0ea5e9);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.85rem;flex-shrink:0;">
-                  {{ ws.user.first_name|first }}{{ ws.user.last_name|first }}
-                </div>
-                <div>
-                  <div class="fw-semibold">{{ ws.user.get_full_name }}</div>
-                  <div class="small text-muted">{{ ws.user.email }}</div>
-                </div>
-              </div>
-            </td>
-            <td>{{ ws.total_subs }}</td>
-            <td><span class="badge bg-success-subtle text-success rounded-pill">{{ ws.approved }}</span></td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <div class="progress flex-grow-1" style="height: 6px; border-radius: 3px;">
-                  <div class="progress-bar {% if ws.approval_rate >= 80 %}bg-success{% elif ws.approval_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" data-width-pct="{{ ws.approval_rate|default:0 }}"></div>
-                </div>
-                <small>{{ ws.approval_rate }}%</small>
-              </div>
-            </td>
-            <td>{% if ws.avg_score %}{{ ws.avg_score }}/100{% else %}<span class="text-muted">—</span>{% endif %}</td>
-            <td>{% if ws.overdue_tasks %}<span class="badge bg-danger-subtle text-danger rounded-pill">{{ ws.overdue_tasks }}</span>{% else %}<span class="text-muted">0</span>{% endif %}</td>
-            <td><a href="{% url 'worker-performance' %}?user_id={{ ws.user.id }}" class="btn btn-sm btn-light rounded-pill"><span class="lang-en">View</span><span class="lang-ar">عرض</span></a></td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="7" class="text-center text-muted py-3">No workers found.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {# ── People ── #}
+    <section class="wt-panel wt-tm-people" aria-labelledby="tm-people-title">
+        <div class="wt-panel-head">
+            <h2 id="tm-people-title"><span class="lang-en">People</span><span class="lang-ar">الأشخاص</span> <span class="wt-count-pill wt-num">{{ result_count }}</span></h2>
+            <form class="wt-tm-tools" method="get" action="{% url 'manager-analytics' %}" role="search">
+                <label class="wt-filter wt-filter-search">
+                    <span class="visually-hidden"><span class="lang-en">Search people</span><span class="lang-ar">ابحث عن أشخاص</span></span>
+                    <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                    <input type="search" name="search" class="form-control" value="{{ search }}" autocomplete="off" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم{% else %}Search by name{% endif %}">
+                </label>
+                <label class="wt-filter">
+                    <span class="visually-hidden"><span class="lang-en">Sort by</span><span class="lang-ar">الترتيب</span></span>
+                    <select class="form-select" name="sort" onchange="this.form.submit()">
+                        <option value="score"{% if sort == 'score' %} selected{% endif %}>{% if wt_lang == 'ar' %}الأعلى نتيجة{% else %}Highest score{% endif %}</option>
+                        <option value="overdue"{% if sort == 'overdue' %} selected{% endif %}>{% if wt_lang == 'ar' %}الأكثر تأخرًا{% else %}Most overdue{% endif %}</option>
+                        <option value="name"{% if sort == 'name' %} selected{% endif %}>{% if wt_lang == 'ar' %}الاسم{% else %}Name{% endif %}</option>
+                    </select>
+                </label>
+            </form>
+        </div>
+        {% if page.object_list %}
+        <div class="wt-tm-headrow" aria-hidden="true">
+            <span></span>
+            <span><span class="lang-en">Person</span><span class="lang-ar">الشخص</span></span>
+            <span><span class="lang-en">Score this month</span><span class="lang-ar">نتيجة الشهر</span></span>
+            <span><span class="lang-en">Open</span><span class="lang-ar">مفتوحة</span></span>
+            <span><span class="lang-en">Overdue</span><span class="lang-ar">متأخرة</span></span>
+            <span><span class="lang-en">To review</span><span class="lang-ar">للمراجعة</span></span>
+        </div>
+        <ul class="wt-tm-list">
+            {% for u in page %}
+            <li class="wt-tm-row">
+                <span class="wt-avatar" aria-hidden="true">{{ u.first_name|default:u.email|first|upper }}{{ u.last_name|first|upper }}</span>
+                <span class="wt-tm-main">
+                    <a class="wt-cell-link" href="{% url 'worker-performance' %}?user_id={{ u.id }}" dir="auto" translate="no">{{ u.get_full_name|default:u.email }}</a>
+                    <small dir="auto" translate="no">{{ u.department.name|default:"" }}</small>
+                </span>
+                <span class="wt-tm-score"><span class="wt-up-bar" role="img" aria-label="{{ u.wt_score|stringformat:'s' }}"><i style="--p: {{ u.wt_score|stringformat:'s' }}%;"></i></span><b class="wt-num">{{ u.wt_score|floatformat:"-1" }}</b></span>
+                <span class="wt-tm-stats">
+                    <span><small><span class="lang-en">Open</span><span class="lang-ar">مفتوحة</span></small><b class="wt-num">{{ u.wt_open }}</b></span>
+                    <span><small><span class="lang-en">Overdue</span><span class="lang-ar">متأخرة</span></small><b class="wt-num{% if u.wt_overdue %} wt-tm-late{% endif %}">{{ u.wt_overdue }}</b></span>
+                    <span><small><span class="lang-en">To review</span><span class="lang-ar">للمراجعة</span></small><b class="wt-num">{{ u.wt_waiting }}</b></span>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if page.has_other_pages %}
+        <div class="wt-panel-foot wt-join-foot">
+            <span class="wt-num">{{ page.start_index }}–{{ page.end_index }} / {{ result_count }}</span>
+            <nav class="wt-pager" aria-label="{% if wt_lang == 'ar' %}صفحات الفريق{% else %}Team pages{% endif %}">
+                {% if page.has_previous %}<a class="wt-page" href="?page={{ page.previous_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}السابق{% else %}Previous{% endif %}"><i class="fas fa-chevron-left rtl-flip"></i></a>{% endif %}
+                {% for i in page.paginator.page_range %}
+                {% if page.number == i %}<span class="wt-page is-on" aria-current="page">{{ i }}</span>
+                {% elif i == 1 or i == page.paginator.num_pages or i > page.number|add:'-3' and i < page.number|add:'3' %}<a class="wt-page" href="?page={{ i }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}">{{ i }}</a>
+                {% elif i == page.number|add:'-3' or i == page.number|add:'3' %}<span class="wt-page-gap" aria-hidden="true">…</span>{% endif %}
+                {% endfor %}
+                {% if page.has_next %}<a class="wt-page" href="?page={{ page.next_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}التالي{% else %}Next{% endif %}"><i class="fas fa-chevron-right rtl-flip"></i></a>{% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="wt-empty"><i class="fas fa-users" aria-hidden="true"></i>
+            <p>{% if wt_filtered %}<span class="lang-en">Nobody matches that name.</span><span class="lang-ar">لا أحد بهذا الاسم.</span>{% else %}<span class="lang-en">No one is on your team yet. People appear here when they report to you or share a work group with you.</span><span class="lang-ar">لا أحد في فريقك بعد. يظهر هنا من يتبع لك أو يشاركك مجموعة عمل.</span>{% endif %}</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="wt-tm-bottom">
+        {# ── Module health ── #}
+        <section class="wt-panel" aria-labelledby="tm-mod-title">
+            <div class="wt-panel-head"><h2 id="tm-mod-title"><span class="lang-en">Modules</span><span class="lang-ar">الوحدات</span></h2></div>
+            {% if modules %}
+            <ul class="wt-tm-mods">
+                {% for r in modules %}
+                <li>
+                    <span class="wt-up-dot" style="--mc: var(--wt-brand);" aria-hidden="true"></span>
+                    <span class="wt-tm-mod-main"><a class="wt-cell-link" href="{% url 'module-dashboard' r.module.slug %}" dir="auto" translate="no">{{ r.module.name }}</a><small class="wt-num" dir="ltr">{{ r.done }} / {{ r.total }}</small></span>
+                    {% if r.late %}<span class="wt-chip is-alert"><span class="wt-num">{{ r.late }}</span> <span class="lang-en">overdue</span><span class="lang-ar">متأخرة</span></span>{% endif %}
+                    <span class="wt-up-bar" role="img" aria-label="{{ r.pct }}%"><i style="--p: {{ r.pct }}%;"></i></span>
+                    <b class="wt-num">{{ r.pct }}%</b>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="wt-side-empty"><span class="lang-en">No modules with tasks yet.</span><span class="lang-ar">لا وحدات فيها مهام بعد.</span></p>{% endif %}
+        </section>
+
+        {# ── Six months ── #}
+        <section class="wt-panel" aria-labelledby="tm-trend-title">
+            <div class="wt-panel-head">
+                <h2 id="tm-trend-title"><span class="lang-en">Last 6 months</span><span class="lang-ar">آخر 6 أشهر</span></h2>
+                <span class="wt-panel-meta wt-tm-key"><span><i class="wt-tm-key-sent" aria-hidden="true"></i><span class="lang-en">Submitted</span><span class="lang-ar">مُسلَّمة</span></span><span><i class="wt-tm-key-ok" aria-hidden="true"></i><span class="lang-en">Approved</span><span class="lang-ar">معتمدة</span></span></span>
+            </div>
+            <ol class="wt-tm-cols">
+                {% for t in trend %}
+                <li class="{% if t.current %}is-current{% endif %}">
+                    <span class="wt-tm-col-val wt-num" dir="ltr">{{ t.approved }}/{{ t.sent }}</span>
+                    <span class="wt-tm-col" aria-hidden="true"><i class="wt-tm-bar-sent" style="--p: {{ t.sent_pct }}%;"></i><i class="wt-tm-bar-ok" style="--p: {{ t.approved_pct }}%;"></i></span>
+                    <span class="wt-tm-col-label"><span class="lang-en">{{ t.label_en }}</span><span class="lang-ar">{{ t.label_ar }}</span></span>
+                </li>
+                {% endfor %}
+            </ol>
+        </section>
     </div>
-  </div>
 </div>
-{% endblock %}
-{% block extra_js %}
-<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
-
-<!-- Data for Trend Chart -->
-<div id="monthly-trend-data" style="display:none;">{{ monthly_trend|safe }}</div>
-
-<script>
-const t = JSON.parse(document.getElementById('monthly-trend-data').textContent);
-new Chart(document.getElementById('trendChart'), {
-  type:'line',
-  data:{
-    labels: t.map(d=>{
-      if (window.__isArabic) {
-        const months = {
-          'Jan': 'جانفي', 'Feb': 'فيفري', 'Mar': 'مارس', 'Apr': 'أفريل', 'May': 'ماي', 'Jun': 'جوان',
-          'Jul': 'جويلية', 'Aug': 'أوت', 'Sep': 'سبتمبر', 'Oct': 'أكتوبر', 'Nov': 'نوفمبر', 'Dec': 'ديسمبر'
-        };
-        let parts = d.label.split(' ');
-        if (parts.length > 0 && months[parts[0]]) {
-          parts[0] = months[parts[0]];
-        }
-        return parts.join(' ');
-      }
-      return d.label;
-    }),
-    datasets:[
-      {label:window.__isArabic ? 'المقدمة' : 'Submitted', data:t.map(d=>d.submitted), borderColor:'#6366f1', tension:.4, fill:true, backgroundColor:'rgba(99,102,241,.12)', pointRadius:4},
-      {label:window.__isArabic ? 'المعتمدة' : 'Approved',  data:t.map(d=>d.approved),  borderColor:'var(--color-primary, #10b981)', tension:.4, fill:false, pointRadius:4},
-    ]
-  },
-  options:{responsive:true,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
-});
-</script>
 {% endblock %}

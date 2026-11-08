@@ -5585,51 +5585,9 @@ def user_create(request):
 
 
 @login_required(login_url='login')
-@require_http_methods(["GET"])
 def kpi_dashboard(request):
-    """KPI and performance dashboard."""
-    if request.user.role == 'worker':
-        # Workers see only their own KPI
-        from kpi.models import UserKPI
-        kpi_records = UserKPI.objects.filter(user=request.user).order_by('-month')[:12]
-        
-        context = {
-            'kpi_records': kpi_records,
-            'current_month': kpi_records.first() if kpi_records else None,
-        }
-    else:
-        # Managers/Admins see all KPIs
-        from kpi.models import UserKPI
-        from django.db.models import Avg
-        
-        all_kpi = UserKPI.objects.filter(
-            month__gte=timezone.now().date().replace(day=1) - datetime.timedelta(days=90)
-        )
-        
-        kpi_stats = all_kpi.aggregate(
-            avg_completion=Avg('completion_rate'),
-            avg_quality=Avg('quality_score'),
-            avg_on_time=Avg('on_time_rate'),
-        )
-        
-        top_performers = UserKPI.objects.filter(
-            month=timezone.now().date().replace(day=1)
-        ).order_by('-total_score')[:5]
-        
-        
-        # We need to serialize the data for Chart.js
-        all_kpi_json = list(all_kpi.values('completion_rate', 'quality_score', 'on_time_rate', 'total_score', 'month'))
-        for item in all_kpi_json:
-            item['month'] = item['month'].strftime('%Y-%m-%d')
-            
-        context = {
-            'all_kpi': all_kpi,
-            'all_kpi_json': json.dumps(all_kpi_json),
-            'kpi_stats': kpi_stats,
-            'top_performers': top_performers,
-        }
-    
-    return render(request, 'pages/kpi_dashboard.html', context)
+    """Moved: KPI results live on the Team page (managers) and My score (everyone)."""
+    return redirect('manager-analytics' if request.user.role in ('manager', 'super_admin') else 'worker-performance')
 
 
 @login_required(login_url='login')
@@ -5724,133 +5682,6 @@ def register_new_user(request):
 
 
 # ============= Manager Portal Views =============
-
-@login_required(login_url='login')
-@require_http_methods(["GET"])
-def manager_portal(request):
-    """Dedicated Manager Portal - Team Management"""
-    if request.user.role not in ['manager', 'super_admin']:
-        messages.error(request, 'You do not have access to the manager portal.')
-        return redirect('dashboard')
-    
-    # Get manager's team
-    team_members = User.objects.filter(
-        profile__manager=request.user,
-        is_active=True
-    ).select_related('department', 'profile__manager')
-    
-    # Team statistics
-    team_stats = {
-        'total_members': team_members.count(),
-        'active_members': team_members.filter(is_active=True).count(),
-    }
-    
-    # Tasks assigned to team members
-    all_team_tasks = Task.objects.filter(
-        assigned_to__in=team_members,
-        work_module__is_archived=False
-    ).select_related('created_by', 'work_module')
-    team_standard = all_team_tasks.filter(task_type='standard')
-    # Correspondence for team — use the new Correspondence model
-    team_corr_qs = Correspondence.objects.filter(
-        assigned_to__in=team_members, 
-        status='active',
-        work_module__is_archived=False
-    )
-    corr_stats = {
-        'total': team_corr_qs.count(),
-        'pending': team_corr_qs.filter(status='active').count(),
-        'completed': team_corr_qs.filter(status='archived').count(),
-    }
-
-    # Recent correspondence from Correspondence model
-    recent_correspondence = team_corr_qs.select_related('created_by', 'work_module').order_by('-created_at')[:8]
-
-    # Team standard task stats
-    tasks_stats = {
-        'total': team_standard.count(),
-        'pending': team_standard.filter(status='pending').count(),
-        'in_progress': team_standard.filter(status='in_progress').count(),
-        'completed': team_standard.filter(status__in=['completed', 'approved']).count(),
-    }
-
-    # Recent standard tasks
-    recent_tasks = team_standard.order_by('-created_at')[:8]
-
-    # Submissions from team
-    team_submissions_qs = Submission.objects.filter(
-        worker__in=team_members,
-        task__work_module__is_archived=False
-    )
-    pending_submissions = team_submissions_qs.filter(
-        status='submitted'
-    ).select_related('task', 'worker')
-
-    submissions_stats = {
-        'total': team_submissions_qs.count(),
-        'submitted': pending_submissions.count(),
-        'approved': team_submissions_qs.filter(status='approved').count(),
-        'rejected': team_submissions_qs.filter(status='rejected').count(),
-    }
-
-    try:
-        my_today_record = AttendanceRecord.objects.filter(user=request.user, date=timezone.now().date()).first()
-    except Exception:
-        my_today_record = None
-
-    # Fetch Manager Modules with rich stats matching Admin Dashboard
-    selected_group = request.GET.get('group', 'all')
-    mod_data = get_module_workspace_stats(request.user, selected_group)
-
-    # Fetch Available Modules for Explore option
-    enrolled_task_module_ids = Task.objects.filter(assigned_to=request.user).values_list('work_module_id', flat=True).distinct()
-    enrolled_users_ids = request.user.enrolled_modules.values_list('id', flat=True)
-    all_enrolled_ids = set(list(enrolled_task_module_ids) + list(enrolled_users_ids))
-    available_modules = WorkModule.objects.filter(allow_enrollment=True, is_archived=False).exclude(id__in=all_enrolled_ids).order_by('-created_at')
-
-    completion_rate = round((tasks_stats['completed'] / tasks_stats['total'] * 100) if tasks_stats['total'] > 0 else 0)
-
-    module_stats = mod_data['module_stats']
-    average_module_progress = 0
-    average_module_completion = 0
-    if module_stats:
-        active_progress_sum = sum(m['progress'] for m in module_stats if m['progress'] is not None)
-        average_module_progress = round(active_progress_sum / len(module_stats))
-        active_rate_sum = sum(m['rate'] for m in module_stats if m['rate'] is not None)
-        average_module_completion = round(active_rate_sum / len(module_stats))
-
-    context = {
-        'team_members': team_members,
-        'team_stats': team_stats,
-        'tasks_stats': tasks_stats,
-        'corr_stats': corr_stats,
-        'team_tasks': team_standard,
-        'recent_tasks': recent_tasks,
-        'recent_correspondence': recent_correspondence,
-        'pending_submissions': pending_submissions,
-        'pending_count': pending_submissions.count(),
-        'submissions_stats': submissions_stats,
-        'total_submissions': submissions_stats['total'],
-        'submissions_count': submissions_stats['total'],
-        'my_today_record': my_today_record,
-        'manager_modules': mod_data['modules_list'],
-        'available_modules': available_modules,
-        'completion_rate': completion_rate,
-        'average_module_progress': average_module_progress,
-        'average_module_completion': average_module_completion,
-        'total_tasks': tasks_stats['total'],
-        'total_corr': corr_stats['total'],
-        # Module display context matching Admin Dashboard
-        'modules_list': mod_data['modules_list'],
-        'module_stats_list': mod_data['module_stats'],
-        'module_count': mod_data['module_count'],
-        'available_groups': mod_data['available_groups'],
-        'selected_group': mod_data['selected_group'],
-        'group_progress': mod_data['group_progress'],
-        'is_manager': True,
-    }
-    return render(request, 'pages/manager_portal.html', context)
-
 
 # ============= Worker Portal Views =============
 
@@ -6551,56 +6382,123 @@ def worker_performance(request):
     return render(request, 'pages/worker_performance.html', context)
 
 
-# ── Improvement #6: Manager Analytics Panel ───────────
+def _team_people(user):
+    """The people a manager looks after: those who report to them or share a work group, plus (for an
+    administrator) every active staff member and manager. Never the viewer."""
+    if user.role == 'super_admin':
+        qs = User.objects.filter(is_active=True, role__in=['worker', 'manager'])
+    else:
+        ids = set(User.objects.filter(profile__manager=user).values_list('id', flat=True))
+        ids |= set(user.get_teammates().values_list('id', flat=True))
+        qs = User.objects.filter(is_active=True, role='worker', id__in=ids)
+    return qs.exclude(pk=user.pk).select_related('department')
+
 
 @login_required(login_url='login')
+@require_http_methods(["GET"])
 def manager_analytics(request):
-    if request.user.role not in ['manager', 'super_admin']:
-        messages.error(request, 'Permission denied.')
+    """Team: this month's scores per person, what waits for review, module health and six months of output.
+    Replaces the old manager portal, team analytics and KPI dashboard pages (their URLs redirect here)."""
+    from django.core.paginator import Paginator
+    from kpi.engine import month_scores
+    from kpi.models import KPIWeight
+
+    viewer = request.user
+    if viewer.role not in ('manager', 'super_admin'):
+        messages.error(request, _say(request, 'The team page is for managers.', 'صفحة الفريق للمديرين.'))
         return redirect('dashboard')
+
     now = timezone.now()
-    workers = User.objects.filter(role='worker', is_active=True)
-    worker_stats = []
-    for w in workers:
-        s = Submission.objects.filter(worker=w, task__work_module__is_archived=False)
-        total = s.count(); approved = s.filter(status='approved').count()
-        scored = s.filter(score__isnull=False)
-        avg = round(sum(x.score for x in scored)/scored.count(),1) if scored.exists() else None
-        worker_stats.append({
-            'user': w, 'total_subs': total, 'approved': approved,
-            'approval_rate': round((approved/total*100) if total else 0,1),
-            'avg_score': avg,
-            'overdue_tasks': Task.objects.filter(assigned_to=w, status='overdue').count(),
-        })
-    module_health = []
-    for m in WorkModule.get_visible_modules(request.user, include_archived=False):
-        tasks = Task.objects.filter(work_module=m)
-        total = tasks.count(); done = tasks.filter(status__in=['approved','completed']).count()
-        module_health.append({
-            'module': m, 'total': total, 'done': done,
-            'overdue': tasks.filter(status='overdue').count(),
-            'health': round((done/total*100) if total else 0, 1),
-        })
-    monthly_trend = []
-    for i in range(5,-1,-1):
-        ms = (now.replace(day=1)-_dt.timedelta(days=30*i)).replace(day=1)
-        me = (ms.replace(day=28)+_dt.timedelta(days=4)).replace(day=1)
-        monthly_trend.append({
-            'label': ms.strftime('%b %Y'),
-            'submitted': Submission.objects.filter(created_at__gte=ms, created_at__lt=me, task__work_module__is_archived=False).count(),
-            'approved': Submission.objects.filter(status='approved', created_at__gte=ms, created_at__lt=me, task__work_module__is_archived=False).count(),
-        })
-    all_tasks = Task.objects.filter(work_module__is_archived=False)
-    all_subs = Submission.objects.filter(score__isnull=False, task__work_module__is_archived=False)
-    context = {
-        'worker_stats': worker_stats, 'module_health': module_health,
-        'total_overdue': all_tasks.filter(status='overdue').count(),
-        'total_pending': all_tasks.filter(status='pending').count(),
-        'total_completed': all_tasks.filter(status__in=['approved','completed']).count(),
-        'global_avg_score': round(sum(s.score for s in all_subs)/all_subs.count(),1) if all_subs.exists() else None,
-        'monthly_trend': script_json(monthly_trend),
-    }
-    return render(request, 'pages/manager_analytics.html', context)
+    today = timezone.localdate()
+    people_qs = _team_people(viewer)
+    sort = request.GET.get('sort', 'score')
+    search = request.GET.get('search', '').strip()
+    if search:
+        people_qs = people_qs.filter(Q(first_name__icontains=search) | Q(last_name__icontains=search) | Q(email__icontains=search))
+    everyone = list(people_qs)
+    ids = [u.id for u in everyone]
+
+    weights = KPIWeight.get_weights()
+    scores = month_scores(ids, today, weights) if ids else {}
+    open_tasks = dict(Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False).exclude(status__in=['approved', 'completed'])
+                      .values_list('assigned_to').annotate(n=Count('id', distinct=True)))
+    overdue = dict(Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False, deadline__lt=now).exclude(status__in=['approved', 'completed'])
+                   .values_list('assigned_to').annotate(n=Count('id', distinct=True)))
+    waiting = dict(Submission.objects.filter(worker__in=ids, status__in=['submitted', 'under_review'], task__work_module__is_archived=False)
+                   .values_list('worker').annotate(n=Count('id')))
+    for u in everyone:
+        sc = scores.get(u.id, {})
+        u.wt_score = round(sc.get('total', 0), 1)
+        u.wt_open, u.wt_overdue, u.wt_waiting = open_tasks.get(u.id, 0), overdue.get(u.id, 0), waiting.get(u.id, 0)
+    if sort == 'name':
+        everyone.sort(key=lambda u: (u.get_full_name() or u.email).lower())
+    elif sort == 'overdue':
+        everyone.sort(key=lambda u: (-u.wt_overdue, -u.wt_open))
+    else:
+        sort = 'score'
+        everyone.sort(key=lambda u: (-u.wt_score, (u.get_full_name() or u.email).lower()))
+    page = Paginator(everyone, 25).get_page(request.GET.get('page'))
+    params = request.GET.copy()
+    params.pop('page', None)
+
+    # Team numbers (the whole team, not just this page)
+    team_total = len(ids)
+    avg_score = round(sum(u.wt_score for u in everyone) / len(everyone), 1) if everyone else None
+    team_subs = Submission.objects.filter(worker__in=ids, task__work_module__is_archived=False)
+    review_queue = (team_subs.filter(status__in=['submitted', 'under_review'])
+                    .select_related('task', 'task__work_module', 'worker').order_by('submitted_at', 'created_at'))
+    review_count = review_queue.count()
+    team_tasks = Task.objects.filter(assigned_to__in=ids, work_module__is_archived=False).distinct()
+    task_total = team_tasks.count()
+    task_done = team_tasks.filter(status__in=['approved', 'completed']).count()
+
+    # Module health (modules this person can see)
+    modules = []
+    for m in WorkModule.get_visible_modules(viewer, include_archived=False)[:12]:
+        t = Task.objects.filter(work_module=m)
+        total = t.count()
+        done = t.filter(status__in=['approved', 'completed']).count()
+        late = t.filter(deadline__lt=now).exclude(status__in=['approved', 'completed']).count()
+        if total:
+            modules.append({'module': m, 'total': total, 'done': done, 'late': late, 'pct': int(done / total * 100)})
+    modules.sort(key=lambda r: (-r['late'], r['pct']))
+
+    # Six months of output (calendar months)
+    months, y, mo = [], today.year, today.month
+    for _ in range(6):
+        months.append(_dt.date(y, mo, 1))
+        y, mo = (y - 1, 12) if mo == 1 else (y, mo - 1)
+    months.reverse()
+    trend = []
+    for first in months:
+        nxt = _dt.date(first.year + (first.month == 12), first.month % 12 + 1, 1)
+        in_m = team_subs.filter(created_at__date__gte=first, created_at__date__lt=nxt)
+        trend.append({'label_en': first.strftime('%b'), 'label_ar': _AR_MONTHS[first.month - 1],
+                      'sent': in_m.count(), 'approved': in_m.filter(status='approved').count(), 'current': first == months[-1]})
+    peak = max([t['sent'] for t in trend] + [1])
+    for t in trend:
+        t['sent_pct'], t['approved_pct'] = int(t['sent'] / peak * 100), int(t['approved'] / peak * 100)
+
+    return render(request, 'pages/manager_analytics.html', {
+        'page': page, 'result_count': len(everyone), 'team_total': team_total,
+        'avg_score': avg_score, 'review_queue': review_queue[:8], 'review_count': review_count,
+        'overdue_total': sum(overdue.values()),
+        'completion_pct': int(task_done / task_total * 100) if task_total else None,
+        'modules': modules, 'trend': trend,
+        'month_en': today.strftime('%B %Y'), 'month_ar': f'{_AR_MONTHS[today.month - 1]} {today.year}',
+        'sort': sort, 'search': search, 'wt_qs': params.urlencode(), 'wt_filtered': bool(search),
+        'weights': [(round(weights.completion_rate_weight * 100), 'Completion', 'الإنجاز'),
+                    (round(weights.on_time_rate_weight * 100), 'On time', 'الالتزام بالمواعيد'),
+                    (round(weights.quality_score_weight * 100), 'Quality', 'الجودة'),
+                    (round(weights.productivity_score_weight * 100), 'Output', 'حجم العمل')],
+        'is_admin': viewer.role == 'super_admin',
+    })
+
+
+@login_required(login_url='login')
+def manager_portal(request):
+    """Moved: the manager portal is now the Team page."""
+    return redirect('manager-analytics')
 
 
 # ── Improvement #9: Avatar Upload ─────────────────────

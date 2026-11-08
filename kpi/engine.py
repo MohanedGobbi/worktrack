@@ -161,3 +161,37 @@ def recalculate_all_kpis(month=None):
         kpi = recalculate_user_kpi(user, month)
         results.append(kpi)
     return results
+
+
+def month_scores(users, month, weights=None):
+    """KPI parts and total for many users in one go (a handful of queries, not ~30 per person).
+
+    Same formulas as KPICalculationEngine, grouped by person. ``month`` is any date in the month.
+    Returns {user_id: {'completion', 'on_time', 'quality', 'productivity', 'total'}} (0-100).
+    """
+    from django.db.models import Count, Avg, F, Q
+    ids = [u.pk if hasattr(u, 'pk') else u for u in users]
+    weights = weights or KPIWeight.get_weights()
+    m, y = month.month, month.year
+
+    assigned = dict(Task.objects.filter(assigned_to__in=ids, created_at__month=m, created_at__year=y)
+                    .values_list('assigned_to').annotate(n=Count('id', distinct=True)))
+    subs = Submission.objects.filter(worker__in=ids)
+    in_month = subs.filter(submitted_at__month=m, submitted_at__year=y)
+    done = dict(in_month.filter(status__in=['approved', 'submitted']).values_list('worker').annotate(n=Count('id')))
+    approved = dict(in_month.filter(status='approved').values_list('worker').annotate(n=Count('id')))
+    submitted = dict(in_month.filter(submitted_at__isnull=False).values_list('worker').annotate(n=Count('id')))
+    on_time = dict(in_month.filter(submitted_at__isnull=False, submitted_at__lte=F('task__deadline')).values_list('worker').annotate(n=Count('id')))
+    quality = dict(subs.filter(score__isnull=False, reviewed_at__month=m, reviewed_at__year=y)
+                   .values_list('worker').annotate(a=Avg('score')))
+
+    out = {}
+    for uid in ids:
+        completion = (done.get(uid, 0) / assigned[uid] * 100) if assigned.get(uid) else 0
+        ontime = (on_time.get(uid, 0) / submitted[uid] * 100) if submitted.get(uid) else 0
+        q = quality.get(uid) or 0
+        prod = min(approved.get(uid, 0) / 10 * 100, 100)
+        total = min(100, completion * weights.completion_rate_weight + ontime * weights.on_time_rate_weight
+                    + q * weights.quality_score_weight + prod * weights.productivity_score_weight)
+        out[uid] = {'completion': completion, 'on_time': ontime, 'quality': q, 'productivity': prod, 'total': total}
+    return out

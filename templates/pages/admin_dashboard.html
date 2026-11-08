@@ -966,7 +966,7 @@
 
             <!-- Tool: KPI Telemetry & Analytics Hub -->
             <div class="col-6 col-md-4 col-lg-3 col-xl-2 cmd-tool-col" data-tool="kpi dashboard telemetry analytics institutional metrics مؤشرات الأداء">
-                <a href="{% url 'kpi-dashboard' %}" class="cmd-tool-card tint-red">
+                <a href="{% url 'manager-analytics' %}" class="cmd-tool-card tint-red">
                     <div class="cmd-tool-icon"><i class="fas fa-tachometer-alt"></i></div>
                     <div class="cmd-tool-title"><span class="lang-en">KPI Telemetry</span><span class="lang-ar">مؤشرات الأداء KPI</span></div>
                     <div class="cmd-tool-sub"><span class="lang-en">Institutional Metrics</span><span class="lang-ar">لوحة القياس الشاملة</span></div>
@@ -1308,7 +1308,7 @@
                                     <span class="text-muted small">OVERALL SCORE</span>
                                     <h5 class="fw-bold text-primary mb-0">{{ performer.total_score }}%</h5>
                                 </div>
-                                <a href="{% url 'kpi-dashboard' %}?user={{ performer.user.id }}" class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-3 fw-bold">
+                                <a href="{% url 'worker-performance' %}?user_id={{ performer.user.id }}" class="btn btn-sm btn-outline-secondary w-100 rounded-pill mt-3 fw-bold">
                                     View Full Report
                                 </a>
                             </div>

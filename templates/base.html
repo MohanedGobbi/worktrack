@@ -39,7 +39,7 @@
     <script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
 
     {% include 'includes/wt_theme.html' %}
-    <link href="{% static 'wt/app.css' %}?v=46" rel="stylesheet">
+    <link href="{% static 'wt/app.css' %}?v=47" rel="stylesheet">
 
     <script>
         window.__forceLanguageReload = {{ site_settings.force_language_reload|yesno:"true,false" }};
@@ -165,9 +165,6 @@
                 {% endif %}
                 {% if sb_rules.registry != False %}
                 <a href="{% url 'user-management' %}" class="{% if un == 'user-management' or un == 'user-create' or un == 'user-edit' %}is-active{% endif %}"><i class="fas fa-users"></i><span><span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span></span></a>
-                {% endif %}
-                {% if sb_rules.manager_portal != False %}
-                <a href="{% url 'manager-portal' %}" class="{% if un == 'manager-portal' %}is-active{% endif %}"><i class="fas fa-briefcase"></i><span><span class="lang-en">Manager view</span><span class="lang-ar">واجهة المدير</span></span></a>
                 {% endif %}
                 {% if sb_rules.worker_portal != False %}
                 <a href="{% url 'worker-portal' %}" class="{% if un == 'worker-portal' %}is-active{% endif %}"><i class="fas fa-user-gear"></i><span><span class="lang-en">Worker view</span><span class="lang-ar">واجهة الموظف</span></span></a>
