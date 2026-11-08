@@ -2062,3 +2062,30 @@ html[dir="rtl"] .wt-tm-headrow { font-family: var(--wt-font-body); font-size: 0.
   .wt-tm-mods .wt-chip { display: none; }
 }
 @media (max-width: 720px) { .wt-tm-col { height: 100px; } .wt-tm-cols { gap: 6px; padding-inline: 14px; } .wt-tm-reviews li { padding-inline: 14px; } }
+
+/* ───────────────────────── Audit log (pages/audit_logs.html) ───────────────────────── */
+.wt-au { max-width: 1280px; }
+.wt-au .wt-filters { margin-top: var(--wt-s5); }
+.wt-au-panel { margin-top: var(--wt-s4); overflow: hidden; }
+.wt-au-headrow, .wt-au-row { display: grid; grid-template-columns: 110px minmax(0, 0.9fr) 130px minmax(0, 2fr) 130px; gap: 14px; align-items: start; padding-inline: 20px; }
+.wt-au-headrow { padding-block: 10px; background: var(--wt-surface-2); border-bottom: 1px solid var(--wt-line); font-family: var(--wt-font-mono); font-size: 0.7rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wt-muted); }
+html[dir="rtl"] .wt-au-headrow { font-family: var(--wt-font-body); font-size: 0.78rem; letter-spacing: 0; text-transform: none; }
+.wt-au-list { list-style: none; margin: 0; padding: 0; }
+.wt-au-row { padding-block: 11px; border-bottom: 1px solid var(--wt-line-soft); font-size: 0.86rem; }
+.wt-au-row:last-child { border-bottom: 0; }
+.wt-au-row:hover { background: var(--wt-brand-soft); }
+.wt-au-when { display: grid; gap: 1px; }
+.wt-au-when b { font-weight: 600; color: var(--wt-ink-2); }
+.wt-au-when small, .wt-au-what small { color: var(--wt-muted); font-size: 0.78rem; }
+.wt-au-who { min-width: 0; overflow-wrap: anywhere; }
+.wt-au-who b { font-weight: 600; }
+.wt-au-what { min-width: 0; display: grid; gap: 2px; overflow-wrap: anywhere; }
+.wt-au-what b { font-weight: 600; }
+.wt-au-ip { color: var(--wt-muted); font-size: 0.8rem; overflow-wrap: anywhere; }
+@media (max-width: 991.98px) {
+  .wt-au-headrow { display: none; }
+  .wt-au-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "what act" "who when" "ip ip"; gap: 6px 12px; padding-inline: 14px; }
+  .wt-au-what { grid-area: what; } .wt-au-act { grid-area: act; justify-self: end; }
+  .wt-au-who { grid-area: who; color: var(--wt-muted); } .wt-au-when { grid-area: when; justify-self: end; text-align: end; }
+  .wt-au-ip { grid-area: ip; }
+}

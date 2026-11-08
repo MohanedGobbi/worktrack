@@ -5590,43 +5590,57 @@ def kpi_dashboard(request):
     return redirect('manager-analytics' if request.user.role in ('manager', 'super_admin') else 'worker-performance')
 
 
+WT_AUDIT_ACTIONS = {
+    'create': ('Created', 'إنشاء', 'fa-plus', 'ok'), 'update': ('Updated', 'تعديل', 'fa-pen', 'muted'),
+    'delete': ('Deleted', 'حذف', 'fa-trash', 'alert'), 'approve': ('Approved', 'اعتماد', 'fa-check', 'ok'),
+    'reject': ('Sent back', 'إعادة', 'fa-rotate-left', 'alert'), 'assign': ('Assigned', 'إسناد', 'fa-user-plus', 'review'),
+    'submit': ('Submitted', 'تسليم', 'fa-paper-plane', 'review'), 'review': ('Reviewed', 'مراجعة', 'fa-clipboard-check', 'review'),
+    'login': ('Signed in', 'دخول', 'fa-right-to-bracket', 'muted'), 'logout': ('Signed out', 'خروج', 'fa-right-from-bracket', 'muted'),
+}
+
+
 @login_required(login_url='login')
 @require_http_methods(["GET"])
 def audit_logs(request):
-    """View system activity logs."""
-    if request.user.role not in ['super_admin', 'manager']:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
-    
+    """Audit log (administrators): who did what and when, filterable, in pages."""
     from audit.models import ActivityLog
-    
-    logs = ActivityLog.objects.all()
-    
-    # Filters
-    action_filter = request.GET.get('action', '')
-    user_filter = request.GET.get('user', '')
-    object_type_filter = request.GET.get('object_type', '')
-    
-    if action_filter:
-        logs = logs.filter(action=action_filter)
-    
-    if user_filter:
-        logs = logs.filter(user_id=user_filter)
-    
-    if object_type_filter:
-        logs = logs.filter(object_type=object_type_filter)
-    
-    logs = logs.order_by('-created_at')
-    
-    context = {
-        'logs': logs[:500],  # Limit to last 500
-        'action_choices': ActivityLog.ACTION_TYPES,
-        'action_filter': action_filter,
-        'user_filter': user_filter,
-        'object_type_filter': object_type_filter,
-    }
-    
-    return render(request, 'pages/audit_logs.html', context)
+    from django.core.paginator import Paginator
+    if request.user.role != 'super_admin':
+        messages.error(request, _say(request, 'Permission denied.', 'ليست لديك صلاحية.'))
+        return redirect('dashboard')
+
+    logs = ActivityLog.objects.select_related('user')
+    action = request.GET.get('action', '')
+    object_type = request.GET.get('object_type', '')
+    user_id = request.GET.get('user', '')
+    search = request.GET.get('search', '').strip()
+    if action in WT_AUDIT_ACTIONS:
+        logs = logs.filter(action=action)
+    else:
+        action = ''
+    if object_type:
+        logs = logs.filter(object_type=object_type)
+    if user_id.isdigit():
+        logs = logs.filter(user_id=int(user_id))
+    else:
+        user_id = ''
+    if search:
+        logs = logs.filter(Q(object_str__icontains=search) | Q(description__icontains=search) | Q(user__email__icontains=search)
+                           | Q(user__first_name__icontains=search) | Q(user__last_name__icontains=search))
+    page = Paginator(logs.order_by('-created_at'), 50).get_page(request.GET.get('page'))
+    for entry in page.object_list:
+        a = WT_AUDIT_ACTIONS.get(entry.action, (entry.action.title(), entry.action.title(), 'fa-circle', 'muted'))
+        entry.wt_en, entry.wt_ar, entry.wt_icon, entry.wt_tone = a
+    params = request.GET.copy()
+    params.pop('page', None)
+    return render(request, 'pages/audit_logs.html', {
+        'page': page, 'result_count': page.paginator.count,
+        'actions': [(k, v[0], v[1]) for k, v in WT_AUDIT_ACTIONS.items()],
+        'object_types': list(ActivityLog.objects.order_by('object_type').values_list('object_type', flat=True).distinct()[:60]),
+        'people': User.objects.filter(activity_logs__isnull=False).distinct().order_by('first_name', 'last_name', 'email')[:200],
+        'action': action, 'object_type': object_type, 'user_id': user_id, 'search': search,
+        'wt_filtered': bool(action or object_type or user_id or search), 'wt_qs': params.urlencode(),
+    })
 
 
 @login_required(login_url='login')

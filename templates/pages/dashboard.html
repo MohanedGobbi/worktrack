@@ -3591,7 +3591,7 @@
                 <!-- Item 5: Enlarge Search Bar & Make Smart (Sort By removed) -->
                 <div class="position-relative flex-grow-1" style="min-width: 260px; max-width: 440px;">
                     <i class="fas fa-search position-absolute text-muted" style="inset-inline-start: 16px; top: 50%; transform: translateY(-50%); font-size: 0.95rem; color: var(--color-primary, #10b981) !important;"></i>
-                    <input type="text" id="sys-module-search" class="form-control rounded-pill shadow-sm" placeholder="بحث ذكي في الوحدات... / Search modules..." onkeyup="searchSystemModules(); const cBtn = document.getElementById('clearSysSearchBtn'); if(cBtn) cBtn.style.display = this.value ? 'block' : 'none';" style="padding-inline-start: 42px; padding-inline-end: 36px; height: 42px; border: 1.5px solid var(--wt-brand-soft); font-size: 0.88rem; font-weight: 600; background: #ffffff;">
+                    <input type="text" id="sys-module-search" class="form-control rounded-pill shadow-sm" placeholder="{% if wt_lang == 'ar' %}ابحث في الوحدات…{% else %}Search modules…{% endif %}" aria-label="{% if wt_lang == 'ar' %}ابحث في الوحدات{% else %}Search modules{% endif %}" onkeyup="searchSystemModules(); const cBtn = document.getElementById('clearSysSearchBtn'); if(cBtn) cBtn.style.display = this.value ? 'block' : 'none';" style="padding-inline-start: 42px; padding-inline-end: 36px; height: 42px; border: 1.5px solid var(--wt-brand-soft); font-size: 0.88rem; font-weight: 600; background: #ffffff;">
                     <button type="button" class="btn btn-sm position-absolute border-0 text-muted p-0" id="clearSysSearchBtn" onclick="document.getElementById('sys-module-search').value=''; searchSystemModules(); this.style.display='none';" style="inset-inline-end: 14px; top: 50%; transform: translateY(-50%); display: none; width: 20px; height: 20px;">
                         <i class="fas fa-times-circle"></i>
                     </button>
@@ -3799,7 +3799,7 @@
                             </div>
                             <div class="group-indicator js-apply-style" data-style-g-color="{{ g.color|default:'#4f46e5' }}" style="background: linear-gradient(135deg, var(--g-color), #9333ea); box-shadow: 0 0 12px color-mix(in srgb, var(--g-color) 50%, transparent);"></div>
                             {% if g %}<i class="fas {{ g.icon_class }} me-2 small text-muted"></i>{% endif %}
-                            {{ g.name|default:"Uncategorized" }}
+                            {% if g.name and g.name != "Uncategorized" %}<span dir="auto" translate="no">{{ g.name }}</span>{% else %}<span class="lang-en">Uncategorized</span><span class="lang-ar">بلا مجموعة</span>{% endif %}
                         </div>
                         <div class="d-flex align-items-center gap-3">
                             {% if g and g.id in group_progress %}

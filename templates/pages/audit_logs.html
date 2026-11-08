@@ -1,182 +1,104 @@
 {% extends 'base.html' %}
-{% block title %}System Audit Logs · Worktrack Pro{% endblock %}
+{% load static %}
 
-{% block extra_css %}
-<style>
-/* ========= HERO BANNER ========= */
-.audit-hero {
-    border-radius: 24px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-}
-.audit-hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
-    pointer-events: none; opacity: 0.3;
-}
-.hero-content { position: relative; z-index: 2; padding: 3rem 2.5rem; color: white; }
-.hero-title { font-size: 2.25rem; font-weight: 800; letter-spacing: -.8px; margin-bottom: .5rem; }
-.hero-subtitle { opacity: .7; font-size: 1rem; margin: 0; }
+{% block title %}{% if wt_lang == 'ar' %}سجل النشاط · {{ site_config.app_name_ar|default:site_config.app_name|default:"WorkTrack Pro" }}{% else %}Audit log · {{ site_config.app_name|default:"WorkTrack Pro" }}{% endif %}{% endblock %}
 
-/* ========= FILTER CARD ========= */
-.filter-card {
-    background: white; border-radius: 20px; padding: 1.5rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-    margin-bottom: 2rem; border: 1px solid #f1f5f9;
-}
-.filter-form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
-.filter-group { flex: 1; min-width: 180px; }
-.filter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: .5rem; display: block; }
-.filter-select, .filter-input {
-    width: 100%; border: 1.5px solid #e2e8f0; border-radius: 12px;
-    padding: .6rem 1rem; font-size: .875rem; color: #1e293b;
-    transition: all .2s; background-color: #f8fafc;
-}
-.filter-select:focus, .filter-input:focus { border-color: #6366f1; outline: none; background: white; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-.filter-btn {
-    padding: .65rem 1.5rem; border-radius: 12px; font-weight: 700; font-size: .875rem;
-    background: #6366f1; color: white; border: none; cursor: pointer; transition: all .2s;
-}
-.filter-btn:hover { background: #4f46e5; transform: translateY(-1px); }
-
-/* ========= TABLE PANEL ========= */
-.panel-card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid #f1f5f9; }
-.panel-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
-.panel-title { font-weight: 800; font-size: 1.1rem; color: #0f172a; margin: 0; display: flex; align-items: center; gap: .75rem; }
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table thead th {
-    background: #f8fafc; padding: .9rem 1.25rem;
-    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #64748b;
-    border-bottom: 1px solid #f1f5f9;
-}
-.data-table tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .15s; }
-.data-table tbody tr:hover { background: #fbfcfe; }
-.data-table tbody td { padding: 1rem 1.25rem; vertical-align: middle; font-size: .875rem; color: #334155; }
-
-/* ========= CHIPS & BADGES ========= */
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: .3rem .75rem; border-radius: 50px; font-size: .75rem; font-weight: 700; }
-.chip-create { background: #fee2e2; color: color-mix(in oklab, var(--wt-brand) 62%, #000); }
-.chip-update { background: #dbeafe; color: #1e40af; }
-.chip-delete { background: #fee2e2; color: color-mix(in oklab, var(--wt-bad) 70%, #000); }
-.chip-login  { background: #fef9c3; color: #854d0e; }
-
-.user-pill { display: flex; align-items: center; gap: .75rem; }
-.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; }
-.time-stamp { font-size: .75rem; color: #94a3b8; }
-</style>
+{% block breadcrumb_trail %}
+<li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}"><span class="lang-en">Administration</span><span class="lang-ar">الإدارة</span></a></li>
+<li class="breadcrumb-item active" aria-current="page"><span class="lang-en">Audit log</span><span class="lang-ar">سجل النشاط</span></li>
 {% endblock %}
 
 {% block content %}
-<div class="audit-hero">
-    <div class="hero-content">
-        <h1 class="hero-title"><i class="fas fa-history me-2"></i> System Audit Logs</h1>
-        <p class="hero-subtitle">Comprehensive tracking of all system activities and administrative changes.</p>
-    </div>
-</div>
-
-<div class="container-fluid">
-    <!-- Filters -->
-    <div class="filter-card">
-        <form method="get" class="filter-form">
-            <div class="filter-group">
-                <label class="filter-label">Action Type</label>
-                <select name="action" class="filter-select">
-                    <option value="">All Actions</option>
-                    {% for val, label in action_choices %}
-                    <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">Object Type</label>
-                <input type="text" name="object_type" class="filter-input" placeholder="e.g. Task, User" value="{{ object_type_filter }}">
-            </div>
-            <div class="filter-group" style="flex: 0 0 auto;">
-                <button type="submit" class="filter-btn">
-                    <i class="fas fa-filter me-1"></i> Apply Filters
-                </button>
-                <a href="?" class="btn btn-link text-muted fw-bold text-decoration-none small ms-2">Clear</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Logs Table -->
-    <div class="panel-card">
-        <div class="panel-header">
-            <h2 class="panel-title"><i class="fas fa-list-ul" style="color:#6366f1;"></i> Activity History</h2>
-            <span class="badge bg-light text-dark rounded-pill px-3">{{ logs.count }} entries</span>
+{% comment %}
+  Audit log (administrators): who did what, when and from where. Filter bar, then one row per entry, 50 per page.
+  Data: core.template_views.audit_logs (actions and their EN/AR labels: WT_AUDIT_ACTIONS).
+{% endcomment %}
+<div class="wt-home wt-au">
+    <header class="wt-home-head">
+        <div class="wt-home-title">
+            <h1><span class="lang-en">Audit log</span><span class="lang-ar">سجل النشاط</span></h1>
+            <p><span class="lang-en"><span class="wt-num">{{ result_count }}</span> entr{{ result_count|pluralize:"y,ies" }}{% if wt_filtered %} match your filters{% endif %}. Newest first.</span><span class="lang-ar"><span class="wt-num">{{ result_count }}</span> سجلًا{% if wt_filtered %} يطابق عوامل التصفية{% endif %}. الأحدث أولًا.</span></p>
         </div>
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>User</th>
-                        <th><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></th>
-                        <th>Object</th>
-                        <th>IP Address</th>
-                        <th>Changes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>
-                            <div class="fw-bold">{{ log.created_at|date:"M d, Y" }}</div>
-                            <div class="time-stamp">{{ log.created_at|time:"H:i:s" }}</div>
-                        </td>
-                        <td>
-                            <div class="user-pill">
-                                <div class="user-avatar">{{ log.user.first_name|first|upper }}</div>
-                                <div>
-                                    <div class="fw-bold">{{ log.user.get_full_name }}</div>
-                                    <div class="time-stamp">{{ log.user.get_role_display }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            {% if log.action == 'create' %}
-                                <span class="chip chip-create"><i class="fas fa-plus-circle"></i><span class="lang-en">Create</span><span class="lang-ar">إنشاء</span></span>
-                            {% elif log.action == 'update' %}
-                                <span class="chip chip-update"><i class="fas fa-edit"></i><span class="lang-en">Update</span><span class="lang-ar">تحديث</span></span>
-                            {% elif log.action == 'delete' %}
-                                <span class="chip chip-delete"><i class="fas fa-trash-alt"></i><span class="lang-en">Delete</span><span class="lang-ar">حذف</span></span>
-                            {% elif 'login' in log.action %}
-                                <span class="chip chip-login"><i class="fas fa-sign-in-alt"></i><span class="lang-en">Login</span><span class="lang-ar">تسجيل الدخول</span></span>
-                            {% else %}
-                                <span class="chip chip-update">{{ log.action|title }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="fw-bold">{{ log.object_type }}</div>
-                            <div class="small text-muted">ID: #{{ log.object_id|default:"N/A" }}</div>
-                        </td>
-                        <td>
-                            <code class="small text-muted">{{ log.ip_address|default:"-" }}</code>
-                        </td>
-                        <td style="max-width:300px;">
-                            <div class="small text-truncate" title="{{ log.changes|default:'' }}">
-                                {{ log.description|default:"No details provided." }}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="text-muted mb-2"><i class="fas fa-info-circle fa-2x opacity-25"></i></div>
-                            <h6 class="fw-bold">No activity logs found</h6>
-                            <p class="small text-muted">Try adjusting your filters or check back later.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    </header>
+
+    <form class="wt-panel wt-filters" method="get" action="{% url 'audit-logs' %}" role="search">
+        <label class="wt-filter wt-filter-search">
+            <span class="visually-hidden"><span class="lang-en">Search the log</span><span class="lang-ar">ابحث في السجل</span></span>
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" name="search" class="form-control" value="{{ search }}" autocomplete="off" placeholder="{% if wt_lang == 'ar' %}ابحث بالوصف أو العنصر أو الشخص{% else %}Search details, item or person{% endif %}">
+        </label>
+        <label class="wt-filter">
+            <span class="wt-filter-label"><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></span>
+            <select class="form-select" name="action" data-autosubmit>
+                <option value="">{% if wt_lang == 'ar' %}كل الإجراءات{% else %}All actions{% endif %}</option>
+                {% for key, en, ar in actions %}<option value="{{ key }}"{% if action == key %} selected{% endif %}>{% if wt_lang == 'ar' %}{{ ar }}{% else %}{{ en }}{% endif %}</option>{% endfor %}
+            </select>
+        </label>
+        <label class="wt-filter">
+            <span class="wt-filter-label"><span class="lang-en">Item type</span><span class="lang-ar">نوع العنصر</span></span>
+            <select class="form-select" name="object_type" data-autosubmit>
+                <option value="">{% if wt_lang == 'ar' %}كل الأنواع{% else %}All types{% endif %}</option>
+                {% for t in object_types %}<option value="{{ t }}"{% if object_type == t %} selected{% endif %}>{{ t }}</option>{% endfor %}
+            </select>
+        </label>
+        <label class="wt-filter">
+            <span class="wt-filter-label"><span class="lang-en">Person</span><span class="lang-ar">الشخص</span></span>
+            <select class="form-select" name="user" data-autosubmit>
+                <option value="">{% if wt_lang == 'ar' %}الجميع{% else %}Everyone{% endif %}</option>
+                {% for p in people %}<option value="{{ p.id }}"{% if user_id == p.id|stringformat:'s' %} selected{% endif %}>{{ p.get_full_name|default:p.email }}</option>{% endfor %}
+            </select>
+        </label>
+        <div class="wt-filter-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter" aria-hidden="true"></i><span class="lang-en">Apply</span><span class="lang-ar">تطبيق</span></button>
+            {% if wt_filtered %}<a class="btn btn-light" href="{% url 'audit-logs' %}"><span class="lang-en">Clear all</span><span class="lang-ar">مسح الكل</span></a>{% endif %}
         </div>
-    </div>
+    </form>
+
+    <section class="wt-panel wt-au-panel" aria-labelledby="au-title">
+        <h2 id="au-title" class="visually-hidden"><span class="lang-en">Log entries</span><span class="lang-ar">السجلات</span></h2>
+        {% if page.object_list %}
+        <div class="wt-au-headrow" aria-hidden="true">
+            <span><span class="lang-en">When</span><span class="lang-ar">الوقت</span></span>
+            <span><span class="lang-en">Person</span><span class="lang-ar">الشخص</span></span>
+            <span><span class="lang-en">Action</span><span class="lang-ar">الإجراء</span></span>
+            <span><span class="lang-en">Item and details</span><span class="lang-ar">العنصر والتفاصيل</span></span>
+            <span>IP</span>
+        </div>
+        <ul class="wt-au-list">
+            {% for e in page %}
+            <li class="wt-au-row">
+                <span class="wt-au-when wt-num"><b>{{ e.created_at|date:"j/n/Y" }}</b><small>{{ e.created_at|time:"H:i:s" }}</small></span>
+                <span class="wt-au-who" dir="auto" translate="no">{% if e.user %}<b>{{ e.user.get_full_name|default:e.user.email }}</b>{% else %}<span class="wt-cell-muted">–</span>{% endif %}</span>
+                <span class="wt-au-act"><span class="wt-chip {% if e.wt_tone == 'ok' %}is-ok{% elif e.wt_tone == 'alert' %}is-alert{% elif e.wt_tone == 'review' %}is-review{% else %}is-muted{% endif %}"><i class="fas {{ e.wt_icon }}" aria-hidden="true"></i><span class="lang-en">{{ e.wt_en }}</span><span class="lang-ar">{{ e.wt_ar }}</span></span></span>
+                <span class="wt-au-what" dir="auto" translate="no"><b>{{ e.object_type }}{% if e.object_str %}: {{ e.object_str|truncatechars:80 }}{% endif %}</b>{% if e.description %}<small>{{ e.description|truncatechars:200 }}</small>{% endif %}</span>
+                <span class="wt-au-ip wt-num wt-tf-ltr">{{ e.ip_address|default:"–" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if page.has_other_pages %}
+        <div class="wt-panel-foot wt-join-foot">
+            <span class="wt-num">{{ page.start_index }}–{{ page.end_index }} / {{ result_count }}</span>
+            <nav class="wt-pager" aria-label="{% if wt_lang == 'ar' %}صفحات السجل{% else %}Log pages{% endif %}">
+                {% if page.has_previous %}<a class="wt-page" href="?page={{ page.previous_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}السابق{% else %}Previous{% endif %}"><i class="fas fa-chevron-left rtl-flip"></i></a>{% endif %}
+                {% for i in page.paginator.page_range %}
+                {% if page.number == i %}<span class="wt-page is-on" aria-current="page">{{ i }}</span>
+                {% elif i == 1 or i == page.paginator.num_pages or i > page.number|add:'-3' and i < page.number|add:'3' %}<a class="wt-page" href="?page={{ i }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}">{{ i }}</a>
+                {% elif i == page.number|add:'-3' or i == page.number|add:'3' %}<span class="wt-page-gap" aria-hidden="true">…</span>{% endif %}
+                {% endfor %}
+                {% if page.has_next %}<a class="wt-page" href="?page={{ page.next_page_number }}{% if wt_qs %}&amp;{{ wt_qs }}{% endif %}" aria-label="{% if wt_lang == 'ar' %}التالي{% else %}Next{% endif %}"><i class="fas fa-chevron-right rtl-flip"></i></a>{% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="wt-empty"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
+            <p>{% if wt_filtered %}<span class="lang-en">No entries match these filters.</span><span class="lang-ar">لا سجلات تطابق عوامل التصفية.</span>{% else %}<span class="lang-en">Nothing has been logged yet.</span><span class="lang-ar">لم يُسجَّل شيء بعد.</span>{% endif %}</p>
+            {% if wt_filtered %}<a class="btn btn-light" href="{% url 'audit-logs' %}"><span class="lang-en">Clear filters</span><span class="lang-ar">مسح التصفية</span></a>{% endif %}
+        </div>
+        {% endif %}
+    </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>document.querySelectorAll('.wt-filters [data-autosubmit]').forEach(el => el.addEventListener('change', () => el.form.submit()));</script>
 {% endblock %}

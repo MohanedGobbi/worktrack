@@ -164,25 +164,16 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <!-- Hero Banner -->
-    <div class="vault-hero anime-up">
-        <div class="position-relative z-index-2">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-white-50"><span class="lang-en">Dashboard</span><span class="lang-ar">لوحة التحكم</span></a></li>
-                    <li class="breadcrumb-item active text-white" aria-current="page">Archive</li>
-                </ol>
-            </nav>
-            <h1 class="fw-black mb-1 display-5">Archive Vault</h1>
-            <p class="text-white-50 mb-0">Manage and restore archived project modules.</p>
+    <header class="wt-home-head wt-av-head">
+        <div class="wt-home-title">
+            <h1><span class="lang-en">Archived modules</span><span class="lang-ar">الوحدات المؤرشفة</span></h1>
+            <p><span class="lang-en"><span class="wt-num">{{ module_count }}</span> archived. Open one to restore it or delete it for good.</span><span class="lang-ar"><span class="wt-num">{{ module_count }}</span> وحدة مؤرشفة. افتح وحدة لاستعادتها أو حذفها نهائيًا.</span></p>
         </div>
-    </div>
+    </header>
 
     <!-- Header & Controls -->
     <div class="d-flex align-items-center justify-content-between mb-4 anime-up" style="animation-delay: 100ms;">
-        <div>
-            <h4 class="fw-bold mb-0">Archived Modules <span class="text-muted ms-1" style="font-weight: 400;">({{ module_count }})</span></h4>
-        </div>
+        <div></div>
         
         <div class="d-flex align-items-center gap-4">
             <!-- Grid/List Toggle -->
