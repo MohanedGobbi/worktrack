@@ -1,0 +1,6 @@
+[Unit]
+Description=WorkTrack Pro nightly backup (database and uploads)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/worktrack/app/deploy/linux/backup.sh --label nightly

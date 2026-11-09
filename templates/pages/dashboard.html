@@ -3837,7 +3837,7 @@
                                     {% if m_stat.deadline %}<span><i class="far fa-calendar"></i> <span class="wt-num">{{ m_stat.deadline|date:"j/n/Y" }}</span></span>{% endif %}
                                     {% if m_stat.correspondence_count %}<span><i class="fas fa-envelope-open-text"></i> <span class="wt-num">{{ m_stat.correspondence_count }}</span> <span class="lang-en">letters</span><span class="lang-ar">مراسلات</span></span>{% endif %}
                                     {% if m_stat.pending_todo_count %}<span><i class="fas fa-list-check"></i> <span class="wt-num">{{ m_stat.pending_todo_count }}</span> <span class="lang-en">to-dos</span><span class="lang-ar">مهام فرعية</span></span>{% endif %}
-                                    <span title="Manual progress"><i class="fas fa-gauge-simple"></i> <span class="wt-num">{{ m_stat.progress|default:0 }}%</span> <span class="lang-en">set progress</span><span class="lang-ar">التقدم المحدد</span></span>
+                                    <span title="{% if wt_lang == 'ar' %}تقدّم محدد يدويًا{% else %}Progress set by hand{% endif %}"><i class="fas fa-gauge-simple"></i> <span class="wt-num">{{ m_stat.progress|default:0 }}%</span> <span class="lang-en">set progress</span><span class="lang-ar">التقدم المحدد</span></span>
                                 </div>
                             </div>
                             <div class="wt-mcard-foot">
@@ -3901,13 +3901,13 @@
                                 <td class="py-3" style="border-bottom: 1px solid #f1f5f9; min-width: 140px;">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="fw-bold text-dark" style="min-width: 40px; font-size: 0.85rem;">{{ m_stat.progress }}%</span>
-                                        <div class="progress flex-grow-1" style="height: 6px; border-radius: 10px; background:#f1f5f9;" title="{{ m_stat.progress }}% Complete">
+                                        <div class="progress flex-grow-1" style="height: 6px; border-radius: 10px; background:#f1f5f9;" title="{{ m_stat.progress }}%">
                                             <div class="progress-bar rounded-pill" role="progressbar" style="width: {{ m_stat.progress }}%; background-color: {{ m_stat.obj.color|default:'#6366f1' }};"></div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="py-3 text-muted" style="border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; font-weight: 500;">
-                                    {{ m_stat.obj.updated_at|date:"M d, Y"|default:"Recently" }}
+                                    {{ m_stat.obj.updated_at|date:"j/n/Y"|default:"Recently" }}
                                 </td>
                                 <td class="py-3 px-4" style="border-bottom: 1px solid #f1f5f9;" onclick="event.stopPropagation();">
                                     <div class="dropdown">
@@ -4653,7 +4653,7 @@
 
 
 <!-- ===== PREMIUM BULK ACTION BAR ===== -->
-<div id="bulkActionBar" class="wt-bulkbar translate-y-full" style="display: none;" role="region" aria-label="Bulk actions">
+<div id="bulkActionBar" class="wt-bulkbar translate-y-full" style="display: none;" role="region" aria-label="{% if wt_lang == 'ar' %}إجراءات جماعية{% else %}Bulk actions{% endif %}">
     <div class="wt-bulkbar-inner">
         <div class="wt-bulkbar-count">
             <span><span class="lang-en">Selected modules</span><span class="lang-ar">الوحدات المحددة</span></span>

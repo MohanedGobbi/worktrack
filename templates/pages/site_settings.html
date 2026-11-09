@@ -282,11 +282,48 @@
             </div>
         </aside>
     </form>
+
+    {# ── Software updates (outside the settings form; talks to core.views.update_status / update_check) ── #}
+    <section class="wt-panel wt-upd" id="wt-updates" aria-labelledby="upd-title"
+             data-status-url="{% url 'update-status' %}" data-check-url="{% url 'update-check' %}" data-demo="{% if wt_demo %}1{% endif %}">
+        <div class="wt-panel-head">
+            <h2 id="upd-title"><i class="fas fa-rotate" aria-hidden="true"></i><span class="lang-en">Software updates</span><span class="lang-ar">تحديثات البرنامج</span></h2>
+        </div>
+        <div class="wt-upd-body">
+            <dl class="wt-upd-facts">
+                <div><dt><span class="lang-en">Installed version</span><span class="lang-ar">الإصدار المثبّت</span></dt><dd class="wt-num" dir="ltr" data-upd="installed">–</dd></div>
+                <div><dt><span class="lang-en">Latest release</span><span class="lang-ar">أحدث إصدار</span></dt><dd class="wt-num" dir="ltr" data-upd="latest">–</dd></div>
+                <div><dt><span class="lang-en">Last check</span><span class="lang-ar">آخر فحص</span></dt><dd class="wt-num" data-upd="checked">–</dd></div>
+            </dl>
+            <p class="wt-upd-state" role="status" aria-live="polite" data-upd="state"><i class="fas fa-circle-info" aria-hidden="true"></i><span></span></p>
+            <p class="wt-upd-detail" dir="ltr" translate="no" data-upd="detail" hidden></p>
+            <p class="wt-tf-help" data-upd="help"><span class="lang-en">The server installs new releases by itself every night. Use the button to check now.</span><span class="lang-ar">يثبّت الخادم الإصدارات الجديدة تلقائيًا كل ليلة. استخدم الزر للفحص الآن.</span></p>
+            <div class="wt-upd-actions">
+                <button type="button" class="btn btn-primary" data-upd="check" disabled><i class="fas fa-magnifying-glass" aria-hidden="true"></i><span class="lang-en">Check for updates now</span><span class="lang-ar">ابحث عن تحديثات الآن</span></button>
+                <button type="button" class="btn btn-light" data-upd="reload" hidden><i class="fas fa-rotate-right" aria-hidden="true"></i><span class="lang-en">Reload page</span><span class="lang-ar">إعادة تحميل الصفحة</span></button>
+            </div>
+        </div>
+    </section>
+
+    <dialog class="wt-upd-dialog" id="wt-upd-dialog" aria-labelledby="upd-dlg-title">
+        <form method="dialog" class="wt-upd-dialog-body" id="wt-upd-form">
+            <h2 id="upd-dlg-title"><span class="lang-en">Check for updates now?</span><span class="lang-ar">البحث عن تحديثات الآن؟</span></h2>
+            <p><span class="lang-en">If a new release exists, the server installs it and restarts for a moment. Enter your password to continue.</span><span class="lang-ar">إذا وُجد إصدار جديد فسيثبّته الخادم ويُعاد تشغيله لحظات. أدخل كلمة مرورك للمتابعة.</span></p>
+            <label for="wt-upd-password" class="form-label"><span class="lang-en">Your password</span><span class="lang-ar">كلمة مرورك</span></label>
+            <input type="password" class="form-control wt-tf-ltr" id="wt-upd-password" autocomplete="current-password" required>
+            <p class="wt-upd-error" role="alert" hidden></p>
+            <div class="wt-upd-dialog-actions">
+                <button type="button" class="btn btn-light" value="cancel" data-upd="cancel"><span class="lang-en">Cancel</span><span class="lang-ar">إلغاء</span></button>
+                <button type="submit" class="btn btn-primary" data-upd="confirm"><i class="fas fa-check" aria-hidden="true"></i><span class="lang-en">Check now</span><span class="lang-ar">افحص الآن</span></button>
+            </div>
+        </form>
+    </dialog>
 </div>
 
 <script id="ss-rowd" type="application/json">{"brand": "#0033a0", "accent": "#19bedc", "on": "#ffffff"}</script>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'wt/js/updates.js' %}?v=2"></script>
 <script src="{% static 'wt/js/site-settings.js' %}?v=3"></script>
 {% endblock %}

@@ -208,7 +208,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': str(BASE_DIR / '.translation_cache'),
+        'LOCATION': config('CACHE_DIR', default=str(BASE_DIR / '.translation_cache')),
         'TIMEOUT': None,
         'OPTIONS': {
             'MAX_ENTRIES': 10000
@@ -340,7 +340,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'worktrack_pro.log',
+            'filename': Path(config('LOG_DIR', default=str(BASE_DIR / 'logs'))) / 'worktrack_pro.log',
             'formatter': 'verbose',
         },
     },
@@ -358,8 +358,16 @@ LOGGING = {
 }
 
 # Create logs directory
-LOG_DIR = BASE_DIR / 'logs'
-LOG_DIR.mkdir(exist_ok=True)
+LOG_DIR = Path(config('LOG_DIR', default=str(BASE_DIR / 'logs')))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── Automatic updates (deploy/linux) ──
+# The nightly updater (root) writes its progress here; the admin "Check for updates" button drops a request file
+# into UPDATE_REQUEST_DIR (owned by the app user). The folder existing is what "updates are set up" means.
+UPDATE_STATUS_FILE = config('UPDATE_STATUS_FILE', default='/var/lib/worktrack/update/status.json')
+UPDATE_REQUEST_DIR = config('UPDATE_REQUEST_DIR', default='/var/lib/worktrack/update-request')
+# Demo installs (public trials, sales demos) must never trigger updates or other server actions.
+DEMO_MODE = config('DEMO_MODE', default=False, cast=bool)
 
 # Allow iframes from the same origin (required for Live Widget Preview)
 X_FRAME_OPTIONS = 'SAMEORIGIN'

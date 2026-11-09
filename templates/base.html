@@ -39,7 +39,7 @@
     <script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
 
     {% include 'includes/wt_theme.html' %}
-    <link href="{% static 'wt/app.css' %}?v=50" rel="stylesheet">
+    <link href="{% static 'wt/app.css' %}?v=52" rel="stylesheet">
 
     <script>
         window.__forceLanguageReload = {{ site_settings.force_language_reload|yesno:"true,false" }};
@@ -75,7 +75,7 @@
     {% with un=request.resolver_match.url_name %}
     <!-- Mobile top bar (< 992px) -->
     <header class="wt-mobilebar" role="banner">
-        <button type="button" class="wt-icon-btn" onclick="window.toggleNeuralSidebar()" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+        <button type="button" class="wt-icon-btn" onclick="window.toggleNeuralSidebar()" aria-label="{% if wt_lang == 'ar' %}فتح القائمة{% else %}Open menu{% endif %}"><i class="fas fa-bars"></i></button>
         <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="wt-mobile-brand">
             {% include 'includes/wt_logo_chip.html' %}
             <span><span class="lang-en">{{ site_config.app_name|default:"WorkTrack Pro" }}</span><span class="lang-ar">{{ site_config.app_name_ar|default:"وورك تراك برو" }}</span></span>
@@ -94,7 +94,7 @@
     <div class="cndp-sidebar-backdrop" id="cndpSidebarBackdrop" onclick="window.toggleNeuralSidebar(false)"></div>
 
     <div class="wt-shell">
-        <aside class="neural-sidebar" aria-label="Main navigation">
+        <aside class="neural-sidebar" aria-label="{% if wt_lang == 'ar' %}القائمة الرئيسية{% else %}Main navigation{% endif %}">
             <a class="wt-side-brand" href="{% if user.is_authenticated %}{% if user.role == 'worker' %}{% url 'worker-portal' %}{% else %}{% url 'dashboard' %}{% endif %}{% else %}{% url 'home' %}{% endif %}">
                 {% include 'includes/wt_logo_chip.html' %}
                 <span class="wt-side-name">
@@ -209,19 +209,7 @@
                         <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><span class="lang-en">Home</span><span class="lang-ar">الرئيسية</span></a></li>
                         {% block breadcrumb_trail %}
                         <li class="breadcrumb-item active" aria-current="page">
-                            {% if un == 'admin_dashboard' or un == 'dashboard' %}<span class="lang-en">Overview</span><span class="lang-ar">نظرة عامة</span>
-                            {% elif un == 'worker-portal' %}<span class="lang-en">Worker view</span><span class="lang-ar">واجهة الموظف</span>
-                            {% elif un == 'manager-portal' %}<span class="lang-en">Manager view</span><span class="lang-ar">واجهة المدير</span>
-                            {% elif un == 'user-management' %}<span class="lang-en">Users</span><span class="lang-ar">المستخدمون</span>
-                            {% elif un == 'user-create' %}<span class="lang-en">New user</span><span class="lang-ar">مستخدم جديد</span>
-                            {% elif un == 'user-edit' %}<span class="lang-en">Edit user</span><span class="lang-ar">تعديل المستخدم</span>
-                            {% elif un == 'task-list' %}<span class="lang-en">Tasks</span><span class="lang-ar">المهام</span>
-                            {% elif un == 'task-kanban' %}<span class="lang-en">Board</span><span class="lang-ar">لوحة المهام</span>
-                            {% elif un == 'task-calendar' %}<span class="lang-en">Calendar</span><span class="lang-ar">التقويم</span>
-                            {% elif un == 'manage-groups' %}<span class="lang-en">Work groups</span><span class="lang-ar">مجموعات العمل</span>
-                            {% elif un == 'translations' or un == 'translations_portal' %}<span class="lang-en">Translations</span><span class="lang-ar">الترجمات</span>
-                            {% elif un == 'profile' %}<span class="lang-en">Profile</span><span class="lang-ar">الملف الشخصي</span>
-                            {% else %}<span class="lang-en">{{ un|default:"Overview"|title }}</span><span class="lang-ar">{{ un|default:"نظرة عامة" }}</span>{% endif %}
+                            {% if wt_crumb %}<span class="lang-en">{{ wt_crumb.0 }}</span><span class="lang-ar">{{ wt_crumb.1 }}</span>{% endif %}
                         </li>
                         {% endblock %}
                     </ol>
@@ -278,7 +266,7 @@
 
     <div id="search-overlay" onclick="closeSearchOnBg(event)">
       <div id="search-box" role="dialog" aria-label="Search">
-        <input id="search-input" type="text" placeholder="Search tasks, people, modules… (Ctrl+K)" autocomplete="off" aria-label="Search">
+        <input id="search-input" type="text" placeholder="{% if wt_lang == 'ar' %}ابحث في المهام والأشخاص والوحدات… (Ctrl+K){% else %}Search tasks, people, modules… (Ctrl+K){% endif %}" autocomplete="off" aria-label="{% if wt_lang == 'ar' %}بحث{% else %}Search{% endif %}">
         <div id="search-results"></div>
       </div>
     </div>

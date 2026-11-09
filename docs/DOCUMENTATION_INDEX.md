@@ -115,6 +115,7 @@ Documentation/
 └── 📋 GUIDES
     ├── TESTING_GUIDE.md
     ├── DOCKER_SETUP.md
+    ├── INSTALL_LINUX.md  (Ubuntu/Debian install + automatic updates)
     ├── IMPLEMENTATION_SUMMARY.md
     └── GUI_IMPLEMENTATION_SUMMARY.md
 ```

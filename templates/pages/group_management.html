@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ title }} - WorkTrack Pro{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -246,7 +246,7 @@
 
 <!-- Save Toast Notification -->
 <div class="save-toast" id="saveToast">
-    <i class="fas fa-check-circle me-2"></i>Order saved successfully!
+    <i class="fas fa-check-circle me-2"></i><span class="lang-en">Order saved.</span><span class="lang-ar">تم حفظ الترتيب.</span>
 </div>
 
 {# Delete modals rendered OUTSIDE the table to avoid Bootstrap z-index / backdrop issues #}

@@ -1,0 +1,16 @@
+# WorkTrack Pro web app (gunicorn behind nginx). Installed by deploy/linux/install.sh; re-applied by the updater.
+[Unit]
+Description=WorkTrack Pro
+After=network.target
+
+[Service]
+User=worktrack
+Group=worktrack
+WorkingDirectory=/opt/worktrack/app
+EnvironmentFile=/etc/worktrack/worktrack.env
+ExecStart=/opt/worktrack/venv/bin/gunicorn worktrack_pro.wsgi:application --bind 127.0.0.1:8000 --workers 3 --timeout 120 --access-logfile -
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -22,7 +22,7 @@
         <div class="lp-field lp-field--pw">
             <label for="signin-password"><span class="lang-en">Password</span><span class="lang-ar">كلمة المرور</span></label>
             <input id="signin-password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
-            <button type="button" class="lp-reveal" data-reveal="signin-password" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+            <button type="button" class="lp-reveal" data-reveal="signin-password" aria-label="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}" title="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}"><i class="fas fa-eye"></i></button>
         </div>
         <button type="submit" class="lp-submit">
             <span class="lang-en">Sign in</span><span class="lang-ar">دخول</span>

@@ -2098,3 +2098,50 @@ html[dir="rtl"] .wt-au-headrow { font-family: var(--wt-font-body); font-size: 0.
 .wt-partner-chip img { max-height: 28px; max-width: 150px; object-fit: contain; display: block; }
 .wt-partner-name { font-size: 0.82rem; font-weight: 700; }
 .wt-footer-credits { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+
+/* ───────────────────────── Legacy page banners: readable on any brand colour or photo ─────────────────────────
+   .dash-hero (dashboard, attendance), .cmd-hero (admin console), .admin-hero (emerald_banner include) set
+   their own faint whites (40-60%) and slate greys; these rules hold the text at readable strength. */
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) { color: var(--wt-on-brand); }
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) :is(h1, h2, h3, .cmd-title, .cmd-title-accent, .hero-title) {
+  color: var(--wt-on-brand) !important; -webkit-text-fill-color: currentColor; background: none !important;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.22);
+}
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) :is(p, small, .cmd-desc, .text-white-50, .text-muted, [class*="subtitle"]):not(.btn *):not(.bg-white:not(.bg-opacity-10) *) {
+  color: color-mix(in oklab, var(--wt-on-brand) 90%, transparent) !important; opacity: 1 !important;
+}
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) .bg-white.bg-opacity-10 {
+  background: color-mix(in oklab, var(--wt-on-brand) 14%, transparent) !important; color: var(--wt-on-brand) !important;
+  border-color: color-mix(in oklab, var(--wt-on-brand) 24%, transparent) !important;
+}
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) :is(.cmd-clock-pill, .cmd-clock-pill strong, .cmd-live-pill) { color: var(--wt-on-brand) !important; }
+.wt-app :is(.dash-hero, .cmd-hero, .admin-hero) .cmd-clock-pill i { color: color-mix(in oklab, var(--wt-on-brand) 80%, var(--wt-accent)) !important; }
+
+/* ───────────────────────── Software updates panel (site_settings.html + wt/js/updates.js) ───────────────────────── */
+.wt-upd { margin-top: var(--wt-s5); max-width: calc(100% - 360px - var(--wt-s5)); }
+.wt-upd .wt-panel-head h2 i { color: var(--wt-brand); font-size: 0.9rem; }
+.wt-upd-body { display: grid; gap: 12px; padding: 0 20px 20px; }
+.wt-upd-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.wt-upd-facts > div { padding: 10px 12px; border: 1px solid var(--wt-line); border-radius: 10px; background: var(--wt-surface-2); min-width: 0; }
+.wt-upd-facts dt { font-size: 0.76rem; font-weight: 500; color: var(--wt-muted); }
+.wt-upd-facts dd { margin: 2px 0 0; font-weight: 700; font-size: 0.95rem; color: var(--wt-ink); overflow-wrap: anywhere; }
+.wt-upd-state { margin: 0; display: flex; align-items: flex-start; gap: 10px; font-size: 0.9rem; font-weight: 600; color: var(--wt-ink-2); }
+.wt-upd-state i { margin-top: 3px; color: var(--wt-brand); }
+.wt-upd-state[data-state="up_to_date"] i, .wt-upd-state[data-state="updated"] i { color: var(--wt-ok); }
+.wt-upd-state[data-state="failed"] i, .wt-upd-state[data-state="error"] i { color: var(--wt-bad); }
+.wt-upd-state[data-state="skipped"] i { color: var(--wt-warn); }
+.wt-upd-state[data-state="checking"] i, .wt-upd-state[data-state="downloading"] i, .wt-upd-state[data-state="installing"] i, .wt-upd-state[data-state="pending"] i { animation: wt-upd-pulse 1.2s ease-in-out infinite; }
+@keyframes wt-upd-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .wt-upd-state i { animation: none !important; } }
+.wt-upd-detail { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--wt-surface-2); font-family: var(--wt-font-mono); font-size: 0.74rem; color: var(--wt-ink-2); overflow-wrap: anywhere; text-align: start; unicode-bidi: plaintext; }
+.wt-upd-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.wt-upd-dialog { width: min(440px, calc(100% - 32px)); padding: 0; border: 0; border-radius: var(--wt-r-dialog, 16px); box-shadow: var(--wt-shadow-3); }
+.wt-upd-dialog::backdrop { background: color-mix(in oklab, var(--wt-ink) 45%, transparent); }
+.wt-upd-dialog-body { display: grid; gap: 10px; padding: 22px; margin: 0; }
+.wt-upd-dialog-body h2 { margin: 0; font-size: 1.1rem; }
+.wt-upd-dialog-body p { margin: 0; font-size: 0.88rem; color: var(--wt-ink-2); }
+.wt-upd-dialog-body .form-label { margin: 4px 0 0; font-size: 0.82rem; font-weight: 600; color: var(--wt-ink-2); }
+.wt-upd-error { color: var(--wt-bad) !important; font-weight: 600; }
+.wt-upd-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+@media (max-width: 1199.98px) { .wt-upd { max-width: none; } }
+@media (max-width: 720px) { .wt-upd-facts { grid-template-columns: minmax(0, 1fr); } .wt-upd-actions .btn { flex: 1; justify-content: center; } }

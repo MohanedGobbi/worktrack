@@ -955,7 +955,7 @@
         <div style="padding:20px 20px 14px;">
             <div class="flex items-center justify-between" style="margin-bottom:16px;">
                 <div class="flex items-center gap-2">
-                    <button id="mobile-sidebar-close" class="lm-icon-btn" onclick="toggleConversationsSidebar(false)" style="color:var(--color-primary, #10b981);" title="Close conversations list">
+                    <button id="mobile-sidebar-close" class="lm-icon-btn" onclick="toggleConversationsSidebar(false)" style="color:var(--color-primary, #10b981);" title="{% if wt_lang == 'ar' %}إغلاق المحادثات{% else %}Close conversations{% endif %}">
                         <i class="fas fa-arrow-left rtl-flip wt-mi" aria-hidden="true"></i>
                     </button>
                     <h1 class="lm-sidebar-title"><span class="lang-en">Messages</span><span class="lang-ar">الرسائل</span></h1>
@@ -1022,7 +1022,7 @@
             <header class="lm-chat-header flex items-center justify-between shrink-0 z-10">
                 <div class="flex items-center gap-2.5">
                     <!-- Conversations list toggle / back button -->
-                    <button type="button" id="sidebar-toggle-btn" onclick="toggleConversationsSidebar()" class="lm-icon-btn shrink-0" title="Toggle Conversations List">
+                    <button type="button" id="sidebar-toggle-btn" onclick="toggleConversationsSidebar()" class="lm-icon-btn shrink-0" title="{% if wt_lang == 'ar' %}إظهار المحادثات أو إخفاؤها{% else %}Show or hide conversations{% endif %}">
                         <i class="fas fa-bars wt-mi" id="sidebar-toggle-icon" aria-hidden="true"></i>
                     </button>
                     <div style="position:relative;flex-shrink:0;">

@@ -18,6 +18,9 @@ from django.contrib import messages
 from django.utils import timezone
 from django.utils.text import slugify
 import datetime
+import logging
+from django.core.exceptions import PermissionDenied
+logger = logging.getLogger(__name__)
 import os
 import json
 from core.sanitize import script_json
