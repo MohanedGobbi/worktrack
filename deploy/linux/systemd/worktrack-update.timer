@@ -1,0 +1,11 @@
+# Every night after the 01:30 backup, outside working hours. Persistent: runs at boot if the server was off.
+[Unit]
+Description=Nightly WorkTrack Pro update check
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+RandomizedDelaySec=45min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

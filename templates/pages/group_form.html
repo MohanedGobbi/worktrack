@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ title }} - WorkTrack Pro{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
@@ -49,7 +49,7 @@
                                     {% for icon in icon_list %}
                                     <div class="col-auto">
                                         <div class="icon-item {% if group.icon_class == icon or not group and icon == 'fa-layer-group' %}active{% endif %}" 
-                                             data-icon="{{ icon }}" title="{{ icon|cut:'fa-'|capfirst }}">
+                                             data-icon="{{ icon }}">
                                             <i class="fas {{ icon }}"></i>
                                         </div>
                                     </div>
@@ -62,7 +62,7 @@
                         <div class="mb-4">
                             <label for="description" class="form-label fw-bold text-slate-700">Description (Optional)</label>
                             <textarea class="form-control rounded-3" id="description" name="description" rows="3" 
-                                      placeholder="What kind of modules belong in this group?">{{ group.description|default:'' }}</textarea>
+                                      placeholder="{% if wt_lang == 'ar' %}ما نوع الوحدات التي تنتمي إلى هذه المجموعة؟{% else %}What kind of modules belong in this group?{% endif %}">{{ group.description|default:'' }}</textarea>
                         </div>
 
                         <!-- Color Selection -->

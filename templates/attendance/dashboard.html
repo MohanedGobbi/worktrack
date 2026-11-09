@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Attendance Tracking · {% if wt_lang == 'ar' %}{{ site_config.app_name_ar|default:site_config.app_name|default:'WorkTrack Pro' }}{% else %}{{ site_config.app_name|default:'WorkTrack Pro' }}{% endif %}{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -212,7 +212,7 @@
             <h1 class="hero-title">{{ target_user.get_full_name }}'s Attendance</h1>
             <p class="hero-sub mb-3">Viewing historic attendance records for {{ target_user.first_name }}.</p>
         {% else %}
-            <div class="hero-greeting"><i class="fas fa-clock"></i> Daily Attendance</div>
+            <div class="hero-greeting"><i class="fas fa-clock"></i> <span class="lang-en">Daily attendance</span><span class="lang-ar">الحضور اليومي</span></div>
             <h1 class="hero-title">Track your daily shift</h1>
             <p class="hero-sub mb-3">Ensure your hours are logged accurately for performance reviews.</p>
         {% endif %}
@@ -236,7 +236,7 @@
         {% if request.user.role == 'super_admin' %}
         <div class="mt-4">
             <a href="{% url 'attendance-settings' %}" class="btn btn-light rounded-pill px-4 shadow-sm text-danger fw-bold">
-                <i class="fas fa-business-time me-2"></i> Configure Policy
+                <i class="fas fa-business-time me-2"></i> <span class="lang-en">Attendance policy</span><span class="lang-ar">سياسة الحضور</span>
             </a>
         </div>
         {% endif %}
@@ -251,7 +251,7 @@
                 <form action="{% url 'attendance-check-in' %}" method="POST" class="w-100">
                     {% csrf_token %}
                     <button type="submit" class="btn-check-giant btn-checkin">
-                        <i class="fas fa-sign-in-alt"></i> Check In Now
+                        <i class="fas fa-sign-in-alt"></i> <span class="lang-en">Check in now</span><span class="lang-ar">سجّل الحضور الآن</span>
                     </button>
                 </form>
             {% elif my_today_record.check_in and not my_today_record.check_out %}
@@ -282,7 +282,7 @@
     <div class="col-lg-6">
         <div class="panel-card h-100 mb-0">
             <div class="panel-header d-flex justify-content-between align-items-center">
-                <h4 class="panel-title mb-0"><i class="fas fa-calendar-alt text-indigo"></i> Org Heatmap ({{ heatmap_month_name }})</h4>
+                <h4 class="panel-title mb-0"><i class="fas fa-calendar-alt text-indigo"></i> <span class="lang-en">Attendance map</span><span class="lang-ar">خريطة الحضور</span> (<span class="wt-num">{{ heatmap_month_name }}</span>)</h4>
                 <form method="GET" class="d-flex">
                     <!-- Preserve existing filters -->
                     <input type="hidden" name="date" value="{{ filter_date|date:'Y-m-d' }}">
@@ -340,7 +340,7 @@
     <div class="col-lg-6">
         <div class="panel-card h-100 mb-0">
             <div class="panel-header">
-                <h4 class="panel-title"><i class="fas fa-chart-bar" style="color:#8b5cf6;"></i> Department Punctuality</h4>
+                <h4 class="panel-title"><i class="fas fa-chart-bar" style="color:#8b5cf6;"></i> <span class="lang-en">Punctuality by department</span><span class="lang-ar">الانضباط حسب القسم</span></h4>
             </div>
             <div style="position: relative; height: 300px; width: 100%;">
                 <canvas id="deptChart"></canvas>
@@ -355,7 +355,7 @@
 <div class="row">
     <div class="col-12">
         <div class="panel-header mb-3">
-            <h4 class="panel-title"><i class="fas fa-users" style="color:#f59e0b;"></i> Team Daily Status (Today)</h4>
+            <h4 class="panel-title"><i class="fas fa-users" style="color:#f59e0b;"></i> <span class="lang-en">Team today</span><span class="lang-ar">الفريق اليوم</span></h4>
         </div>
         <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
@@ -386,8 +386,8 @@
     <div class="col-lg-12 mt-4">
         <div class="panel-card mb-0" style="border-left: 4px solid var(--wt-bad);">
             <div class="panel-header mb-3">
-                <h4 class="panel-title text-danger"><i class="fas fa-exclamation-triangle"></i> Chronic Late Arrivals (This Month)</h4>
-                <div class="badge bg-danger rounded-pill">{{ chronic_late_users|length }} Users Flagged</div>
+                <h4 class="panel-title text-danger"><i class="fas fa-exclamation-triangle"></i> <span class="lang-en">Frequent late arrivals (this month)</span><span class="lang-ar">التأخر المتكرر (هذا الشهر)</span></h4>
+                <div class="badge bg-danger rounded-pill"><span class="wt-num">{{ chronic_late_users|length }}</span> <span class="lang-en">flagged</span><span class="lang-ar">موظفين</span></div>
             </div>
             {% if chronic_late_users %}
             <div class="table-responsive">
@@ -433,7 +433,7 @@
     <!-- Quick Stats -->
     <div class="col-12">
         <div class="panel-header mb-3">
-            <h4 class="panel-title"><i class="fas fa-chart-pie text-indigo"></i> My Monthly Overview</h4>
+            <h4 class="panel-title"><i class="fas fa-chart-pie text-indigo"></i> <span class="lang-en">My month at a glance</span><span class="lang-ar">ملخص شهري</span></h4>
         </div>
         <div class="stats-grid">
             <div class="stat-card" style="--bg-color: #fee2e2; --text-color: color-mix(in oklab, var(--wt-brand) 62%, #000);">
@@ -473,7 +473,7 @@
     <div class="panel-header d-flex justify-content-between flex-wrap align-items-center gap-3">
         <h4 class="panel-title mb-0">
             <i class="fas fa-history text-indigo"></i> 
-            {% if is_manager_or_admin %}Team Attendance Records{% else %}My Attendance History{% endif %}
+            {% if is_manager_or_admin %}<span class="lang-en">Team attendance records</span><span class="lang-ar">سجلات حضور الفريق</span>{% else %}<span class="lang-en">My attendance history</span><span class="lang-ar">سجل حضوري</span>{% endif %}
         </h4>
         <div class="d-flex flex-wrap gap-2">
             <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
@@ -506,7 +506,7 @@
                 <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
                 <input type="hidden" name="status" value="{{ status_filter }}">
                 <button type="submit" class="btn btn-success" style="padding: 0.4rem 0.8rem; border-radius: 8px;">
-                    <i class="fas fa-file-excel"></i> Export XLS
+                    <i class="fas fa-file-excel"></i> <span class="lang-en">Export to Excel</span><span class="lang-ar">تصدير إلى Excel</span>
                 </button>
             </form>
         </div>
@@ -545,7 +545,7 @@
                     </td>
                     {% endif %}
                     <td>
-                        <span class="fw-bold text-dark">{{ record.date|date:"M d, Y" }}</span>
+                        <span class="fw-bold text-dark">{{ record.date|date:"j/n/Y" }}</span>
                     </td>
                     <td>
                         {% if record.check_in %}
@@ -664,13 +664,13 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Present (On Time)',
+                                label: '{% if wt_lang == 'ar' %}حاضر (في الوقت){% else %}Present (on time){% endif %}',
                                 data: presentData,
                                 backgroundColor: 'var(--primary)',
                                 borderRadius: 4
                             },
                             {
-                                label: 'Late',
+                                label: '{% if wt_lang == 'ar' %}متأخر{% else %}Late{% endif %}',
                                 data: lateData,
                                 backgroundColor: '#f59e0b',
                                 borderRadius: 4

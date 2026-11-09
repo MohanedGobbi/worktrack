@@ -57,12 +57,12 @@
                         <div class="lp-field lp-field--pw">
                             <label for="reg-pw1"><span class="lang-en">Password</span><span class="lang-ar">كلمة المرور</span></label>
                             <input id="reg-pw1" name="password1" type="password" required minlength="8" autocomplete="new-password">
-                            <button type="button" class="lp-reveal" data-reveal="reg-pw1" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="lp-reveal" data-reveal="reg-pw1" aria-label="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}" title="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}"><i class="fas fa-eye"></i></button>
                         </div>
                         <div class="lp-field lp-field--pw">
                             <label for="reg-pw2"><span class="lang-en">Repeat password</span><span class="lang-ar">تأكيد كلمة المرور</span></label>
                             <input id="reg-pw2" name="password2" type="password" required minlength="8" autocomplete="new-password">
-                            <button type="button" class="lp-reveal" data-reveal="reg-pw2" aria-label="Show password" title="Show password"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="lp-reveal" data-reveal="reg-pw2" aria-label="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}" title="{% if wt_lang == 'ar' %}إظهار كلمة المرور{% else %}Show password{% endif %}"><i class="fas fa-eye"></i></button>
                         </div>
                     </div>
                     <p class="lp-hint"><span class="lang-en">At least 8 characters.</span><span class="lang-ar">8 أحرف على الأقل.</span></p>

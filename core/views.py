@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import rotate_token
 from django.contrib import messages
+from django.conf import settings as dj_settings
 from .models import SiteConfiguration, AllowedHost, BlockedHostAttempt
 from .forms import SiteConfigurationForm, SiteThemeForm
 
@@ -103,6 +104,7 @@ def site_settings_view(request):
         'ss_mode': form['theme_preset'].value() or 'rowd',
         'ss_start': start,
         'ss_swatches': WT_SWATCHES,
+        'wt_demo': getattr(dj_settings, 'DEMO_MODE', False),
         'ss_lang': request.POST.get('default_language') or site.default_language,
         'ss_allow_registration': (request.POST.get('allow_registration') == 'on') if request.method == 'POST' else site.allow_registration,
     })
@@ -210,3 +212,98 @@ def delete_host_action(request, host_id):
 import os
 import uuid
 from django.core.files.storage import default_storage
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Health check and automatic updates (see deploy/linux and docs/guides/INSTALL_LINUX.md)
+# The web app never runs anything as root: it only reads the updater's status file and drops a request file that a
+# systemd .path unit turns into an updater run.
+# ─────────────────────────────────────────────────────────────────────────────
+from pathlib import Path as _Path
+
+_UPDATE_STATES = {'checking', 'up_to_date', 'downloading', 'installing', 'updated', 'failed', 'skipped', 'error'}
+_UPDATE_REQUEST_NAME = 'request'
+
+
+def healthz(request):
+    """Liveness for the updater and load balancers: the app answers and the database responds."""
+    from django.db import connection
+    from worktrack_pro.version import get_version
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except Exception:
+        return JsonResponse({'status': 'error'}, status=503)
+    return JsonResponse({'status': 'ok', 'version': get_version()})
+
+
+def _read_update_status():
+    """The updater's last report, or {} when missing, unreadable or not a known state."""
+    from django.conf import settings
+    try:
+        data = json.loads(_Path(settings.UPDATE_STATUS_FILE).read_text(encoding='utf-8'))
+    except (OSError, ValueError, TypeError):
+        return {}
+    if not isinstance(data, dict) or data.get('state') not in _UPDATE_STATES:
+        return {}
+    return {k: str(data.get(k) or '') for k in ('state', 'installed', 'latest', 'message', 'timestamp')}
+
+
+def _update_paths():
+    from django.conf import settings
+    folder = _Path(settings.UPDATE_REQUEST_DIR)
+    return folder, folder / _UPDATE_REQUEST_NAME
+
+
+def _admin_json_guard(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'error', 'message': 'Sign in first.'}, status=401)
+    if getattr(request.user, 'role', '') != 'super_admin':
+        return JsonResponse({'status': 'error', 'message': 'Administrators only.'}, status=403)
+    return None
+
+
+def update_status(request):
+    """GET: installed version, whether updates are set up, whether a check is pending, and the last report."""
+    from worktrack_pro.version import version_info
+    bounce = _admin_json_guard(request)
+    if bounce:
+        return bounce
+    folder, req = _update_paths()
+    info = version_info()
+    return JsonResponse({
+        'installed': info['version'], 'commit': info['commit'], 'build_date': info['build_date'],
+        'configured': folder.is_dir(), 'pending': req.exists(), 'status': _read_update_status(),
+    })
+
+
+def update_check(request):
+    """POST (password again): ask the server to look for a new release now."""
+    from django.conf import settings
+    from django.utils import timezone
+    bounce = _admin_json_guard(request)
+    if bounce:
+        return bounce
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST only.'}, status=405)
+    if getattr(settings, 'DEMO_MODE', False):
+        return JsonResponse({'status': 'error', 'code': 'demo', 'message': 'Not available in demo mode.'}, status=403)
+    if not request.user.check_password(request.POST.get('password') or ''):
+        return JsonResponse({'status': 'error', 'code': 'password', 'message': 'Wrong password.'}, status=403)
+    folder, req = _update_paths()
+    if not folder.is_dir():
+        return JsonResponse({'status': 'error', 'code': 'not_configured', 'message': 'Automatic updates are not set up on this server.'}, status=409)
+    try:
+        tmp = folder / f'.{_UPDATE_REQUEST_NAME}.tmp'
+        tmp.write_text(json.dumps({'by': request.user.email, 'at': timezone.now().isoformat()}), encoding='utf-8')
+        tmp.replace(req)
+    except OSError:
+        return JsonResponse({'status': 'error', 'code': 'write', 'message': 'Could not write the request file.'}, status=500)
+    try:
+        from audit.models import ActivityLog
+        ActivityLog.objects.create(user=request.user, action='update', object_type='Software', object_id=0,
+                                   object_str='Update check', description='Asked the server to check for a new release',
+                                   ip_address=request.META.get('REMOTE_ADDR'))
+    except Exception:
+        logger.warning('Could not record the update request in the activity log', exc_info=True)
+    return JsonResponse({'status': 'requested'})

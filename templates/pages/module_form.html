@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ title }} - Worktrack Pro{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -322,7 +322,7 @@
                                 <div class="icon-grid">
                                     {% for icon in icon_list %}
                                         <div class="icon-option {% if module.icon_class == icon %}selected{% elif not module and icon == 'fa-folder' %}selected{% endif %}" 
-                                             onclick="selectIcon('{{ icon }}', this)" title="{{ icon }}">
+                                             onclick="selectIcon('{{ icon }}', this)">
                                             <i class="fas {{ icon }}"></i>
                                         </div>
                                     {% endfor %}

@@ -195,7 +195,7 @@ def attendance_dashboard(request):
             month_data.append(week_data)
             
         context['calendar_data'] = month_data
-        context['heatmap_month_name'] = target_date.strftime('%B %Y')
+        context['heatmap_month_name'] = f'{target_date.month}/{target_date.year}'  # numeric: reads the same in Arabic and English
         context['heatmap_month_value'] = target_date.strftime('%Y-%m')
     
     # Phase 1: Department Benchmarking Data (Admins Only)

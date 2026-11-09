@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}System Privileges & Profiles | {{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block breadcrumb_trail %}
 <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted"><span class="lang-en">Admin Dashboard</span><span class="lang-ar">لوحة الإدارة</span></a></li>

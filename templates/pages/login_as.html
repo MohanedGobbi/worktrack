@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 {% load static %}
 
 {% block content %}
@@ -7,15 +8,15 @@
     <div class="row mb-4 align-items-center">
         <div class="col-md-6">
             <h2 class="fw-bold mb-0 text-dark">
-                <i class="fas fa-user-secret text-primary me-2"></i> Immersive Login
+                <i class="fas fa-user-secret text-primary me-2"></i> <span class="lang-en">Sign in as another user</span><span class="lang-ar">الدخول كمستخدم آخر</span>
             </h2>
-            <p class="text-muted mt-2 mb-0">Select a user account to seamlessly impersonate their session.</p>
+            <p class="text-muted mt-2 mb-0"><span class="lang-en">Open the platform as that person to see what they see. Return from the banner at the top.</span><span class="lang-ar">افتح المنصة باسم ذلك الشخص لترى ما يراه. ارجع من الشريط في أعلى الصفحة.</span></p>
         </div>
         <div class="col-md-6 text-md-end mt-3 mt-md-0">
             <form method="GET" class="d-flex ms-auto" style="max-width: 400px;">
                 <div class="input-group shadow-sm">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search users by name or email..." value="{{ search }}">
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="{% if wt_lang == 'ar' %}ابحث بالاسم أو البريد…{% else %}Search by name or email…{% endif %}" value="{{ search }}">
                     <button class="btn btn-primary px-4 fw-bold" type="submit"><span class="lang-en">Search</span><span class="lang-ar">بحث</span></button>
                 </div>
             </form>
@@ -50,7 +51,7 @@
                         <form method="post" action="{% url 'impersonate-user' u.id %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-primary rounded-pill fw-bold w-100" style="border-width: 2px;">
-                                <i class="fas fa-sign-in-alt me-1"></i> Login As
+                                <i class="fas fa-sign-in-alt me-1"></i> <span class="lang-en">Sign in as</span><span class="lang-ar">الدخول باسمه</span>
                             </button>
                         </form>
                     </div>

@@ -30,21 +30,23 @@
     /* Page banner surface: the brand field + the three-module motif (theme-agnostic white ink).
        A banner uploaded in Site Settings sits under a brand overlay so white text stays readable. */
     --wt-hero-motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 300'%3E%3Cg fill='%23fff'%3E%3Crect x='0' y='28' width='330' height='70' rx='35' fill-opacity='.09'/%3E%3Crect x='34' y='114' width='330' height='70' rx='35' fill-opacity='.15'/%3E%3Crect x='170' y='200' width='250' height='70' rx='35' fill-opacity='.11'/%3E%3C/g%3E%3C/svg%3E");
-    --wt-hero-bg:
+    --wt-hero-bg:{% if site_config.banner_image %}
+      linear-gradient(100deg, color-mix(in oklab, var(--wt-brand) 94%, #000) 0%, color-mix(in oklab, var(--wt-brand) 90%, transparent) 42%, color-mix(in oklab, var(--wt-brand) 58%, transparent) 100%),
+      url("{{ site_config.banner_image.url }}") center / cover no-repeat,
+      var(--wt-brand);{% else %}
       var(--wt-hero-motif) right -60px center / auto 128% no-repeat,
       radial-gradient(70% 90% at 92% 10%, color-mix(in oklab, var(--wt-signal) 45%, transparent) 0%, transparent 65%),
-      {% if site_config.banner_image %}linear-gradient(120deg, color-mix(in oklab, var(--wt-brand) 92%, transparent), color-mix(in oklab, var(--wt-brand) 70%, #000 30%)),
-      url("{{ site_config.banner_image.url }}") center / cover no-repeat,{% endif %}
-      linear-gradient(125deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);
+      linear-gradient(125deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);{% endif %}
     --system-banner-img: none;
     --dashboard-banner-overlay-img: none;
   }
   html[dir="rtl"] {
-    --wt-hero-bg:
+    --wt-hero-bg:{% if site_config.banner_image %}
+      linear-gradient(260deg, color-mix(in oklab, var(--wt-brand) 94%, #000) 0%, color-mix(in oklab, var(--wt-brand) 90%, transparent) 42%, color-mix(in oklab, var(--wt-brand) 58%, transparent) 100%),
+      url("{{ site_config.banner_image.url }}") center / cover no-repeat,
+      var(--wt-brand);{% else %}
       var(--wt-hero-motif) left -60px center / auto 128% no-repeat,
       radial-gradient(70% 90% at 8% 10%, color-mix(in oklab, var(--wt-signal) 45%, transparent) 0%, transparent 65%),
-      {% if site_config.banner_image %}linear-gradient(240deg, color-mix(in oklab, var(--wt-brand) 92%, transparent), color-mix(in oklab, var(--wt-brand) 70%, #000 30%)),
-      url("{{ site_config.banner_image.url }}") center / cover no-repeat,{% endif %}
-      linear-gradient(235deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);
+      linear-gradient(235deg, var(--wt-brand) 0%, color-mix(in oklab, var(--wt-brand) 72%, #000) 100%);{% endif %}
   }
 </style>

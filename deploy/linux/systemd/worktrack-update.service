@@ -1,0 +1,12 @@
+# WorkTrack Pro updater (root). Started by worktrack-update.timer at night and by worktrack-update.path when an
+# administrator presses "Check for updates now". See docs/guides/INSTALL_LINUX.md.
+[Unit]
+Description=WorkTrack Pro automatic update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/worktrack/app/deploy/linux/worktrack-update.sh
+Nice=10
+TimeoutStartSec=1800

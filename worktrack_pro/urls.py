@@ -17,6 +17,7 @@ from core.views import (
     whitelist_host_action, delete_host_action
 )
 from core.features import feature_required
+from core.views import update_status as core_update_status, update_check as core_update_check, healthz as core_healthz
 from core.views_translations import (
     translation_manager, api_update_translation, api_bulk_update_translations, api_manage_translations,
 )
@@ -243,6 +244,9 @@ urlpatterns = [
     path('management/audit-logs/', audit_logs, name='audit-logs'),
     path('management/settings/', admin_settings, name='admin-settings'),
     path('admin-dashboard/site-settings/', site_settings_view, name='site-settings'),
+    path('admin-dashboard/updates/status/', core_update_status, name='update-status'),
+    path('admin-dashboard/updates/check/', core_update_check, name='update-check'),
+    path('healthz/', core_healthz, name='healthz'),
     
     # Host Management UI
     path('admin-dashboard/host-management/', feature_required('host_management')(host_management_view), name='host-management'),

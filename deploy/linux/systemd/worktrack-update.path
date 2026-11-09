@@ -1,0 +1,11 @@
+# "Check for updates now": the web app (no root) drops this request file; systemd starts the updater, which
+# deletes it first thing.
+[Unit]
+Description=WorkTrack Pro update request from the admin panel
+
+[Path]
+PathExists=/var/lib/worktrack/update-request/request
+Unit=worktrack-update.service
+
+[Install]
+WantedBy=multi-user.target

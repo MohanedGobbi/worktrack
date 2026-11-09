@@ -12,7 +12,8 @@
       input.type = show ? 'text' : 'password';
       const icon = btn.querySelector('i');
       if (icon) icon.className = 'fas ' + (show ? 'fa-eye-slash' : 'fa-eye');
-      const label = show ? 'Hide password' : 'Show password';
+      const ar = document.documentElement.lang === 'ar';
+      const label = show ? (ar ? 'إخفاء كلمة المرور' : 'Hide password') : (ar ? 'إظهار كلمة المرور' : 'Show password');
       btn.setAttribute('aria-label', label);
       btn.title = label;
       input.focus();

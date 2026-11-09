@@ -2,9 +2,9 @@
 <!-- GLOBAL STRATEGIC TODO NOTES DRAWER & BACKDROP -->
 <div class="wp-notes-backdrop" id="strategicDrawerBackdrop" onclick="toggleStrategicDrawer(true)"></div>
 
-<div class="wp-notes-panel d-print-none" id="strategicNotesDrawer" aria-label="Todo Notes">
+<div class="wp-notes-panel d-print-none" id="strategicNotesDrawer" aria-label="{% if wt_lang == 'ar' %}الملاحظات{% else %}Notes{% endif %}">
     <!-- Edge protruding arrow button on panel border: visible on viewport edge on every page -->
-    <button type="button" class="drawer-border-arrow-btn" onclick="toggleStrategicDrawer()" title="Todo Notes / الملاحظات وقائمة المهام" aria-label="Toggle Todo Notes">
+    <button type="button" class="drawer-border-arrow-btn" onclick="toggleStrategicDrawer()" title="{% if wt_lang == 'ar' %}الملاحظات{% else %}Notes{% endif %}" aria-label="{% if wt_lang == 'ar' %}إظهار الملاحظات أو إخفاؤها{% else %}Show or hide notes{% endif %}">
         <i class="fas fa-chevron-right icon-close-arrow"></i>
         <i class="fas fa-chevron-left icon-open-arrow"></i>
     </button>
@@ -32,7 +32,7 @@
     </div>
 
     <div class="wp-notes-footer">
-        <textarea class="wp-notes-input" id="newStrategicNoteInput" rows="3" placeholder="Draft a new todo note or action item..."></textarea>
+        <textarea class="wp-notes-input" id="newStrategicNoteInput" rows="3" placeholder="{% if wt_lang == 'ar' %}اكتب ملاحظة أو إجراءً جديدًا…{% else %}Write a new note or action item…{% endif %}"></textarea>
         <button type="button" class="wp-notes-submit" onclick="submitSimpleStrategicNote()">
             <i class="fas fa-plus me-1"></i>
             <span class="lang-en">Save Note</span>
@@ -42,7 +42,7 @@
 </div>
 
 <!-- Floating Trigger Button -->
-<div class="wp-floating-notes-btn d-print-none" id="generalTodoToggle" onclick="toggleStrategicDrawer()" title="Todo Notes">
+<div class="wp-floating-notes-btn d-print-none" id="generalTodoToggle" onclick="toggleStrategicDrawer()" title="{% if wt_lang == 'ar' %}الملاحظات{% else %}Notes{% endif %}">
     <i class="fas fa-clipboard-list"></i>
     <div id="drawerGlobalBadge" class="wp-note-trigger-badge" style="display: none;">0</div>
 </div>

@@ -188,6 +188,7 @@ def site_config(request):
         'wt_theme': _wt_theme(config, preset_key, theme_colors),
         'wt_lang': _wt_lang(request),
         'sb_rules': sb_rules,
+        'wt_crumb': WT_PAGE_NAMES.get(getattr(getattr(request, 'resolver_match', None), 'url_name', None)),
     }
 
 
@@ -196,6 +197,35 @@ def _clean_hex(value, fallback):
     if len(s) in (4, 7) and s.startswith('#') and all(c in '0123456789abcdefABCDEF' for c in s[1:]):
         return s
     return fallback
+
+
+# Breadcrumb label of each page (route name -> English, Arabic). Pages may still override the trail themselves.
+WT_PAGE_NAMES = {
+    'dashboard': ('Overview', 'نظرة عامة'), 'admin_dashboard': ('Admin console', 'لوحة الإدارة'),
+    'worker-portal': ('Worker view', 'واجهة الموظف'), 'manager-portal': ('Team', 'الفريق'),
+    'available-modules': ('Modules', 'الوحدات'), 'module-create': ('New module', 'وحدة جديدة'),
+    'module-edit': ('Edit module', 'تعديل الوحدة'), 'module-dashboard': ('Module', 'الوحدة'),
+    'group-create': ('New group', 'مجموعة جديدة'), 'group-edit': ('Edit group', 'تعديل المجموعة'),
+    'manage-groups': ('Work groups', 'مجموعات العمل'), 'archived-modules': ('Archived modules', 'الوحدات المؤرشفة'),
+    'admin-correspondence': ('Correspondence', 'المراسلات'), 'correspondence-create': ('New correspondence', 'مراسلة جديدة'),
+    'correspondence-detail': ('Correspondence', 'المراسلة'), 'correspondence-edit': ('Edit correspondence', 'تعديل المراسلة'),
+    'task-list': ('Tasks', 'المهام'), 'task-detail': ('Task', 'المهمة'), 'task-create': ('New task', 'مهمة جديدة'),
+    'task-edit': ('Edit task', 'تعديل المهمة'), 'task-kanban': ('Board', 'لوحة المهام'), 'task-calendar': ('Calendar', 'التقويم'),
+    'login-as-page': ('Sign in as', 'الدخول كمستخدم'), 'submission-list': ('Submissions', 'التسليمات'),
+    'submission-create': ('New submission', 'تسليم جديد'), 'submission-detail': ('Submission', 'التسليم'),
+    'submission-edit': ('Edit submission', 'تعديل التسليم'), 'submission-versions': ('Versions', 'النسخ'),
+    'notifications-list': ('Notifications', 'الإشعارات'), 'user-management': ('Users', 'المستخدمون'),
+    'user-create': ('New user', 'مستخدم جديد'), 'user-edit': ('Edit user', 'تعديل المستخدم'),
+    'audit-logs': ('Audit log', 'سجل النشاط'), 'admin-settings': ('System settings', 'إعدادات النظام'),
+    'site-settings': ('Site Settings', 'إعدادات الموقع'), 'worker-performance': ('My score', 'نتيجتي'),
+    'manager-analytics': ('Team', 'الفريق'), 'attendance-dashboard': ('Attendance', 'الحضور'),
+    'attendance-settings': ('Attendance settings', 'إعدادات الحضور'), 'index': ('Messenger', 'المحادثات'),
+    'profile': ('Profile', 'الملف الشخصي'), 'translation-manager': ('Translations', 'الترجمات'),
+    'host-management': ('Hosts', 'المضيفون'), 'global-map': ('Map', 'الخريطة'), 'roadmap-gantt': ('Roadmap', 'خارطة الطريق'),
+    'template-dashboard': ('Templates', 'القوالب'), 'organizational-intelligence': ('Notes', 'الملاحظات'),
+    'submit-contact': ('Contact the administrator', 'تواصل مع المشرف'), 'config': ('Messenger settings', 'إعدادات المحادثات'),
+    'user-message-log': ('Conversation log', 'سجل المحادثات'), 'offline-map-manager': ('Offline maps', 'الخرائط دون اتصال'),
+}
 
 
 def _mix_hex(a, b, weight):

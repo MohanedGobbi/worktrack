@@ -163,7 +163,7 @@
                                 <div class="icon-grid">
                                     {% for icon in icon_list %}
                                         <div class="icon-option {% if template.icon_class == icon %}selected{% elif not template and icon == 'fa-folder' %}selected{% endif %}" 
-                                             onclick="selectIcon('{{ icon }}', this)" title="{{ icon }}">
+                                             onclick="selectIcon('{{ icon }}', this)">
                                             <i class="fas {{ icon }}"></i>
                                         </div>
                                     {% endfor %}

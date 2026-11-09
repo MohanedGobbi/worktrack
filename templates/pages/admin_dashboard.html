@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}System Command Center - {{ site_config.app_name|default:"WorkTrack Pro" }}{% endblock %}
+{% block title %}{% include 'includes/wt_page_title.html' %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -1096,31 +1096,31 @@
                                 <td>
                                     {% if u.role == 'super_admin' %}
                                     <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-crown me-1"></i> Super Admin
+                                        <i class="fas fa-crown me-1"></i> <span class="lang-en">Super Admin</span><span class="lang-ar">مشرف عام</span>
                                     </span>
                                     {% elif u.role == 'manager' %}
                                     <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-user-tie me-1"></i> Manager
+                                        <i class="fas fa-user-tie me-1"></i> <span class="lang-en">Manager</span><span class="lang-ar">مدير</span>
                                     </span>
                                     {% else %}
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-user me-1"></i> Staff Worker
+                                        <i class="fas fa-user me-1"></i> <span class="lang-en">Staff</span><span class="lang-ar">موظف</span>
                                     </span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if u.is_active %}
                                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-check-circle me-1"></i> Active
+                                        <i class="fas fa-check-circle me-1"></i> <span class="lang-en">Active</span><span class="lang-ar">نشط</span>
                                     </span>
                                     {% else %}
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-ban me-1"></i> Disabled
+                                        <i class="fas fa-ban me-1"></i> <span class="lang-en">Disabled</span><span class="lang-ar">معطّل</span>
                                     </span>
                                     {% endif %}
                                 </td>
                                 <td class="text-muted small font-monospace">
-                                    {{ u.date_joined|date:"M d, Y" }}
+                                    {{ u.date_joined|date:"j/n/Y" }}
                                 </td>
                                 <td class="text-end pe-3">
                                     <div class="btn-group btn-group-sm rounded-pill shadow-sm border bg-white">
@@ -1129,7 +1129,7 @@
                                         </a>
                                         <form action="{% url 'user-toggle-status' u.id %}" method="post" class="d-inline m-0">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-light px-2.5" title="{% if u.is_active %}Disable Account{% else %}Activate Account{% endif %}">
+                                            <button type="submit" class="btn btn-light px-2.5" title="{% if u.is_active %}{% if wt_lang == 'ar' %}تعطيل الحساب{% else %}Deactivate account{% endif %}{% else %}{% if wt_lang == 'ar' %}تفعيل الحساب{% else %}Activate account{% endif %}{% endif %}">
                                                 <i class="fas fa-power-off {% if u.is_active %}text-danger{% else %}text-success{% endif %}" style="font-size: 0.75rem;"></i>
                                             </button>
                                         </form>
@@ -1157,10 +1157,10 @@
                 <!-- Pagination -->
                 {% if users.has_other_pages %}
                 <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                    <p class="text-muted small mb-0">Showing {{ users.start_index }} to {{ users.end_index }} of {{ users.paginator.count }} staff profiles</p>
+                    <p class="text-muted small mb-0"><span class="lang-en">Showing {{ users.start_index }}–{{ users.end_index }} of {{ users.paginator.count }}</span><span class="lang-ar">عرض {{ users.start_index }}–{{ users.end_index }} من {{ users.paginator.count }}</span></p>
                     <nav class="d-inline-flex gap-1">
                         {% if users.has_previous %}
-                        <a href="?page={{ users.previous_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3"><i class="fas fa-chevron-left me-1"></i> Prev</a>
+                        <a href="?page={{ users.previous_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3"><i class="fas fa-chevron-left me-1 rtl-flip"></i> <span class="lang-en">Previous</span><span class="lang-ar">السابق</span></a>
                         {% endif %}
 
                         {% for num in users.paginator.page_range %}
@@ -1172,7 +1172,7 @@
                         {% endfor %}
 
                         {% if users.has_next %}
-                        <a href="?page={{ users.next_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3">Next <i class="fas fa-chevron-right ms-1"></i></a>
+                        <a href="?page={{ users.next_page_number }}" class="btn btn-sm btn-light border rounded-pill px-3"><span class="lang-en">Next</span><span class="lang-ar">التالي</span> <i class="fas fa-chevron-right ms-1 rtl-flip"></i></a>
                         {% endif %}
                     </nav>
                 </div>
@@ -1193,7 +1193,7 @@
                         </p>
                     </div>
                     <a href="{% url 'audit-logs' %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                        <i class="fas fa-external-link-alt me-1"></i> Full Audit Console
+                        <i class="fas fa-external-link-alt me-1"></i> <span class="lang-en">Full audit log</span><span class="lang-ar">سجل النشاط الكامل</span>
                     </a>
                 </div>
 
@@ -1212,7 +1212,7 @@
                             {% for activity in recent_activity %}
                             <tr>
                                 <td class="ps-3 font-monospace small text-muted">
-                                    <i class="far fa-clock me-1 text-primary"></i>{{ activity.created_at|date:"M d, H:i:s" }}
+                                    <i class="far fa-clock me-1 text-primary"></i>{{ activity.created_at|date:"j/n H:i:s" }}
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
@@ -1264,7 +1264,7 @@
                             <span class="lang-ar">تقييم الرواد وفق معدلات الإنجاز، الالتزام بالوقت وجودة المخرجات.</span>
                         </p>
                     </div>
-                    <span class="badge bg-dark rounded-pill px-3 py-1.5 font-monospace">{{ month|default:now|date:"F Y" }}</span>
+                    <span class="badge bg-dark rounded-pill px-3 py-1.5 font-monospace">{{ month|default:now|date:"n/Y" }}</span>
                 </div>
 
                 <div class="row g-4">
